@@ -128,13 +128,16 @@ fun MoodList(
                     }
 
                     moodResult.items.forEach { item ->
-                        item {
-                            BasicText(
-                                text = item.title,
-                                style = typography().m.semiBold,
-                                modifier = sectionTextModifier
-                            )
-                        }
+                        // Untitled sections exist (a page that is one big grid, such as
+                        // "Mixed for you"); don't leave a blank gap where a header would be.
+                        if( item.title.isNotBlank() )
+                            item {
+                                BasicText(
+                                    text = item.title,
+                                    style = typography().m.semiBold,
+                                    modifier = sectionTextModifier
+                                )
+                            }
                         item {
                             ItemUtils.LazyRowItem(
                                 navController = navController,

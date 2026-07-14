@@ -20,20 +20,37 @@ suspend fun Innertube.browse(body: BrowseBodyWithLocale) = runCatchingNonCancell
             ?.musicDetailHeaderRenderer?.title?.text,
         items = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
             ?.tabRenderer?.content?.sectionListRenderer?.contents?.mapNotNull { content ->
+                // A section is worth keeping when it has items — not when it happens to
+                // carry a header. Pages like FEmusic_mixed_for_you are a single, untitled
+                // grid (the name lives in the page header), and requiring a title here
+                // silently dropped the whole thing, leaving the screen blank.
                 when {
-                    content.gridRenderer != null -> BrowseResult.Item(
-                        title = content.gridRenderer.header?.gridHeaderRenderer?.title?.runs
-                            ?.firstOrNull()?.text ?: return@mapNotNull null,
-                        items = content.gridRenderer.items?.mapNotNull { it.musicTwoRowItemRenderer?.toItem() }
-                            .orEmpty()
-                    )
+                    content.gridRenderer != null -> {
+                        val items = content.gridRenderer.items
+                                           ?.mapNotNull { it.musicTwoRowItemRenderer?.toItem() }
+                                           .orEmpty()
+                        if( items.isEmpty() ) return@mapNotNull null
 
-                    content.musicCarouselShelfRenderer != null -> BrowseResult.Item(
-                        title = content.musicCarouselShelfRenderer.header?.musicCarouselShelfBasicHeaderRenderer
-                            ?.title?.runs?.firstOrNull()?.text ?: return@mapNotNull null,
-                        items = content.musicCarouselShelfRenderer.contents?.mapNotNull { it.musicTwoRowItemRenderer?.toItem() }
-                            .orEmpty()
-                    )
+                        BrowseResult.Item(
+                            title = content.gridRenderer.header?.gridHeaderRenderer?.title?.runs
+                                ?.firstOrNull()?.text.orEmpty(),
+                            items = items
+                        )
+                    }
+
+                    content.musicCarouselShelfRenderer != null -> {
+                        val items = content.musicCarouselShelfRenderer.contents
+                                           ?.mapNotNull { it.musicTwoRowItemRenderer?.toItem() }
+                                           .orEmpty()
+                        if( items.isEmpty() ) return@mapNotNull null
+
+                        BrowseResult.Item(
+                            title = content.musicCarouselShelfRenderer.header
+                                ?.musicCarouselShelfBasicHeaderRenderer
+                                ?.title?.runs?.firstOrNull()?.text.orEmpty(),
+                            items = items
+                        )
+                    }
 
                     else -> null
                 }
