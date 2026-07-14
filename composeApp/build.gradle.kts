@@ -306,15 +306,15 @@ android {
             // Signing config
             signingConfig = signingConfigs.getByName( "nightly" )
 
-            val longFormat = SimpleDateFormat("yyyy.MM.dd")
-            val shortFormat = SimpleDateFormat("yyMMdd")
+            val longFormat = SimpleDateFormat("yyyy.MM.dd HH:mm")
 
             // App's properties
             applicationIdSuffix = ".nightly"
-            versionName = longFormat.format (Date() )
-            manifestPlaceholders["appName"] = "Nightly"
-            // The idea is to combine build date and current version code together
-            versionCode = "${shortFormat.format( Date() )}$vCode".toInt()
+            versionName = longFormat.format( Date() )
+            manifestPlaceholders["appName"] = "$APP_NAME Nightly"
+            // Minutes since the epoch: strictly increases every build (so each APK
+            // installs as an update over the previous one) and stays within Int range.
+            versionCode = ( System.currentTimeMillis() / 60_000L ).toInt()
         }
         create( "prod" ) {
             dimension = "env"
