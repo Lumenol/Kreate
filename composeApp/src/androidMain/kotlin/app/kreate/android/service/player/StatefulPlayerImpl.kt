@@ -495,14 +495,16 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
      */
 
     private fun normalizeLoudness() {
+        // Cancel before bailing out: the collector below runs until it's cancelled,
+        // so an early return would leave the previous song's collector alive.
+        loudnessNormalizationJob?.cancel()
+
         if( !::loudnessEnhancer.isInitialized || !loudnessEnhancer.enabled )
             return
         else
             logger.v { "Normalizing loudness..." }
 
         try {
-            loudnessNormalizationJob?.cancel()
-
             // Interaction with [Player] must happen on Main thread
             val mediaId = currentMediaItem?.mediaId ?: return
             loudnessNormalizationJob = coroutineScope.launch {
@@ -518,8 +520,16 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
                             val targetLoudness by Preferences.AUDIO_VOLUME_NORMALIZATION_TARGET
                             val targetGain = mediaLoudness?.let { (targetLoudness - it) * 100f } ?: 0f
 
-                            if( ::loudnessEnhancer.isInitialized )
+                            // [onAudioSessionIdChanged] can release the effect while this job
+                            // is still collecting, and a released lateinit still reports itself
+                            // as initialized. The resulting exception must not escape the
+                            // coroutine, it has no handler to catch it.
+                            try {
                                 loudnessEnhancer.setTargetGain( targetGain.toInt() )
+                            } catch( err: RuntimeException ) {
+                                logger.e( err ) { "Failed to apply loudness gain, effect is gone" }
+                                return@collect
+                            }
 
                             logger.d { "Media loudness: ${mediaLoudness ?: "unknown"}, target loudness: %.2f, gain: %.2f".format(targetLoudness, targetGain) }
                         }
