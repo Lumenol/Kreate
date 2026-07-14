@@ -1,0 +1,48 @@
+name: Build test APK
+
+# Builds an installable debug APK to test patches before they're proposed upstream.
+# Debug build type suffixes the application id with ".debug", so the result can be
+# installed side-by-side with a regular Kreate install.
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'fix/**'
+      - 'test/**'
+
+jobs:
+  build:
+    name: Build debug APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+
+      - name: Setup Java 21
+        uses: actions/setup-java@v5.5.0
+        with:
+          java-version: "21"
+          distribution: "corretto"
+
+      - name: Restore Gradle dependencies & build cache
+        uses: actions/cache@v6
+        with:
+          path: |
+            ~/.gradle/caches
+            ./build
+            ./composeApp/build
+          key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', '**/libs.versions.toml') }}
+          restore-keys: gradle-${{ runner.os }}-
+
+      - name: Build with Gradle
+        run: ./gradlew assembleGithubUniversalProdDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: kreate-debug-apk
+          path: composeApp/build/outputs/apk/**/debug/*.apk
+          if-no-files-found: error
