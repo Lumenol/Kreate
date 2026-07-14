@@ -82,6 +82,7 @@ import it.fast4x.compose.persist.persist
 import it.fast4x.compose.persist.persistList
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.YtMusic
+import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.innertube.models.bodies.NextBody
 import it.fast4x.innertube.requests.HomePage
 import it.fast4x.innertube.requests.chartsPageComplete
@@ -270,11 +271,6 @@ fun HomeQuickPicks(
 
             if (isYouTubeLoggedIn())
                 homePageResult = YtMusic.getHomePage()
-                homePageResult?.onFailure { err ->
-                    Logger.e( throwable = err, tag = "HomeQuickPicks" ) { "getHomePage failed" }
-                }.also { result ->
-                    Logger.i( tag = "HomeQuickPicks" ) { "getHomePage sections: ${result?.getOrNull()?.sections?.size ?: "null"}" }
-                }
 
         }.onFailure {
             Logger.e( tag = "HomeQuickPicks" ) { "loadData failed!" }
@@ -1003,25 +999,39 @@ fun HomeQuickPicks(
 
                 }
 
-                Logger.i( tag = "HomeQuickPicks" ) {
-                    "render: homePageInit=${homePageInit?.sections?.size ?: "null"} sections"
-                }
-
                 homePageInit?.let { page ->
 
                     page.sections.forEach { section ->
-                        Logger.i( tag = "HomeQuickPicks" ) {
-                            "render section '${section.title}': ${section.items.size} items, ${section.items.count { it != null }} non-null"
-                        }
                         // A leading unparsable item must not hide a section that has
                         // valid ones after it, so drop nulls before deciding.
                         val items = section.items.fastFilterNotNull()
                         if (items.isEmpty()) return@forEach
 
+                        // Sections whose header carries a "More" button open the full
+                        // listing (e.g. "Mixed for you" -> FEmusic_mixed_for_you), which
+                        // the mood route already knows how to browse and render.
+                        val more = section.endpoint?.takeIf { it.browseId.isNotBlank() }
+
                         BasicText(
                             text = section.title,
                             style = typography().l.semiBold.color(colorPalette().text),
-                            modifier = Modifier.padding(horizontal = 16.dp).padding(vertical = 4.dp)
+                            modifier = Modifier.let { base ->
+                                                   if( more == null ) base
+                                                   else base.clickable {
+                                                       onMoodClick(
+                                                           Innertube.Mood.Item(
+                                                               title = section.title,
+                                                               stripeColor = 0L,
+                                                               endpoint = NavigationEndpoint.Endpoint.Browse(
+                                                                   browseId = more.browseId,
+                                                                   params = more.params
+                                                               )
+                                                           )
+                                                       )
+                                                   }
+                                               }
+                                               .padding(horizontal = 16.dp)
+                                               .padding(vertical = 4.dp)
                         )
 
                         val currentMediaItem by player.currentMediaItemState.collectAsState()
