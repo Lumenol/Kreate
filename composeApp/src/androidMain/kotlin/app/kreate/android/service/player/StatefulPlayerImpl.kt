@@ -566,8 +566,9 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
      * [Player.setAuxEffectInfo] silently fails on it.
      */
     @MainThread
-    private fun updateReverb( sessionId: Int = player.audioSessionId ) {
-        if( sessionId == C.AUDIO_SESSION_ID_UNSET ) return
+    private fun updateReverb() {
+        // An aux send can only be attached once the sink has a track to attach it to
+        if( player.audioSessionId == C.AUDIO_SESSION_ID_UNSET ) return
 
         try {
             val preset = Preferences.AUDIO_REVERB_PRESET.value.toShort()
@@ -642,15 +643,9 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         }
         //</editor-fold>
         //<editor-fold desc="Reverb preset">
-        try {
-            // Effect is bound to the previous session, it can't be reused
-            reverb?.release()
-            reverb = null
-
-            updateReverb( audioSessionId )
-        } catch( err: Exception ) {
-            logger.e( err ) { "Reverb init failed!" }
-        }
+        // The effect lives on the output mix, so it outlives audio sessions.
+        // Only the aux send has to be attached to the new session's track.
+        updateReverb()
         //</editor-fold>
     }
 
