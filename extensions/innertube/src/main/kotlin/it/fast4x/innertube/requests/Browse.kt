@@ -41,18 +41,12 @@ private fun JsonElement?.string(): String? =
 // taking the page down.
 private val ITEM_KEYS = setOf( "navigationEndpoint", "thumbnailRenderer", "title", "subtitle", "aspectRatio" )
 
-var lastBrowseItemError: String? = null
-    private set
-
 private fun twoRowItem( element: JsonElement ): Innertube.Item? {
     val renderer = element.child( "musicTwoRowItemRenderer" ) as? JsonObject ?: return null
     val slimmed = JsonObject( renderer.filterKeys { it in ITEM_KEYS } )
-    return try {
+    return runCatching {
         BROWSE_JSON.decodeFromJsonElement( MusicTwoRowItemRenderer.serializer(), slimmed ).toItem()
-    } catch ( e: Exception ) {
-        lastBrowseItemError = e.message
-        null
-    }
+    }.getOrNull()
 }
 
 private fun sectionItem( section: JsonElement, gridKey: String, titlePath: List<String> ): BrowseResult.Item? {
@@ -71,6 +65,9 @@ private fun sectionItem( section: JsonElement, gridKey: String, titlePath: List<
 
 suspend fun Innertube.browse(body: BrowseBodyWithLocale) = runCatchingNonCancellable {
     val root = client.post(browse) {
+        // Attach the session, like every other browse call does. Without it,
+        // account-scoped pages (FEmusic_mixed_for_you, …) come back 401.
+        setLogin(setLogin = true)
         setBody(body)
     }.body<JsonObject>()
 

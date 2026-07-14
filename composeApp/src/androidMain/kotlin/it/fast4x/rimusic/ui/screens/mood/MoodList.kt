@@ -67,10 +67,6 @@ fun MoodList(
 
     LaunchedEffect(Unit) {
         moodPage = Innertube.browse(BrowseBodyWithLocale(browseId = browseId, params = mood.params))
-        co.touchlab.kermit.Logger.i( tag = "MoodList" ) {
-            val r = moodPage
-            "browse $browseId -> ${if (r?.isSuccess == true) "ok, sections=${r.getOrNull()?.items?.size}, items=${r.getOrNull()?.items?.sumOf { it.items.size }}" else "fail: ${r?.exceptionOrNull()?.message}"} | itemErr=${it.fast4x.innertube.requests.lastBrowseItemError}"
-        }
     }
 
     val lazyListState = rememberLazyListState()
