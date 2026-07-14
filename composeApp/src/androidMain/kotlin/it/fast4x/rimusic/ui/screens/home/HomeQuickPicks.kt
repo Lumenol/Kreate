@@ -175,7 +175,9 @@ fun HomeQuickPicks(
     var discoverPageInit by persist<Innertube.DiscoverPage>("home/discoveryAlbums")
     var discoverPagePreference by rememberPreference(quickPicsDiscoverPageKey, discoverPageInit)
 
-    var homePageResult by persist<Result<HomePage?>>("home/homePage")
+    // Distinct tags: persist is a keyed cache, so sharing one tag made the Result
+    // and the page overwrite each other in the same slot (see relatedPage above).
+    var homePageResult by persist<Result<HomePage?>>("home/homePageResult")
     var homePageInit by persist<HomePage?>("home/homePage")
     var homePagePreference by rememberPreference(quickPicsHomePageKey, homePageInit)
 
@@ -997,9 +999,16 @@ fun HomeQuickPicks(
 
                 }
 
+                Logger.i( tag = "HomeQuickPicks" ) {
+                    "render: homePageInit=${homePageInit?.sections?.size ?: "null"} sections"
+                }
+
                 homePageInit?.let { page ->
 
                     page.sections.forEach { section ->
+                        Logger.i( tag = "HomeQuickPicks" ) {
+                            "render section '${section.title}': ${section.items.size} items, ${section.items.count { it != null }} non-null"
+                        }
                         // A leading unparsable item must not hide a section that has
                         // valid ones after it, so drop nulls before deciding.
                         val items = section.items.fastFilterNotNull()
