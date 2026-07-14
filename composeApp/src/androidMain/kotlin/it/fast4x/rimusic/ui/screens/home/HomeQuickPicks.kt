@@ -268,6 +268,11 @@ fun HomeQuickPicks(
 
             if (isYouTubeLoggedIn())
                 homePageResult = YtMusic.getHomePage()
+                homePageResult?.onFailure { err ->
+                    Logger.e( throwable = err, tag = "HomeQuickPicks" ) { "getHomePage failed" }
+                }.also { result ->
+                    Logger.i( tag = "HomeQuickPicks" ) { "getHomePage sections: ${result?.getOrNull()?.sections?.size ?: "null"}" }
+                }
 
         }.onFailure {
             Logger.e( tag = "HomeQuickPicks" ) { "loadData failed!" }
@@ -942,10 +947,7 @@ fun HomeQuickPicks(
                                                 Row(
                                                     horizontalArrangement = Arrangement.spacedBy( 10.dp ),
                                                     verticalAlignment = Alignment.CenterVertically,
-                                                    modifier = Modifier.clickable {
-                                                                           NavRoutes.YT_ARTIST.navigateHere( navController, artist.id )
-                                                                       }
-                                                                       .padding( start = 16.dp )
+                                                    modifier = Modifier.padding( start = 16.dp )
                                                                        .requiredHeight( ArtistItem.thumbnailSize().height )
                                                 ) {
                                                     BasicText(
