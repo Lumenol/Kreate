@@ -296,7 +296,11 @@ fun HomeQuickPicks(
         relatedPageResult = null
         relatedInit = null
         trending = null
-        refreshScope.launch(Dispatchers.IO) {
+        // Stay on the main thread: loadData() writes the `loadedData` preference,
+        // whose setter is @MainThread — off the main thread it refuses the write and
+        // toasts an error. The actual fetching already runs in loadData()'s own
+        // Dispatchers.IO coroutine, so nothing blocks here.
+        refreshScope.launch {
             refreshing = true
             loadData()
             delay(500)
