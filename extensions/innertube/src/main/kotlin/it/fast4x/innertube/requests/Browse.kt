@@ -35,13 +35,24 @@ private fun JsonElement?.array(): List<JsonElement> =
 private fun JsonElement?.string(): String? =
     (this as? JsonPrimitive)?.contentOrNull
 
+// Keep only the fields toItem()/from() actually read. Everything else (menu,
+// overlay, badges, …) decodes strictly and any unmodelled shape in there would
+// throw; whitelisting keeps a single odd item — or an odd sibling field — from
+// taking the page down.
+private val ITEM_KEYS = setOf( "navigationEndpoint", "thumbnailRenderer", "title", "subtitle", "aspectRatio" )
+
+var lastBrowseItemError: String? = null
+    private set
+
 private fun twoRowItem( element: JsonElement ): Innertube.Item? {
     val renderer = element.child( "musicTwoRowItemRenderer" ) as? JsonObject ?: return null
-    // Drop the parts we don't use; they're the fragile ones.
-    val slimmed = JsonObject( renderer - "menu" - "thumbnailOverlay" )
-    return runCatching {
+    val slimmed = JsonObject( renderer.filterKeys { it in ITEM_KEYS } )
+    return try {
         BROWSE_JSON.decodeFromJsonElement( MusicTwoRowItemRenderer.serializer(), slimmed ).toItem()
-    }.getOrNull()
+    } catch ( e: Exception ) {
+        lastBrowseItemError = e.message
+        null
+    }
 }
 
 private fun sectionItem( section: JsonElement, gridKey: String, titlePath: List<String> ): BrowseResult.Item? {
