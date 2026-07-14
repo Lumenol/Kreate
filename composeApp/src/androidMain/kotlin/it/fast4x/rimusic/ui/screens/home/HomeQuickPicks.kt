@@ -997,13 +997,14 @@ fun HomeQuickPicks(
 
                 homePageInit?.let { page ->
 
-                    page.sections.forEach {
-                        if (it.items.isEmpty() || it.items.firstOrNull()?.key == null) return@forEach
-                        println("homePage() in HomeYouTubeMusic sections: ${it.title} ${it.items.size}")
-                        println("homePage() in HomeYouTubeMusic sections items: ${it.items}")
+                    page.sections.forEach { section ->
+                        // A leading unparsable item must not hide a section that has
+                        // valid ones after it, so drop nulls before deciding.
+                        val items = section.items.fastFilterNotNull()
+                        if (items.isEmpty()) return@forEach
 
                         BasicText(
-                            text = it.title,
+                            text = section.title,
                             style = typography().l.semiBold.color(colorPalette().text),
                             modifier = Modifier.padding(horizontal = 16.dp).padding(vertical = 4.dp)
                         )
@@ -1011,7 +1012,7 @@ fun HomeQuickPicks(
                         val currentMediaItem by player.currentMediaItemState.collectAsState()
                         ItemUtils.LazyRowItem(
                             navController = navController,
-                            innertubeItems = it.items.fastFilterNotNull(),
+                            innertubeItems = items,
                             currentlyPlaying = currentMediaItem?.mediaId
                         )
                     }
