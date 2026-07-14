@@ -57,9 +57,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -510,16 +510,23 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             // Interaction with [Player] must happen on Main thread
             val mediaId = currentMediaItem?.mediaId ?: return
             loudnessNormalizationJob = coroutineScope.launch {
-                // This holds the job as long as loudnessDb is unavailable
-                val mediaLoudness: Float = Database.formatTable
-                                                   .findBySongId( mediaId )
-                                                   .mapNotNull { it?.loudnessDb }
-                                                   .first()
-                val targetLoudness by Preferences.AUDIO_VOLUME_NORMALIZATION_TARGET
-                val targetGain = (targetLoudness - mediaLoudness) * 100f
-                loudnessEnhancer.setTargetGain( targetGain.toInt() )
+                // Loudness is written to the database while the stream is being resolved,
+                // so it's usually absent on the first emission. Songs that never get one
+                // (local files, or responses that don't carry it) must still reset the
+                // gain, otherwise the previous song's gain keeps being applied.
+                Database.formatTable
+                        .findBySongId( mediaId )
+                        .map { it?.loudnessDb }
+                        .distinctUntilChanged()
+                        .collect { mediaLoudness ->
+                            val targetLoudness by Preferences.AUDIO_VOLUME_NORMALIZATION_TARGET
+                            val targetGain = mediaLoudness?.let { (targetLoudness - it) * 100f } ?: 0f
 
-                logger.d { "Media loudness: %.2f, target loudness: %.2f, gain: %.2f".format(mediaLoudness, targetLoudness, targetGain) }
+                            if( ::loudnessEnhancer.isInitialized )
+                                loudnessEnhancer.setTargetGain( targetGain.toInt() )
+
+                            logger.d { "Media loudness: ${mediaLoudness ?: "unknown"}, target loudness: %.2f, gain: %.2f".format(targetLoudness, targetGain) }
+                        }
             }
         } catch( err: Exception ) {
             logger.e( err ) { "normalizeLoudness failed!" }
