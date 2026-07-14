@@ -35,10 +35,12 @@ data class HomePage(
                                        ?.buttonRenderer
                                        ?.navigationEndpoint
                                        ?.browseEndpoint
-                                       ?.let {
+                                       ?.let { endpoint ->
                                            // Keep the params too: they're what the "More"
                                            // button carries alongside the browse id.
-                                           BrowseEndpoint( browseId = it.browseId, params = it.params )
+                                           endpoint.browseId?.let { id ->
+                                               BrowseEndpoint( browseId = id, params = endpoint.params )
+                                           }
                                        },
                     items = renderer.contents
                         .map {
