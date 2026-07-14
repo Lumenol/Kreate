@@ -6,16 +6,9 @@ import it.fast4x.innertube.models.BrowseEndpoint
 import it.fast4x.innertube.models.BrowseResponse
 import it.fast4x.innertube.models.Context
 import it.fast4x.innertube.models.CreatePlaylistResponse
-import it.fast4x.innertube.models.MusicCarouselShelfRenderer
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.innertube.models.getContinuation
 import it.fast4x.innertube.models.oddElements
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.contentOrNull
 import it.fast4x.innertube.requests.AlbumPage
 import it.fast4x.innertube.requests.ArtistItemsContinuationPage
 import it.fast4x.innertube.requests.ArtistItemsPage
@@ -126,69 +119,38 @@ object YtMusic {
         println("YtMusic removelikeVideoOrSong error: ${it.stackTraceToString()}")
     }
 
-    /**
-     * The home shelves are extracted by walking the raw JSON and decoding each
-     * carousel on its own, instead of deserializing the whole [BrowseResponse].
-     *
-     * The full response carries many shelf and header types this module doesn't
-     * model, and several of its fields are non-null without a default; a single
-     * unexpected shape anywhere in that tree makes `body<BrowseResponse>()` throw
-     * and takes the entire home down with it. Decoding carousel by carousel keeps
-     * the failure local — an undecodable shelf is skipped, the rest still show.
-     */
-    private val HOME_JSON = Json {
-        ignoreUnknownKeys = true
-        explicitNulls = false
-        coerceInputValues = true
-    }
-
-    private fun JsonElement?.child( key: String ): JsonElement? =
-        (this as? JsonObject)?.get( key )
-
-    private fun JsonElement?.array(): List<JsonElement> =
-        (this as? JsonArray).orEmpty()
-
-    private fun homeSections( contents: JsonElement? ): List<HomePage.Section> =
-        contents.array().mapNotNull { element ->
-            val shelf = element.child( "musicCarouselShelfRenderer" ) ?: return@mapNotNull null
-            runCatching {
-                HOME_JSON.decodeFromJsonElement( MusicCarouselShelfRenderer.serializer(), shelf )
-            }.getOrNull()
-             ?.let( HomePage.Section::fromMusicCarouselShelfRenderer )
-        }
-
-    private fun continuationToken( holder: JsonElement? ): String? =
-        holder.child( "continuations" ).array().firstOrNull()
-              .child( "nextContinuationData" )
-              .child( "continuation" )
-              ?.let { (it as? JsonPrimitive)?.contentOrNull }
-
     suspend fun getHomePage(setLogin: Boolean = false): Result<HomePage> = runCatching {
 
-        val root = Innertube.browse(browseId = "FEmusic_home", setLogin = setLogin).body<JsonObject>()
+        val response = Innertube.browse(browseId = "FEmusic_home", setLogin = setLogin).body<BrowseResponse>()
 
-        val sectionList = root.child( "contents" )
-                              .child( "singleColumnBrowseResultsRenderer" )
-                              .child( "tabs" ).array().firstOrNull()
-                              .child( "tabRenderer" )
-                              .child( "content" )
-                              .child( "sectionListRenderer" )
+        val tab = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+            ?.tabRenderer?.content?.sectionListRenderer
 
-        val sections = homeSections( sectionList.child( "contents" ) ).toMutableList()
+        val sections = tab?.contents
+            ?.mapNotNull { it.musicCarouselShelfRenderer }
+            ?.mapNotNull { HomePage.Section.fromMusicCarouselShelfRenderer(it) }
+            .orEmpty()
+            .toMutableList()
 
-        // A continuation page that fails must not discard what's already collected.
-        var continuation = continuationToken( sectionList )
+        // Continuations are fetched one page at a time. A single page that fails
+        // to deserialize must not discard the sections already collected — YouTube
+        // occasionally returns a shelf type this parser doesn't model, and losing
+        // the whole home over it is worse than stopping a few sections short.
+        var continuation = tab?.continuations?.getContinuation()
         while (continuation != null) {
             val page = try {
-                Innertube.browse(continuation = continuation).body<JsonObject>()
+                Innertube.browse(continuation = continuation).body<BrowseResponse>()
             } catch (e: Exception) {
                 println("getHomePage() continuation failed, keeping ${sections.size} sections: ${e.message}")
                 break
             }
 
-            val holder = page.child( "continuationContents" ).child( "sectionListContinuation" )
-            sections += homeSections( holder.child( "contents" ) )
-            continuation = continuationToken( holder )
+            sections += page.continuationContents?.sectionListContinuation?.contents
+                ?.mapNotNull { it.musicCarouselShelfRenderer }
+                ?.mapNotNull { HomePage.Section.fromMusicCarouselShelfRenderer(it) }
+                .orEmpty()
+
+            continuation = page.continuationContents?.sectionListContinuation?.continuations?.getContinuation()
         }
 
         HomePage( sections = sections )
