@@ -91,6 +91,12 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
 
     companion object {
         const val SleepTimerNotificationChannelId = "sleep_timer_channel_id"
+
+        /**
+         * Audio session of the global output mix. Audio effects created on it are
+         * instantiated as auxiliary effects, the kind aux sends can be attached to.
+         */
+        private const val AUDIO_SESSION_OUTPUT_MIX = 0
     }
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -547,11 +553,17 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
      * Attaches, updates, or detaches the reverb effect according to
      * [Preferences.AUDIO_REVERB_PRESET].
      *
-     * An enabled [PresetReverb] declares `EFFECT_FLAG_VOLUME_CTRL`, which makes
-     * AudioFlinger hand volume control of the audio session over to the effect.
-     * It must therefore only exist while a preset other than
-     * [PresetReverb.PRESET_NONE] is selected, otherwise device volume no longer
-     * attenuates playback on devices whose effect implementation doesn't honor it.
+     * The effect is created on [AUDIO_SESSION_OUTPUT_MIX] to get the *auxiliary*
+     * variant, which is what [Player.setAuxEffectInfo] expects: the player's track
+     * is routed to it through an aux send, and only the reverberated signal comes
+     * back into the mix.
+     *
+     * Creating it on the player's own session yields the *insert* variant instead.
+     * That one declares `EFFECT_FLAG_VOLUME_CTRL`, so AudioFlinger hands volume
+     * control of the session over to the effect and applies unity gain to the track;
+     * implementations that don't attenuate then leave playback stuck at full scale.
+     * On top of that, an insert effect cannot be attached through an aux send, so
+     * [Player.setAuxEffectInfo] silently fails on it.
      */
     @MainThread
     private fun updateReverb( sessionId: Int = player.audioSessionId ) {
@@ -570,7 +582,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
                 return
             }
 
-            val presetReverb = reverb ?: PresetReverb( 1, sessionId ).also { reverb = it }
+            val presetReverb = reverb ?: PresetReverb( 1, AUDIO_SESSION_OUTPUT_MIX ).also { reverb = it }
             presetReverb.enabled = false
             presetReverb.preset = preset
             presetReverb.enabled = true
