@@ -37,6 +37,9 @@ jobs:
           key: gradle-${{ runner.os }}-${{ hashFiles('**/gradle-wrapper.properties', '**/libs.versions.toml') }}
           restore-keys: gradle-${{ runner.os }}-
 
+      - name: Run unit tests
+        run: ./gradlew :composeApp:testGithubUniversalProdDebugUnitTest
+
       - name: Build with Gradle
         run: ./gradlew assembleGithubUniversalProdDebug
 
