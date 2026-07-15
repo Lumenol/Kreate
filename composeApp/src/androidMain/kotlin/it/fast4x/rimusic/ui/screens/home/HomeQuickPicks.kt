@@ -949,7 +949,10 @@ fun HomeQuickPicks(
                                                 Row(
                                                     horizontalArrangement = Arrangement.spacedBy( 10.dp ),
                                                     verticalAlignment = Alignment.CenterVertically,
-                                                    modifier = Modifier.padding( start = 16.dp )
+                                                    modifier = Modifier.clickable {
+                                                                           NavRoutes.YT_ARTIST.navigateHere( navController, artist.id )
+                                                                       }
+                                                                       .padding( start = 16.dp )
                                                                        .requiredHeight( ArtistItem.thumbnailSize().height )
                                                 ) {
                                                     BasicText(
