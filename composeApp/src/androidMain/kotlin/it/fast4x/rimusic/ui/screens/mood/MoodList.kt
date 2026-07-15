@@ -139,12 +139,23 @@ fun MoodList(
                                 )
                             }
                         item {
-                            ItemUtils.LazyRowItem(
-                                navController = navController,
-                                innertubeItems = item.items.fastFilter { it.key != defaultBrowseId },
-                                // SongItem and VideoItem are not available here
-                                currentlyPlaying = null
-                            )
+                            val visibleItems = item.items.fastFilter { it.key != defaultBrowseId }
+                            // A grid section (e.g. "Mixed for you") wraps over several
+                            // lines and scrolls with the page; a carousel stays a row.
+                            if( item.isGrid )
+                                ItemUtils.GridItems(
+                                    navController = navController,
+                                    innertubeItems = visibleItems,
+                                    currentlyPlaying = null,
+                                    modifier = Modifier.padding( horizontal = 12.dp )
+                                )
+                            else
+                                ItemUtils.LazyRowItem(
+                                    navController = navController,
+                                    innertubeItems = visibleItems,
+                                    // SongItem and VideoItem are not available here
+                                    currentlyPlaying = null
+                                )
                         }
                     }
 

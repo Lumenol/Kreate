@@ -34,7 +34,8 @@ suspend fun Innertube.browse(body: BrowseBodyWithLocale) = runCatchingNonCancell
                         BrowseResult.Item(
                             title = content.gridRenderer.header?.gridHeaderRenderer?.title?.runs
                                 ?.firstOrNull()?.text.orEmpty(),
-                            items = items
+                            items = items,
+                            isGrid = true
                         )
                     }
 
@@ -61,7 +62,10 @@ data class BrowseResult(
 ) {
     data class Item(
         val title: String,
-        val items: List<Innertube.Item>
+        val items: List<Innertube.Item>,
+        // YouTube sends a grid (wrap + vertical) or a carousel (horizontal row);
+        // preserve that so the UI can lay each section out the way it's meant to be.
+        val isGrid: Boolean = false
     )
 }
 
