@@ -3,8 +3,11 @@ package app.kreate.android.utils
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -41,6 +44,7 @@ import me.knighthat.innertube.model.InnertubeItem
 import me.knighthat.innertube.model.InnertubePlaylist
 import me.knighthat.innertube.model.InnertubeSong
 import org.koin.compose.koinInject
+import kotlin.math.max
 
 
 object ItemUtils {
@@ -171,10 +175,19 @@ object ItemUtils {
         val artistItemValues = remember( appearance ) { ArtistItem.Values.from( appearance ) }
         val playlistItemValues = remember( appearance ) { PlaylistItem.Values.from( appearance ) }
 
-        FlowRow(
-            horizontalArrangement = Arrangement.spacedBy( COLUMN_SPACING.dp, Alignment.CenterHorizontally ),
-            modifier = modifier
+        val spacing = COLUMN_SPACING.dp
+        val cellWidth = PlaylistItem.thumbnailSize().width
+        BoxWithConstraints(
+            modifier = modifier.fillMaxWidth(),
+            // Center the whole grid as a block; items stay left-aligned inside it.
+            contentAlignment = Alignment.TopCenter
         ) {
+            val columns = max( 1, ( (maxWidth + spacing) / (cellWidth + spacing) ).toInt() )
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy( spacing ),
+                maxItemsInEachRow = columns,
+                modifier = Modifier.width( cellWidth * columns + spacing * (columns - 1) )
+            ) {
             innertubeItems.forEach { childItem ->
                 when ( childItem ) {
                     is Innertube.SongItem -> SongItem.Render(
@@ -218,6 +231,7 @@ object ItemUtils {
                         navController = navController
                     )
                 }
+            }
             }
         }
     }
