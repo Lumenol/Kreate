@@ -121,38 +121,34 @@ object YtMusic {
 
     suspend fun getHomePage(setLogin: Boolean = false): Result<HomePage> = runCatching {
 
-        val response = Innertube.browse(browseId = "FEmusic_home", setLogin = setLogin).body<BrowseResponse>()
+        var response = Innertube.browse(browseId = "FEmusic_home", setLogin = setLogin).body<BrowseResponse>()
 
-        val tab = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
-            ?.tabRenderer?.content?.sectionListRenderer
+        println("homePage() response sections: ${response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+            ?.tabRenderer?.content?.sectionListRenderer?.contents}" )
 
-        val sections = tab?.contents
-            ?.mapNotNull { it.musicCarouselShelfRenderer }
-            ?.mapNotNull { HomePage.Section.fromMusicCarouselShelfRenderer(it) }
-            .orEmpty()
-            .toMutableList()
 
-        // Continuations are fetched one page at a time. A single page that fails
-        // to deserialize must not discard the sections already collected — YouTube
-        // occasionally returns a shelf type this parser doesn't model, and losing
-        // the whole home over it is worse than stopping a few sections short.
-        var continuation = tab?.continuations?.getContinuation()
+        var continuation = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+            ?.tabRenderer?.content?.sectionListRenderer?.continuations?.getContinuation()
+
+        val sections = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+            ?.tabRenderer?.content?.sectionListRenderer?.contents!!
+            .mapNotNull { it.musicCarouselShelfRenderer }
+            .mapNotNull {
+                HomePage.Section.fromMusicCarouselShelfRenderer(it)
+            }.toMutableList()
         while (continuation != null) {
-            val page = try {
-                Innertube.browse(continuation = continuation).body<BrowseResponse>()
-            } catch (e: Exception) {
-                println("getHomePage() continuation failed, keeping ${sections.size} sections: ${e.message}")
-                break
-            }
+            println("gethomePage() continuation before:  ${continuation}" )
+            response = Innertube.browse(continuation = continuation).body<BrowseResponse>()
+            continuation = response.continuationContents?.sectionListContinuation?.continuations?.getContinuation()
+            println("gethomePage() continuation after:  ${continuation}" )
 
-            sections += page.continuationContents?.sectionListContinuation?.contents
+            sections += response.continuationContents?.sectionListContinuation?.contents
                 ?.mapNotNull { it.musicCarouselShelfRenderer }
-                ?.mapNotNull { HomePage.Section.fromMusicCarouselShelfRenderer(it) }
-                .orEmpty()
+                ?.mapNotNull {
+                    HomePage.Section.fromMusicCarouselShelfRenderer(it)
+                }.orEmpty()
 
-            continuation = page.continuationContents?.sectionListContinuation?.continuations?.getContinuation()
         }
-
         HomePage( sections = sections )
     }
 

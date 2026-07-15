@@ -55,17 +55,10 @@ fun rememberPreference(key: String, defaultValue: Song?): MutableState<Song?> {
                 null
             }
         ) {
-            // Encoding can throw (these page types nest polymorphic items that
-            // aren't always serializable); an unguarded write here crashed the
-            // composition and put the home screen in a load-crash-restart loop.
-            try {
-                context.preferences.edit { putString(
-                    key,
-                    Json.encodeToString(it)
-                ) }
-            } catch (e: Exception) {
-                Logger.e("RememberPreference write Error", e, "LegacyPreferences" )
-            }
+            context.preferences.edit { putString(
+                key,
+                Json.encodeToString(it)
+            ) }
         }
     }
 }
@@ -84,17 +77,10 @@ fun rememberPreference(key: String, defaultValue: Innertube.DiscoverPage?): Muta
                 null
             }
         ) {
-            // Encoding can throw (these page types nest polymorphic items that
-            // aren't always serializable); an unguarded write here crashed the
-            // composition and put the home screen in a load-crash-restart loop.
-            try {
-                context.preferences.edit { putString(
-                    key,
-                    Json.encodeToString(it)
-                ) }
-            } catch (e: Exception) {
-                Logger.e("RememberPreference write Error", e, "LegacyPreferences" )
-            }
+            context.preferences.edit { putString(
+                key,
+                Json.encodeToString(it)
+            ) }
         }
     }
 }
@@ -113,17 +99,10 @@ fun rememberPreference(key: String, defaultValue: Innertube.ChartsPage?): Mutabl
                 null
             }
         ) {
-            // Encoding can throw (these page types nest polymorphic items that
-            // aren't always serializable); an unguarded write here crashed the
-            // composition and put the home screen in a load-crash-restart loop.
-            try {
-                context.preferences.edit { putString(
-                    key,
-                    Json.encodeToString(it)
-                ) }
-            } catch (e: Exception) {
-                Logger.e("RememberPreference write Error", e, "LegacyPreferences" )
-            }
+            context.preferences.edit { putString(
+                key,
+                Json.encodeToString(it)
+            ) }
         }
     }
 }
@@ -142,17 +121,10 @@ fun rememberPreference(key: String, defaultValue: Innertube.RelatedPage?): Mutab
                 null
             }
         ) {
-            // Encoding can throw (these page types nest polymorphic items that
-            // aren't always serializable); an unguarded write here crashed the
-            // composition and put the home screen in a load-crash-restart loop.
-            try {
-                context.preferences.edit { putString(
-                    key,
-                    Json.encodeToString(it)
-                ) }
-            } catch (e: Exception) {
-                Logger.e("RememberPreference write Error", e, "LegacyPreferences" )
-            }
+            context.preferences.edit { putString(
+                key,
+                Json.encodeToString(it)
+            ) }
         }
     }
 }
@@ -171,17 +143,10 @@ fun rememberPreference(key: String, defaultValue: HomePage?): MutableState<HomeP
                 null
             }
         ) {
-            // Encoding can throw (these page types nest polymorphic items that
-            // aren't always serializable); an unguarded write here crashed the
-            // composition and put the home screen in a load-crash-restart loop.
-            try {
-                context.preferences.edit { putString(
-                    key,
-                    Json.encodeToString(it)
-                ) }
-            } catch (e: Exception) {
-                Logger.e("RememberPreference write Error", e, "LegacyPreferences" )
-            }
+            context.preferences.edit { putString(
+                key,
+                Json.encodeToString(it)
+            ) }
         }
     }
 }
