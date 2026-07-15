@@ -16,6 +16,7 @@ import app.kreate.android.Preferences
 import app.kreate.android.R
 import co.touchlab.kermit.Logger
 import com.metrolist.innertube.YouTube
+import it.fast4x.innertube.Innertube as OldInnertube
 import it.fast4x.rimusic.LocalPlayerAwareWindowInsets
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -52,13 +53,19 @@ fun YouTubeLogin( onDone: () -> Unit ) {
 
                         Preferences.YOUTUBE_COOKIES.value = CookieManager.getInstance().getCookie( url )
                         YouTube.cookie = Preferences.YOUTUBE_COOKIES.value
+                        // Same credentials for the module that serves the YT Music home,
+                        // otherwise its requests stay anonymous and YouTube returns the
+                        // generic home instead of the user's shelves.
+                        OldInnertube.cookie = Preferences.YOUTUBE_COOKIES.value.ifBlank { null }
                         evaluateJavascript( "window.yt.config_.VISITOR_DATA" ) { result ->
                             Preferences.YOUTUBE_VISITOR_DATA.value = if( result != "null" ) result.removeSurrounding("\"") else ""
                             YouTube.visitorData = Preferences.YOUTUBE_VISITOR_DATA.value
+                            OldInnertube.visitorData = Preferences.YOUTUBE_VISITOR_DATA.value
                         }
                         evaluateJavascript( "window.yt.config_.DATASYNC_ID" ) { result ->
                             Preferences.YOUTUBE_SYNC_ID.value = if( result != "null" ) result.removeSurrounding("\"").substringBefore("||") else ""
                             YouTube.dataSyncId = Preferences.YOUTUBE_SYNC_ID.value
+                            OldInnertube.dataSyncId = Preferences.YOUTUBE_SYNC_ID.value.ifBlank { null }
                         }
                         CoroutineScope(Dispatchers.IO).launch {
                             YouTube.accountInfo()

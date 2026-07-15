@@ -1,6 +1,8 @@
 package app.kreate.android.utils
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -8,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -122,6 +125,80 @@ object ItemUtils {
                             }
                         )
                     }
+
+                    is Innertube.AlbumItem -> AlbumItem.Vertical(
+                        innertubeAlbum = childItem,
+                        values = albumItemValues,
+                        navController = navController
+                    )
+
+                    is Innertube.ArtistItem -> ArtistItem.Render(
+                        innertubeArtist = childItem,
+                        values = artistItemValues,
+                        navController = navController
+                    )
+
+                    is Innertube.PlaylistItem -> PlaylistItem.Vertical(
+                        innertubePlaylist = childItem,
+                        values = playlistItemValues,
+                        navController = navController
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Lays items out as a wrapping grid (multiple lines) instead of one horizontal
+     * scrolling row. Used for pages that are a single big grid — e.g. "Mixed for
+     * you" — where a lone horizontal line reads poorly.
+     */
+    @OptIn(ExperimentalLayoutApi::class)
+    @UnstableApi
+    @Composable
+    fun GridItems(
+        navController: NavController,
+        innertubeItems: List<Innertube.Item>,
+        currentlyPlaying: String?,
+        modifier: Modifier = Modifier,
+        menu: BottomMenu = LocalBottomMenu.current
+    ) {
+        val player: StatefulPlayer = koinInject()
+        val hapticFeedback = LocalHapticFeedback.current
+        val appearance = LocalAppearance.current
+        val songItemValues = remember( appearance ) { SongItem.Values.from( appearance ) }
+        val albumItemValues = remember( appearance ) { AlbumItem.Values.from( appearance ) }
+        val artistItemValues = remember( appearance ) { ArtistItem.Values.from( appearance ) }
+        val playlistItemValues = remember( appearance ) { PlaylistItem.Values.from( appearance ) }
+
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy( COLUMN_SPACING.dp, Alignment.CenterHorizontally ),
+            modifier = modifier
+        ) {
+            innertubeItems.forEach { childItem ->
+                when ( childItem ) {
+                    is Innertube.SongItem -> SongItem.Render(
+                        innertubeSong = childItem,
+                        hapticFeedback = hapticFeedback,
+                        values = songItemValues,
+                        isPlaying = childItem.key == currentlyPlaying,
+                        onClick = { player.forcePlay( childItem.asMediaItem ) },
+                        onLongClick = { menu.show( MenuPage.Song(childItem.asMediaItem), true ) }
+                    )
+
+                    is Innertube.VideoItem -> SongItem.Render(
+                        innertubeVideo = childItem,
+                        hapticFeedback = hapticFeedback,
+                        isPlaying = currentlyPlaying == childItem.key,
+                        values = songItemValues,
+                        thumbnailSizeDp = SongItem.thumbnailSize(),
+                        onClick = {
+                            player.stopRadio()
+                            if ( isVideoEnabled() ) player.playVideo( childItem.asMediaItem )
+                            else player.forcePlay( childItem.asMediaItem )
+                        },
+                        onLongClick = { menu.show( MenuPage.Song(childItem.asMediaItem), true ) }
+                    )
 
                     is Innertube.AlbumItem -> AlbumItem.Vertical(
                         innertubeAlbum = childItem,
