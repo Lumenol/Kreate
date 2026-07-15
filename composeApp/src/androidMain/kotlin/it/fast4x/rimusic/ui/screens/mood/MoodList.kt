@@ -128,20 +128,34 @@ fun MoodList(
                     }
 
                     moodResult.items.forEach { item ->
+                        // Untitled sections exist (a page that is one big grid, such as
+                        // "Mixed for you"); don't leave a blank gap where a header would be.
+                        if( item.title.isNotBlank() )
+                            item {
+                                BasicText(
+                                    text = item.title,
+                                    style = typography().m.semiBold,
+                                    modifier = sectionTextModifier
+                                )
+                            }
                         item {
-                            BasicText(
-                                text = item.title,
-                                style = typography().m.semiBold,
-                                modifier = sectionTextModifier
-                            )
-                        }
-                        item {
-                            ItemUtils.LazyRowItem(
-                                navController = navController,
-                                innertubeItems = item.items.fastFilter { it.key != defaultBrowseId },
-                                // SongItem and VideoItem are not available here
-                                currentlyPlaying = null
-                            )
+                            val visibleItems = item.items.fastFilter { it.key != defaultBrowseId }
+                            // A grid section (e.g. "Mixed for you") wraps over several
+                            // lines and scrolls with the page; a carousel stays a row.
+                            if( item.isGrid )
+                                ItemUtils.GridItems(
+                                    navController = navController,
+                                    innertubeItems = visibleItems,
+                                    currentlyPlaying = null,
+                                    modifier = Modifier.padding( horizontal = 12.dp )
+                                )
+                            else
+                                ItemUtils.LazyRowItem(
+                                    navController = navController,
+                                    innertubeItems = visibleItems,
+                                    // SongItem and VideoItem are not available here
+                                    currentlyPlaying = null
+                                )
                         }
                     }
 

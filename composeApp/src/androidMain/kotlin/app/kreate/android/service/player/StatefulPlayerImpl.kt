@@ -57,9 +57,9 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -91,6 +91,12 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
 
     companion object {
         const val SleepTimerNotificationChannelId = "sleep_timer_channel_id"
+
+        /**
+         * Audio session of the global output mix. Audio effects created on it are
+         * instantiated as auxiliary effects, the kind aux sends can be attached to.
+         */
+        private const val AUDIO_SESSION_OUTPUT_MIX = 0
     }
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -105,12 +111,11 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
     private var timerJob: TimerJob? = null
     private var loudnessNormalizationJob: Job? = null
     private var bassBoostJob: Job? = null
-    private var reverbJob: Job? = null
     //</editor-fold>
     //<editor-fold desc="AudioFX">
     private lateinit var loudnessEnhancer: LoudnessEnhancer
     private lateinit var bassBoost: BassBoost
-    private lateinit var reverb: PresetReverb
+    private var reverb: PresetReverb? = null
     //</editor-fold>
 
     override val currentMediaItemState = _currentMediaItemState.asStateFlow()
@@ -466,8 +471,6 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         loudnessNormalizationJob = null
         bassBoostJob?.cancel()
         bassBoostJob = null
-        reverbJob?.cancel()
-        reverbJob = null
 
         player.stop()
     }
@@ -479,15 +482,19 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
 
         player.removeListener( this )
 
-        loudnessEnhancer.release()      // Must release after listener is removed to prevent race condition
-        bassBoost.release()
-        reverb.release()
+        // Effects are created on the first audio session, which may never have happened
+        if( ::loudnessEnhancer.isInitialized )
+            loudnessEnhancer.release()      // Must release after listener is removed to prevent race condition
+        if( ::bassBoost.isInitialized )
+            bassBoost.release()
+        reverb?.release()
+        reverb = null
         clearAuxEffectInfo()
 
         player.release()
 
         val preferences: SharedPreferences by inject(PrefType.DEFAULT)
-        preferences.registerOnSharedPreferenceChangeListener( this )
+        preferences.unregisterOnSharedPreferenceChangeListener( this )
     }
 
     /*
@@ -495,27 +502,44 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
      */
 
     private fun normalizeLoudness() {
+        // Cancel before bailing out: the collector below runs until it's cancelled,
+        // so an early return would leave the previous song's collector alive.
+        loudnessNormalizationJob?.cancel()
+
         if( !::loudnessEnhancer.isInitialized || !loudnessEnhancer.enabled )
             return
         else
             logger.v { "Normalizing loudness..." }
 
         try {
-            loudnessNormalizationJob?.cancel()
-
             // Interaction with [Player] must happen on Main thread
             val mediaId = currentMediaItem?.mediaId ?: return
             loudnessNormalizationJob = coroutineScope.launch {
-                // This holds the job as long as loudnessDb is unavailable
-                val mediaLoudness: Float = Database.formatTable
-                                                   .findBySongId( mediaId )
-                                                   .mapNotNull { it?.loudnessDb }
-                                                   .first()
-                val targetLoudness by Preferences.AUDIO_VOLUME_NORMALIZATION_TARGET
-                val targetGain = (targetLoudness - mediaLoudness) * 100f
-                loudnessEnhancer.setTargetGain( targetGain.toInt() )
+                // Loudness is written to the database while the stream is being resolved,
+                // so it's usually absent on the first emission. Songs that never get one
+                // (local files, or responses that don't carry it) must still reset the
+                // gain, otherwise the previous song's gain keeps being applied.
+                Database.formatTable
+                        .findBySongId( mediaId )
+                        .map { it?.loudnessDb }
+                        .distinctUntilChanged()
+                        .collect { mediaLoudness ->
+                            val targetLoudness by Preferences.AUDIO_VOLUME_NORMALIZATION_TARGET
+                            val targetGain = mediaLoudness?.let { (targetLoudness - it) * 100f } ?: 0f
 
-                logger.d { "Media loudness: %.2f, target loudness: %.2f, gain: %.2f".format(mediaLoudness, targetLoudness, targetGain) }
+                            // [onAudioSessionIdChanged] can release the effect while this job
+                            // is still collecting, and a released lateinit still reports itself
+                            // as initialized. The resulting exception must not escape the
+                            // coroutine, it has no handler to catch it.
+                            try {
+                                loudnessEnhancer.setTargetGain( targetGain.toInt() )
+                            } catch( err: RuntimeException ) {
+                                logger.e( err ) { "Failed to apply loudness gain, effect is gone" }
+                                return@collect
+                            }
+
+                            logger.d { "Media loudness: ${mediaLoudness ?: "unknown"}, target loudness: %.2f, gain: %.2f".format(targetLoudness, targetGain) }
+                        }
             }
         } catch( err: Exception ) {
             logger.e( err ) { "normalizeLoudness failed!" }
@@ -545,21 +569,47 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         }
     }
 
+    /**
+     * Attaches, updates, or detaches the reverb effect according to
+     * [Preferences.AUDIO_REVERB_PRESET].
+     *
+     * The effect is created on [AUDIO_SESSION_OUTPUT_MIX] to get the *auxiliary*
+     * variant, which is what [Player.setAuxEffectInfo] expects: the player's track
+     * is routed to it through an aux send, and only the reverberated signal comes
+     * back into the mix.
+     *
+     * Creating it on the player's own session yields the *insert* variant instead.
+     * That one declares `EFFECT_FLAG_VOLUME_CTRL`, so AudioFlinger hands volume
+     * control of the session over to the effect and applies unity gain to the track;
+     * implementations that don't attenuate then leave playback stuck at full scale.
+     * On top of that, an insert effect cannot be attached through an aux send, so
+     * [Player.setAuxEffectInfo] silently fails on it.
+     */
+    @MainThread
     private fun updateReverb() {
-        if( !::reverb.isInitialized || !reverb.enabled )
-            return
-        else
-            logger.v { "Updating reverb..." }
+        // An aux send can only be attached once the sink has a track to attach it to
+        if( player.audioSessionId == C.AUDIO_SESSION_ID_UNSET ) return
 
         try {
-            reverbJob?.cancel()
+            val preset = Preferences.AUDIO_REVERB_PRESET.value.toShort()
 
-            reverbJob = coroutineScope.launch {
-                val preset by Preferences.AUDIO_REVERB_PRESET
-                reverb.preset = preset.toShort()
+            if( preset == PresetReverb.PRESET_NONE ) {
+                clearAuxEffectInfo()
+                reverb?.enabled = false
+                reverb?.release()
+                reverb = null
 
-                logger.d { "Reverb set to $preset" }
+                logger.d { "Reverb detached" }
+                return
             }
+
+            val presetReverb = reverb ?: PresetReverb( 1, AUDIO_SESSION_OUTPUT_MIX ).also { reverb = it }
+            presetReverb.enabled = false
+            presetReverb.preset = preset
+            presetReverb.enabled = true
+            setAuxEffectInfo( AuxEffectInfo(presetReverb.id, 1f) )
+
+            logger.d { "Reverb set to $preset" }
         } catch( err: Exception ) {
             logger.e( err ) { "updateReverb failed!" }
             Toaster.e( R.string.error_reverb_failed )
@@ -613,20 +663,9 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         }
         //</editor-fold>
         //<editor-fold desc="Reverb preset">
-        try {
-            if( ::reverb.isInitialized )
-                reverb.release()
-
-            reverb = PresetReverb(1, audioSessionId)
-            reverb.enabled = true       // Value is set by presets
-
-            val auxEffect = AuxEffectInfo(reverb.id, 1f)
-            setAuxEffectInfo( auxEffect )
-
-            updateReverb()
-        } catch( err: Exception ) {
-            logger.e( err ) { "Reverb init failed!" }
-        }
+        // The effect lives on the output mix, so it outlives audio sessions.
+        // Only the aux send has to be attached to the new session's track.
+        updateReverb()
         //</editor-fold>
     }
 
