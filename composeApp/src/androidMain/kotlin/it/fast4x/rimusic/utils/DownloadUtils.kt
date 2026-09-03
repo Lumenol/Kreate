@@ -12,13 +12,14 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.cache.Cache
 import androidx.media3.exoplayer.offline.Download
 import app.kreate.android.R
+import app.kreate.android.service.DownloadCacheState
+import it.fast4x.rimusic.service.modern.isLocal
 import app.kreate.di.CacheType
 import co.touchlab.kermit.Logger
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalDownloadHelper
 import it.fast4x.rimusic.enums.DownloadedStateMedia
 import it.fast4x.rimusic.service.MyDownloadHelper
-import it.fast4x.rimusic.service.modern.isLocal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import me.knighthat.utils.Toaster
@@ -29,11 +30,18 @@ import org.koin.compose.koinInject
 @Composable
 fun downloadedStateMedia(
     mediaId: String,
-    cache: Cache = koinInject(CacheType.CACHE)
+    cache: Cache = koinInject(CacheType.CACHE),
+    downloadCache: Cache = koinInject(CacheType.DOWNLOAD)
 ): DownloadedStateMedia {
-    val isDownloaded by remember {
+    // A COMPLETED index row is not proof the bytes are still there — the index and the
+    // download cache are independent stores. Require both, so a cache that was wiped or
+    // evicted behind DownloadManager's back stops claiming the song is downloaded.
+    val isDownloaded by remember( mediaId, downloadCache ) {
         MyDownloadHelper.getDownload( mediaId )
-                        .map { it?.state == Download.STATE_COMPLETED }
+                        .map {
+                            it?.state == Download.STATE_COMPLETED
+                                    && DownloadCacheState.isFullyCached( downloadCache, mediaId )
+                        }
     }.collectAsState( false, Dispatchers.IO )
 
     // Return early so it doesn't create another remember function
