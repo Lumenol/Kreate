@@ -13,8 +13,6 @@ import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.CacheDataSink
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR
-import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
-import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -43,11 +41,13 @@ const val CHUNK_LENGTH = 512 * 1024L     // 512KB
 private const val CACHE_DIRNAME = "exo_cache"
 private const val DOWNLOAD_CACHE_DIRNAME = "exo_downloads"
 
-private fun initCache( context: Context, size: Long, cacheDirName: String ): Cache {
-    val cacheEvictor = when( size ) {
-        0L, Long.MAX_VALUE -> NoOpCacheEvictor()
-        else -> LeastRecentlyUsedCacheEvictor( size )
-    }
+private fun initCache(
+    context: Context,
+    size: Long,
+    cacheDirName: String,
+    allowEviction: Boolean
+): Cache {
+    val cacheEvictor = cacheEvictorFor( size, allowEviction )
     val cacheDir = when( size ) {
         // Temporary directory deletes itself after close
         // It means songs remain on device as long as it's open
@@ -71,10 +71,10 @@ private fun initCache( context: Context, size: Long, cacheDirName: String ): Cac
 val playerModule = module {
     //<editor-fold desc="Cache">
     single( CacheType.CACHE ) {
-        initCache( get(), Preferences.EXO_CACHE_SIZE.value, CACHE_DIRNAME )
+        initCache( get(), Preferences.EXO_CACHE_SIZE.value, CACHE_DIRNAME, allowEviction = true )
     }
     single( CacheType.DOWNLOAD ) {
-        initCache( get(), Preferences.EXO_DOWNLOAD_SIZE.value, DOWNLOAD_CACHE_DIRNAME )
+        initCache( get(), Preferences.EXO_DOWNLOAD_SIZE.value, DOWNLOAD_CACHE_DIRNAME, allowEviction = false )
     }
     factory( CacheType.CACHE ) {
         CacheDataSource.Factory()
