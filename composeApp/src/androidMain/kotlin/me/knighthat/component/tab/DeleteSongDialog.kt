@@ -11,6 +11,7 @@ import app.kreate.android.R
 import app.kreate.database.models.Song
 import app.kreate.di.CacheType
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.MenuState
 import it.fast4x.rimusic.ui.components.themed.DeleteDialog
@@ -34,7 +35,6 @@ open class DeleteSongDialog(
     }
 
     protected val cache: Cache by inject(CacheType.CACHE)
-    protected val downloadCache: Cache by inject(CacheType.DOWNLOAD)
 
     var song = Optional.empty<Song>()
 
@@ -54,8 +54,7 @@ open class DeleteSongDialog(
             Database.asyncTransaction {
                 menuState.hide()
                 cache.removeResource( it.id )
-                // FIXME: This is unsafe, use [DownloadService.sendRemoveDownload] instead
-                downloadCache.removeResource( it.id )
+                MyDownloadHelper.purgeDownload( it.id )
                 songPlaylistMapTable.deleteBySongId( it.id )
                 formatTable.deleteBySongId( it.id )
                 songTable.delete( it )

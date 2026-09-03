@@ -13,6 +13,7 @@ import app.kreate.android.R
 import app.kreate.database.models.Song
 import app.kreate.di.CacheType
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.ui.components.tab.toolbar.ConfirmDialog
 import it.fast4x.rimusic.ui.components.tab.toolbar.Descriptive
 import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
@@ -36,7 +37,6 @@ class ResetCache private constructor(
     }
 
     private val cache: Cache by inject(CacheType.CACHE)
-    private val downloadCache: Cache by inject(CacheType.DOWNLOAD)
 
     override val iconId: Int = R.drawable.refresh_circle
     override val messageId: Int = R.string.info_clean_cached_congs
@@ -55,8 +55,7 @@ class ResetCache private constructor(
         Database.asyncTransaction {
             getSongs().forEach { song ->
                 cache.removeResource( song.id )
-                // FIXME: This is unsafe, use [DownloadService.sendRemoveDownload] instead
-                downloadCache.removeResource( song.id )
+                MyDownloadHelper.purgeDownload( song.id )
                 formatTable.deleteBySongId( song.id )
                 formatTable.updateContentLengthOf( song.id )
             }

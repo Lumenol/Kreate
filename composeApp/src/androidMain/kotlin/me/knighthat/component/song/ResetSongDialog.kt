@@ -15,6 +15,7 @@ import app.kreate.di.CacheType
 import app.kreate.di.clearCachedStreamUrlOf
 import co.touchlab.kermit.Logger
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.ui.components.tab.toolbar.Descriptive
 import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
 import kotlinx.coroutines.CoroutineScope
@@ -99,7 +100,6 @@ class ResetSongDialog private constructor(
     }
 
     private val cache: Cache by inject(CacheType.CACHE)
-    private val downloadCache: Cache by inject(CacheType.DOWNLOAD)
 
     override val iconId: Int = R.drawable.refresh_circle
     override val messageId: Int = R.string.info_open_reset_dialog
@@ -150,8 +150,7 @@ class ResetSongDialog private constructor(
                     clearCachedStreamUrlOf( song.id )
 
                     cache.removeResource( song.id )
-                    // FIXME: This is unsafe, use [DownloadService.sendRemoveDownload] instead
-                    downloadCache.removeResource( song.id )
+                    MyDownloadHelper.purgeDownload( song.id )
                     formatTable.deleteBySongId( song.id )
                     formatTable.updateContentLengthOf( song.id )
                 }

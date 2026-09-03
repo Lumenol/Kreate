@@ -34,6 +34,7 @@ import app.kreate.di.CacheType
 import app.kreate.di.clearCachedStreamUrlOf
 import co.touchlab.kermit.Logger
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
@@ -125,8 +126,7 @@ class ResetSongButton : MenuButton<MediaItem>(), ConfirmDialog, KoinComponent {
                     clearCachedStreamUrlOf( song.id )
 
                     get<Cache>(CacheType.CACHE).removeResource( song.id )
-                    // FIXME: This is unsafe, use [DownloadService.sendRemoveDownload] instead
-                    get<Cache>(CacheType.DOWNLOAD).removeResource( song.id )
+                    MyDownloadHelper.purgeDownload( song.id )
                     formatTable.deleteBySongId( song.id )
                     formatTable.updateContentLengthOf( song.id )
                 }

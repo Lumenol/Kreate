@@ -39,6 +39,7 @@ import app.kreate.di.CacheType
 import coil3.imageLoader
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.ui.styling.Dimensions
 import kotlinx.coroutines.Dispatchers
@@ -211,7 +212,11 @@ fun DataSettings( paddingValues: PaddingValues ) {
             entry( search, R.string.song_download_max_size ) {
                 val cache: Cache by inject(Cache::class.java, CacheType.DOWNLOAD)
                 val indicator = remember( cache ) {
-                    ExoCacheIndicator(Preferences.EXO_DOWNLOAD_SIZE, cache)
+                    ExoCacheIndicator(
+                        Preferences.EXO_DOWNLOAD_SIZE,
+                        cache,
+                        MyDownloadHelper::purgeAllDownloads
+                    )
                 }
                 // indicator's progress is observable, and is actually gets updated when
                 // cache is cleared. So this is used to re-compose subtitle when action is performed.

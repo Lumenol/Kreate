@@ -21,6 +21,10 @@ object MyDownloadHelper : KoinComponent {
 
     fun removeDownload(mediaItem: MediaItem) = instance.removeDownload( mediaItem )
 
+    fun purgeDownload( songId: String ) = instance.purgeDownload( songId )
+
+    fun purgeAllDownloads() = instance.purgeAllDownloads()
+
     fun autoDownload(mediaItem: MediaItem) = instance.autoDownload( mediaItem )
 
     fun autoDownloadWhenLiked(mediaItem: MediaItem) = instance.autoDownloadWhenLiked( mediaItem )

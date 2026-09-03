@@ -9,10 +9,12 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.ResolvingDataSource
+import androidx.media3.datasource.cache.Cache
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
 import androidx.media3.exoplayer.offline.DownloadRequest
+import androidx.media3.exoplayer.offline.DownloadService
 import androidx.media3.exoplayer.scheduler.Requirements
 import app.kreate.android.Preferences
 import app.kreate.android.coil3.ImageFactory
@@ -47,6 +49,7 @@ import kotlinx.coroutines.runBlocking
 import me.knighthat.utils.Toaster
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.get
+import org.koin.core.component.inject
 import java.util.concurrent.Executors
 
 
@@ -68,6 +71,7 @@ class DownloadHelperImpl(
                 SupervisorJob() +
                 CoroutineName(EXECUTOR_NAME)
     )
+    private val downloadCache: Cache by inject( CacheType.DOWNLOAD )
 
     override val downloads: MutableStateFlow<Map<String, Download>>
     override val downloadManager by lazy {
@@ -180,6 +184,43 @@ class DownloadHelperImpl(
                 if (it is CancellationException) throw it
 
                 Logger.e( it, "DownloadHelperImpl" ) { "removeDownload failed!"}
+            }
+        }
+    }
+
+    override fun purgeDownload( songId: String ) {
+        coroutineScope.launch {
+            if ( songId in downloads.value ) {
+                // DownloadManager owns the bytes for anything it has an index row for;
+                // it removes the row and the cached resource together.
+                context.removeDownload<MyDownloadService>( songId ).exceptionOrNull()?.let {
+                    if (it is CancellationException) throw it
+
+                    Logger.e( it, "DownloadHelperImpl" ) { "purgeDownload failed for $songId!" }
+                }
+            } else {
+                // No index row, so DownloadManager.removeDownload() would be a no-op and the
+                // bytes would linger forever. Free them directly — nothing else can.
+                runCatching { downloadCache.removeResource( songId ) }
+                    .onFailure {
+                        Logger.w( "DownloadHelperImpl" ) { "Could not evict orphaned bytes for $songId: ${it.message}" }
+                    }
+            }
+        }
+    }
+
+    override fun purgeAllDownloads() {
+        coroutineScope.launch {
+            runCatching {
+                DownloadService.sendRemoveAllDownloads(
+                    /* context    = */ context,
+                    /* clazz      = */ MyDownloadService::class.java,
+                    /* foreground = */ false
+                )
+            }.onFailure {
+                if (it is CancellationException) throw it
+
+                Logger.e( it, "DownloadHelperImpl" ) { "purgeAllDownloads failed!" }
             }
         }
     }

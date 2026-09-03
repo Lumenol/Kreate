@@ -28,6 +28,18 @@ interface DownloadHelper {
 
     fun removeDownload( mediaItem: MediaItem )
 
+    /**
+     * Remove [songId] from **both** the download index and the download cache.
+     *
+     * Prefer this over evicting from the download cache directly: media3's `DownloadManager`
+     * owns that cache, and deleting bytes behind its back leaves a `STATE_COMPLETED` index row
+     * pointing at nothing.
+     */
+    fun purgeDownload( songId: String )
+
+    /** [purgeDownload] for every download the index knows about. */
+    fun purgeAllDownloads()
+
     fun autoDownload( mediaItem: MediaItem )
 
     fun autoDownloadWhenLiked( mediaItem: MediaItem )
