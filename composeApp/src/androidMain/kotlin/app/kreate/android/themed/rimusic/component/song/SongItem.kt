@@ -46,6 +46,7 @@ import androidx.media3.datasource.cache.Cache
 import androidx.media3.exoplayer.offline.Download
 import app.kreate.android.Preferences
 import app.kreate.android.R
+import app.kreate.android.service.DownloadBadge
 import app.kreate.android.themed.rimusic.component.ItemSelector
 import app.kreate.android.themed.rimusic.component.Visual
 import app.kreate.android.utils.innertube.toSong
@@ -170,7 +171,11 @@ object SongItem: Visual() {
     /**
      * Stateful button to display current cache status of a song.
      *
-     * - [R.drawable.download_progress] during download process
+     * - [R.drawable.download_progress] while the download is [DownloadBadge.IN_PROGRESS] — this
+     *   covers not just [Download.STATE_DOWNLOADING] but also [Download.STATE_QUEUED] and
+     *   [Download.STATE_RESTARTING]: `DownloadHelperImpl` caps `maxParallelDownloads` at 3, so a
+     *   4th+ tap sits queued for a while before it ever reaches "downloading", and without this
+     *   it renders identically to a tap that did nothing.
      * - [R.drawable.download] cached if lit up, or neither cached or downloaded
      * - [R.drawable.downloaded] when song is downloaded
      */
@@ -188,9 +193,12 @@ object SongItem: Visual() {
         val downloadState = getDownloadState( songId )
 
         val iconId = when( downloadState ) {
-            Download.STATE_DOWNLOADING  -> R.drawable.download_progress
-            Download.STATE_REMOVING     -> R.drawable.download
-            else                        -> cacheState.androidIconId
+            Download.STATE_REMOVING -> R.drawable.download
+            else                    -> when( DownloadBadge.of( downloadState, cacheState ) ) {
+                DownloadBadge.IN_PROGRESS   -> R.drawable.download_progress
+                DownloadBadge.DOWNLOADED    -> R.drawable.downloaded
+                DownloadBadge.NOT_DOWNLOADED -> R.drawable.download
+            }
         }
         val color = when( cacheState ) {
             DownloadedStateMedia.NOT_CACHED_OR_DOWNLOADED   -> values.uncachedColor

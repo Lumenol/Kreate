@@ -5,6 +5,7 @@ import androidx.annotation.OptIn
 import androidx.annotation.StringRes
 import androidx.media3.common.util.UnstableApi
 import app.kreate.android.R
+import app.kreate.android.service.DownloadBadge
 import me.knighthat.enums.TextView
 
 enum class QueueSwipeAction(
@@ -28,14 +29,10 @@ enum class QueueSwipeAction(
     fun getStateIcon( likeState: Boolean?, downloadState: Int, downloadedStateMedia: DownloadedStateMedia ): Int? =
         when( this ) {
             NoAction -> null
-            Download -> when( downloadedStateMedia ) {
-                DownloadedStateMedia.NOT_CACHED_OR_DOWNLOADED -> when (downloadState) {
-                    androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING -> R.drawable.download_progress
-                    androidx.media3.exoplayer.offline.Download.STATE_QUEUED -> R.drawable.download_progress
-                    androidx.media3.exoplayer.offline.Download.STATE_RESTARTING -> R.drawable.download_progress
-                    else -> downloadedStateMedia.androidIconId
-                }
-                else -> downloadedStateMedia.androidIconId
+            Download -> when( DownloadBadge.of( downloadState, downloadedStateMedia ) ) {
+                DownloadBadge.IN_PROGRESS    -> R.drawable.download_progress
+                DownloadBadge.DOWNLOADED,
+                DownloadBadge.NOT_DOWNLOADED -> downloadedStateMedia.androidIconId
             }
             Favourite -> when( likeState ) {
                 false -> R.drawable.heart_dislike
