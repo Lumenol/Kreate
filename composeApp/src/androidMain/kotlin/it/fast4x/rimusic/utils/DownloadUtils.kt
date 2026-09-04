@@ -10,7 +10,6 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.cache.Cache
-import androidx.media3.exoplayer.offline.Download
 import app.kreate.android.R
 import app.kreate.android.service.DownloadCacheState
 import it.fast4x.rimusic.service.modern.isLocal
@@ -36,12 +35,11 @@ fun downloadedStateMedia(
     // A COMPLETED index row is not proof the bytes are still there — the index and the
     // download cache are independent stores. Require both, so a cache that was wiped or
     // evicted behind DownloadManager's back stops claiming the song is downloaded.
+    // The predicate is shared with DownloadHelper's add/remove decision on purpose: a badge
+    // and a tap that disagree produce a button that visibly does nothing.
     val isDownloaded by remember( mediaId, downloadCache ) {
         MyDownloadHelper.getDownload( mediaId )
-                        .map {
-                            it?.state == Download.STATE_COMPLETED
-                                    && DownloadCacheState.isFullyCached( downloadCache, mediaId )
-                        }
+                        .map { DownloadCacheState.isDownloaded( it?.state, downloadCache, mediaId ) }
     }.collectAsState( false, Dispatchers.IO )
 
     // Return early so it doesn't create another remember function

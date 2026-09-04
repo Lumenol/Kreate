@@ -18,6 +18,7 @@ import androidx.media3.exoplayer.offline.DownloadService
 import androidx.media3.exoplayer.scheduler.Requirements
 import app.kreate.android.Preferences
 import app.kreate.android.coil3.ImageFactory
+import app.kreate.android.service.DownloadCacheState
 import app.kreate.android.service.DownloadHelper
 import app.kreate.database.models.Song
 import app.kreate.di.CacheType
@@ -63,6 +64,7 @@ class DownloadHelperImpl(
         private const val NUM_PARALLEL_DOWNLOADS = 3
         private const val NUM_RETRIES = 2
         private const val EXECUTOR_NAME = "DownloadHelper-Executor-Scope"
+        private const val TAG = "DownloadHelperImpl"
     }
 
     private val executor = Executors.newCachedThreadPool()
@@ -113,6 +115,26 @@ class DownloadHelperImpl(
             results[cursor.download.request.id] = cursor.download
         }
         downloads = MutableStateFlow(results)
+
+        // The index and the download cache are independent stores. Log how far apart they start
+        // out: *every* COMPLETED row reporting no bytes means the cache's own index failed to
+        // load, while a handful means real byte loss (an old LRU eviction, a manual wipe). Info
+        // level, because this is the discriminator a "download button does nothing" report needs
+        // and release builds drop anything below it.
+        runCatching {
+            val completed = results.values.count { it.state == Download.STATE_COMPLETED }
+            val stale = results.values.count {
+                it.state == Download.STATE_COMPLETED
+                        && !DownloadCacheState.isFullyCached( downloadCache, it.request.id )
+            }
+            Logger.i( TAG ) {
+                "download index: ${results.size} rows, $completed completed, $stale of those" +
+                " hold no bytes in the download cache" +
+                " (cacheSpace=${downloadCache.cacheSpace}B, keys=${downloadCache.keys.size})"
+            }
+        }.onFailure {
+            Logger.w( TAG ) { "Could not reconcile download index against cache: ${it.message}" }
+        }
     }
 
     @Synchronized
@@ -227,8 +249,11 @@ class DownloadHelperImpl(
 
     override fun autoDownload( mediaItem: MediaItem ) {
         if ( Preferences.AUTO_DOWNLOAD.value ) {
-            if (downloads.value[mediaItem.mediaId]?.state != Download.STATE_COMPLETED)
-                addDownload(mediaItem)
+            // Same both-stores predicate as the badge: a COMPLETED row whose bytes are gone
+            // must download again, not be skipped as already present.
+            val indexState = downloads.value[mediaItem.mediaId]?.state
+            if( !DownloadCacheState.isDownloaded( indexState, downloadCache, mediaItem.mediaId ) )
+                addDownload( mediaItem )
         }
     }
 
@@ -261,10 +286,22 @@ class DownloadHelperImpl(
     }
 
     override fun handleDownload( song: Song, removeIfDownloaded: Boolean ) {
-        if( song.isLocal ) return
+        if( song.isLocal ) {
+            Logger.i( TAG ) { "handleDownload ${song.id} ignored: local file" }
+            return
+        }
 
-        val isDownloaded =
-            downloads.value.values.any{ it.state == Download.STATE_COMPLETED && it.request.id == song.id }
+        val indexState = downloads.value[song.id]?.state
+        // Must be the predicate the badge renders. Deciding from the index alone makes a tap on
+        // a badge that reads "not downloaded" remove a stale COMPLETED row instead of starting
+        // the download — the badge never changes and the button appears dead. media3 re-queues
+        // an existing COMPLETED row on addDownload, so the stale case needs no removal first.
+        val isDownloaded = DownloadCacheState.isDownloaded( indexState, downloadCache, song.id )
+
+        Logger.i( TAG ) {
+            "handleDownload ${song.id}: index=${indexState?.let( ::stateName ) ?: "none"}" +
+            " downloaded=$isDownloaded removeIfDownloaded=$removeIfDownloaded"
+        }
 
         if( isDownloaded && removeIfDownloaded )
             removeDownload( song.asMediaItem )

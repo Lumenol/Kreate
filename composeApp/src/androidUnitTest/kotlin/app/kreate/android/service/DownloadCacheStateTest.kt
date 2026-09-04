@@ -7,6 +7,7 @@ import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.CacheSpan
 import androidx.media3.datasource.cache.ContentMetadata
 import androidx.media3.datasource.cache.ContentMetadataMutations
+import androidx.media3.exoplayer.offline.Download
 import java.io.File
 import java.util.NavigableSet
 import kotlin.test.Test
@@ -96,5 +97,36 @@ class DownloadCacheStateTest {
     fun releasedCacheIsNotReported() {
         val cache = FakeCache( contentLength = 4_000_000L, cachedBytes = 4_000_000L, throwOnAccess = true )
         assertFalse( DownloadCacheState.isFullyCached( cache, "abc" ) )
+    }
+
+    @Test
+    fun downloadedRequiresBothStores() {
+        val cache = FakeCache( contentLength = 4_000_000L, cachedBytes = 4_000_000L )
+        assertTrue( DownloadCacheState.isDownloaded( Download.STATE_COMPLETED, cache, "abc" ) )
+    }
+
+    /**
+     * The reported bug: the index still claims COMPLETED after the bytes went missing. The badge
+     * renders "not downloaded" for this state, so a tap on it must *add*, never remove — a remove
+     * leaves the badge unchanged and reads as a dead button.
+     */
+    @Test
+    fun completedIndexRowWithoutBytesIsNotDownloaded() {
+        val cache = FakeCache( contentLength = C.LENGTH_UNSET.toLong(), cachedBytes = 0L )
+        assertFalse( DownloadCacheState.isDownloaded( Download.STATE_COMPLETED, cache, "abc" ) )
+    }
+
+    /** Bytes present but the download still running: not yet downloaded. */
+    @Test
+    fun unfinishedDownloadIsNotDownloaded() {
+        val cache = FakeCache( contentLength = 4_000_000L, cachedBytes = 4_000_000L )
+        assertFalse( DownloadCacheState.isDownloaded( Download.STATE_DOWNLOADING, cache, "abc" ) )
+    }
+
+    /** No index row at all, whatever the cache happens to hold. */
+    @Test
+    fun noIndexRowIsNotDownloaded() {
+        val cache = FakeCache( contentLength = 4_000_000L, cachedBytes = 4_000_000L )
+        assertFalse( DownloadCacheState.isDownloaded( null, cache, "abc" ) )
     }
 }
