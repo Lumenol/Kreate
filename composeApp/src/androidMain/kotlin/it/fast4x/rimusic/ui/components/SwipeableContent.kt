@@ -28,9 +28,9 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadService
 import app.kreate.android.Preferences
+import app.kreate.android.service.DownloadBadge
 import it.fast4x.innertube.Innertube
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.colorPalette
@@ -137,26 +137,21 @@ fun SwipeableQueueItem(
     else DownloadedStateMedia.DOWNLOADED
 
     val onDownloadButtonClick: () -> Unit = {
-        if (
-            (
-                    (downloadState == Download.STATE_DOWNLOADING
-                    || downloadState == Download.STATE_QUEUED
-                    || downloadState == Download.STATE_RESTARTING
-                    )  && downloadedStateMedia == DownloadedStateMedia.NOT_CACHED_OR_DOWNLOADED
-            ) ||
-            (
-                    downloadedStateMedia == DownloadedStateMedia.DOWNLOADED
-                   || downloadedStateMedia == DownloadedStateMedia.CACHED_AND_DOWNLOADED
-            )
-        ) {
-            DownloadService.sendRemoveDownload(
-                context,
-                MyDownloadService::class.java,
-                mediaItem.mediaId,
-                false
-            )
-        } else {
-            onDownload()
+        // Derive the tap action from the same DownloadBadge the icon uses, so a badge showing
+        // "in progress" or "downloaded" always takes the cancel/remove branch — otherwise the
+        // icon and the tap can disagree (e.g. a queued-behind-maxParallelDownloads song shows
+        // download_progress but the tap fell through to addDownload on an already-queued item).
+        when (DownloadBadge.of(downloadState, downloadedStateMedia)) {
+            DownloadBadge.IN_PROGRESS,
+            DownloadBadge.DOWNLOADED    ->
+                DownloadService.sendRemoveDownload(
+                    context,
+                    MyDownloadService::class.java,
+                    mediaItem.mediaId,
+                    false
+                )
+
+            DownloadBadge.NOT_DOWNLOADED -> onDownload()
         }
     }
 

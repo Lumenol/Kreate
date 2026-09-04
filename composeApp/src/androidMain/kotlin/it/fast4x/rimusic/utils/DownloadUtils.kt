@@ -99,14 +99,22 @@ fun manageDownload(
 }
 
 
+/**
+ * media3's `Download.state` for this song, or `null` when the download index has no row for
+ * it (never downloaded, removed, or the download hasn't been enqueued yet).
+ *
+ * Deliberately does NOT short-circuit on connectivity: `DownloadHelperImpl` sets
+ * `Requirements(Requirements.NETWORK)`, so an offline device leaves every pending download
+ * parked in [androidx.media3.exoplayer.offline.Download.STATE_QUEUED] — exactly the
+ * long-queue case [DownloadBadge] exists to surface. Reporting the literal
+ * `Download.STATE_COMPLETED` (`3`) sentinel while offline would draw the plain "not
+ * downloaded" icon over a queued download and reproduce that bug.
+ */
 @UnstableApi
 @Composable
-fun getDownloadState(mediaId: String): Int {
+fun getDownloadState(mediaId: String): Int? {
     val downloader = LocalDownloadHelper.current
-    if (!isNetworkAvailableComposable()) return 3
-
     return downloader.getDownload(mediaId).collectAsState(initial = null).value?.state
-        ?: 3
 }
 
 @OptIn(UnstableApi::class)

@@ -46,6 +46,10 @@ enum class DownloadBadge {
                 Download.STATE_DOWNLOADING,
                 Download.STATE_RESTARTING -> IN_PROGRESS
 
+                // A removal in flight is not "downloaded" — show it as not-downloaded
+                // regardless of cacheState, same as every other call site now agrees on.
+                Download.STATE_REMOVING   -> NOT_DOWNLOADED
+
                 else                      -> when( cacheState ) {
                     DownloadedStateMedia.DOWNLOADED,
                     DownloadedStateMedia.CACHED_AND_DOWNLOADED -> DOWNLOADED

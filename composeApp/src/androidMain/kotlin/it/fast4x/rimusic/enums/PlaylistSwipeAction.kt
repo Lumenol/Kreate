@@ -24,7 +24,7 @@ enum class PlaylistSwipeAction(
     Enqueue( R.drawable.enqueue, R.string.enqueue );
 
     @OptIn(UnstableApi::class)
-    fun getStateIcon( likeState: Boolean?, downloadState: Int, downloadedStateMedia: DownloadedStateMedia ): Int? =
+    fun getStateIcon( likeState: Boolean?, downloadState: Int?, downloadedStateMedia: DownloadedStateMedia ): Int? =
         when( this ) {
             NoAction -> null
             Download -> when( DownloadBadge.of( downloadState, downloadedStateMedia ) ) {

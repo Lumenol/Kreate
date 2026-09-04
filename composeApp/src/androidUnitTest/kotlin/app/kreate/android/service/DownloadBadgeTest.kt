@@ -69,9 +69,14 @@ class DownloadBadgeTest {
     }
 
     @Test
-    fun removingFollowsCacheState() {
-        assertEquals( DownloadBadge.NOT_DOWNLOADED, DownloadBadge.of( Download.STATE_REMOVING, DownloadedStateMedia.NOT_CACHED_OR_DOWNLOADED ) )
-        assertEquals( DownloadBadge.DOWNLOADED, DownloadBadge.of( Download.STATE_REMOVING, DownloadedStateMedia.DOWNLOADED ) )
+    fun removingIsNotDownloadedRegardlessOfCacheState() {
+        DownloadedStateMedia.entries.forEach { cacheState ->
+            assertEquals(
+                DownloadBadge.NOT_DOWNLOADED,
+                DownloadBadge.of( Download.STATE_REMOVING, cacheState ),
+                "STATE_REMOVING with cacheState=$cacheState"
+            )
+        }
     }
 
     // --- No index row at all: no download in progress, badge follows cacheState only. ---

@@ -192,18 +192,15 @@ object SongItem: Visual() {
         val cacheState = downloadedStateMedia( songId )
         val downloadState = getDownloadState( songId )
 
-        val iconId = when( downloadState ) {
-            Download.STATE_REMOVING -> R.drawable.download
-            else                    -> when( DownloadBadge.of( downloadState, cacheState ) ) {
-                DownloadBadge.IN_PROGRESS   -> R.drawable.download_progress
-                DownloadBadge.DOWNLOADED    -> R.drawable.downloaded
-                DownloadBadge.NOT_DOWNLOADED -> R.drawable.download
-            }
+        val iconId = when( DownloadBadge.of( downloadState, cacheState ) ) {
+            DownloadBadge.IN_PROGRESS    -> R.drawable.download_progress
+            DownloadBadge.DOWNLOADED     -> R.drawable.downloaded
+            DownloadBadge.NOT_DOWNLOADED -> R.drawable.download
         }
         val color = when( cacheState ) {
-            DownloadedStateMedia.NOT_CACHED_OR_DOWNLOADED   -> values.uncachedColor
-            DownloadedStateMedia.CACHED                     -> values.cachedColor
-            else                                            -> values.downloadedColor
+            DownloadedStateMedia.NOT_CACHED_OR_DOWNLOADED -> values.uncachedColor
+            DownloadedStateMedia.CACHED                   -> values.cachedColor
+            else                                          -> values.downloadedColor
         }
 
         Icon(
