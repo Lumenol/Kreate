@@ -775,6 +775,8 @@
     <string name="setting_entry_youtube_login">Log in to your YouTube account</string>
     <string name="setting_entry_youtube_sync_data">Sync account to %s</string>
     <string name="setting_description_youtube_sync_data">Automatically load playlists in \"%s\" tab</string>
+    <string name="setting_entry_youtube_report_playback">Send listening history to YouTube</string>
+    <string name="setting_description_youtube_report_playback">Songs you play are added to your YouTube history and improve your recommendations</string>
     <string name="setting_description_delete_search_history">Delete %s</string>
     <string name="setting_entry_live_wallpaper">Live wallpaper</string>
     <string name="setting_description_live_wallpaper">Set your wallpaper to the thumbnail of the currently playing song</string>

@@ -362,6 +362,13 @@ fun Scope.resolveInnertubeMedia( dataSpec: DataSpec ): DataSpec {
 fun clearCachedStreamUrlOf( songId: String ): Boolean =
     cachedStreamUrl.remove( songId ) != null
 
+/**
+ * @return the url that registers a playback of [songId] on YouTube,
+ * `null` if its stream wasn't resolved online (offline cache, download...)
+ */
+fun playbackTrackingUrlOf( songId: String ): String? =
+    cachedStreamUrl[songId]?.data?.playbackTracking?.videostatsPlaybackUrl?.baseUrl
+
 private data class CachedStream(
     val data: YTPlayerUtils.PlaybackData,
     val expiresAtMillis: Long

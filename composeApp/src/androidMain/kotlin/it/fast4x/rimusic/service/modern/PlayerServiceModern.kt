@@ -50,6 +50,9 @@ import app.kreate.android.utils.isLocalFile
 import app.kreate.android.widget.Widget
 import app.kreate.database.models.Event
 import app.kreate.di.CacheType
+import app.kreate.di.playbackTrackingUrlOf
+import com.metrolist.innertube.YouTube
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeLoggedIn
 import co.touchlab.kermit.Logger
 import com.google.common.util.concurrent.MoreExecutors
 import io.ktor.client.HttpClient
@@ -255,7 +258,6 @@ class PlayerServiceModern:
 
         player.addListener( listener )
         player.addListener( this )
-        player.addAnalyticsListener(PlaybackStatsListener(false, this@PlayerServiceModern))
 
         mediaLibrarySessionCallback.apply {
             listener = this@PlayerServiceModern.listener
@@ -383,6 +385,8 @@ class PlayerServiceModern:
         if ( totalPlayTimeMs <= Preferences.QUICK_PICKS_MIN_DURATION.value.asMillis )
             return
 
+        reportPlaybackToYouTube( mediaItem.mediaId )
+
         /*
             There's a really small chance that at this point, the song
             is yet to exist in the database, thus, `FOREIGN KEY constraint failed` is thrown.
@@ -408,6 +412,25 @@ class PlayerServiceModern:
                     )
                 )
             }
+        }
+    }
+
+    /**
+     * Adds the song to the account's YouTube history, which also feeds its recommendations.
+     */
+    private fun reportPlaybackToYouTube( mediaId: String ) {
+        if( !Preferences.YOUTUBE_REPORT_PLAYBACK.value || !isYouTubeLoggedIn() ) return
+
+        val url = playbackTrackingUrlOf( mediaId )
+        if( url == null ) {
+            logger.d { "no playback tracking url for $mediaId, not reported to YouTube" }
+            return
+        }
+
+        coroutineScope.launch( Dispatchers.IO ) {
+            YouTube.registerPlayback( playbackTracking = url )
+                   .onSuccess { logger.d { "reported playback of $mediaId to YouTube" } }
+                   .onFailure { logger.e( it ) { "failed to report playback of $mediaId to YouTube" } }
         }
     }
 
