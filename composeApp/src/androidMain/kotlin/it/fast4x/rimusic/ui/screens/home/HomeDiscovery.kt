@@ -33,6 +33,10 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.styling.shimmer
 import it.fast4x.rimusic.utils.semiBold
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.text.style.TextOverflow
+import it.fast4x.rimusic.utils.color
 
 @Composable
 fun MoodItemColored(
@@ -237,4 +241,39 @@ fun MoodItemPlaceholder(
             .background(color = colorPalette().shimmer)
             .size(width, 64.dp)
     )
+}
+
+/**
+ * Compact mood: a short stripe of the mood's color then its name on one line,
+ * so two rows of them fit where the [MoodItemColored] grid took a whole screen.
+ */
+@Composable
+fun MoodPill(
+    mood: Innertube.Mood.Item,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val moodColor = remember( mood.stripeColor ) { Color( mood.stripeColor ) }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy( 10.dp ),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.height( 40.dp )
+                           .clip( RoundedCornerShape( 10.dp ) )
+                           .background( colorPalette().background1 )
+                           .clickable( onClick = onClick )
+                           .padding( horizontal = 14.dp )
+    ) {
+        Box(
+            Modifier.size( width = 4.dp, height = 18.dp )
+                    .clip( RoundedCornerShape( 2.dp ) )
+                    .background( moodColor )
+        )
+        BasicText(
+            text = mood.title,
+            style = typography().xs.semiBold.color( colorPalette().text ),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
 }

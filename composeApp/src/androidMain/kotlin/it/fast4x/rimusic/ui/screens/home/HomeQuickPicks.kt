@@ -142,6 +142,7 @@ import org.koin.compose.koinInject
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
+import androidx.compose.foundation.layout.PaddingValues
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalCoroutinesApi::class)
@@ -876,27 +877,26 @@ fun HomeQuickPicks(
                                 //modifier = Modifier.fillMaxWidth(0.7f)
                             )
 
+                            // Two scrolling rows of compact pills: the 4-row grid of big
+                            // tiles took a whole screen for a secondary feature
                             LazyHorizontalGrid(
                                 state = moodAngGenresLazyGridState,
-                                rows = GridCells.Fixed(4),
+                                rows = GridCells.Fixed(2),
                                 flingBehavior = ScrollableDefaults.flingBehavior(),
-                                //flingBehavior = rememberSnapFlingBehavior(snapLayoutInfoProvider),
-                                contentPadding = endPaddingValues,
+                                contentPadding = PaddingValues( horizontal = 16.dp ),
+                                horizontalArrangement = Arrangement.spacedBy( 8.dp ),
+                                verticalArrangement = Arrangement.spacedBy( 8.dp ),
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    //.height((thumbnailSizeDp + Dimensions.itemsVerticalPadding * 8) * 8)
-                                    .height(Dimensions.itemsVerticalPadding * 4 * 8)
+                                    .height( 88.dp )
                             ) {
                                 items(
                                     items = page.moods.sortedBy { it.title },
                                     key = { it.endpoint.params ?: it.title }
                                 ) {
-                                    MoodItemColored(
+                                    MoodPill(
                                         mood = it,
-                                        onClick = { it.endpoint.browseId?.let { _ -> onMoodClick(it) } },
-                                        modifier = Modifier
-                                            //.width(itemWidth)
-                                            .padding(4.dp)
+                                        onClick = { it.endpoint.browseId?.let { _ -> onMoodClick(it) } }
                                     )
                                 }
                             }
