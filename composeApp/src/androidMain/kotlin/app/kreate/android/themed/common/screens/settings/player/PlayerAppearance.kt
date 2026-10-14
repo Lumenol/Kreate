@@ -38,6 +38,8 @@ import it.fast4x.rimusic.enums.PlayerType
 import it.fast4x.rimusic.enums.ThumbnailRoundness
 import it.fast4x.rimusic.enums.ThumbnailType
 import it.fast4x.rimusic.ui.components.themed.AppearancePresetDialog
+import androidx.compose.runtime.saveable.rememberSaveable
+import it.fast4x.rimusic.ui.components.themed.ConfirmationDialog
 
 fun LazyListScope.playerAppearanceSection( search: SettingEntrySearch, isLandscape: Boolean ) {
     header( R.string.player )
@@ -732,6 +734,25 @@ fun LazyListScope.playerAppearanceSection( search: SettingEntrySearch, isLandsca
                     R.string.showalbumcover
                 )
         }
+    }
+    entry( search, R.string.setting_entry_reset_appearance ) {
+        var showDialog by rememberSaveable { mutableStateOf( false ) }
+
+        if( showDialog )
+            ConfirmationDialog(
+                text = stringResource( R.string.setting_confirm_reset_appearance ),
+                onDismiss = { showDialog = false },
+                onConfirm = {
+                    showDialog = false
+                    Preferences.resetAppearance()
+                }
+            )
+
+        SettingComponents.Text(
+            title = stringResource( R.string.setting_entry_reset_appearance ),
+            subtitle = stringResource( R.string.setting_description_reset_appearance ),
+            onClick = { showDialog = true }
+        )
     }
     entry( search, R.string.setting_entry_marquee_effect ) {
         SettingComponents.BooleanEntry(

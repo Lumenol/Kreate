@@ -847,6 +847,21 @@ sealed class Preferences<T>(
             // look with every song; the full-screen player keeps its cover-colored background
             Enum( preferences, Key.COLOR_PALETTE, "colorPaletteName", ColorPaletteName.Default )
         }
+        /**
+         * "Restore default appearance": colors, player layout and home cards back to
+         * the redesign's defaults. Account, downloads, history and playback settings
+         * are left alone.
+         */
+        fun resetAppearance() {
+            listOf(
+                COLOR_PALETTE, THEME_MODE, PLAYER_BACKGROUND,
+                PLAYER_TIMELINE_TYPE, PLAYER_PLAY_BUTTON_TYPE, PLAYER_SHOW_SONGS_REMAINING_TIME,
+                PLAYER_SHOW_SEEK_BUTTONS, PLAYER_SHOW_TOTAL_QUEUE_TIME, PLAYER_ACTION_LOOP,
+                PLAYER_ACTION_SHOW_MENU, MARQUEE_TEXT_EFFECT, NAVIGATION_BAR_POSITION,
+                ALBUMS_PLATFORM_INDICATOR, ARTISTS_PLATFORM_INDICATOR, PLAYLISTS_PLATFORM_INDICATOR
+            ).forEach { it.reset() }
+        }
+
         /** Whether the one-time switch from Dynamic to the neutral palette already ran */
         val NEUTRAL_PALETTE_MIGRATED by lazy {
             Boolean( preferences, Key.NEUTRAL_PALETTE_MIGRATED, "", false )

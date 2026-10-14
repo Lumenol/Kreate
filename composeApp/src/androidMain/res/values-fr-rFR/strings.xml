@@ -798,6 +798,9 @@ Volume BAS : titre précédent</string>
     <string name="setting_description_monthly_playlist_compilation">Compilez une playlist au début du mois en fonction de ce que vous avez écouté le mois dernier</string>
     <string name="setting_entry_marquee_effect">Effet de défilement</string>
     <string name="setting_description_marquee_effect">Fait défiler le texte s\'il est trop grand pour être affiché en entier</string>
+    <string name="setting_entry_reset_appearance">Rétablir l\'apparence par défaut</string>
+    <string name="setting_description_reset_appearance">Couleurs, lecteur et cartes de l\'accueil reviennent aux réglages par défaut. Votre compte, vos téléchargements et votre historique sont conservés.</string>
+    <string name="setting_confirm_reset_appearance">Rétablir l\'apparence par défaut ? Votre compte, vos téléchargements et votre historique sont conservés.</string>
     <string name="info_explicit_song">Ce titre n\'est peut-être pas adapté à tous les âges </string>
     <string name="info_added_by_smart_recommendations">Ajouté par les recommandations intelligentes</string>
     <string name="info_delete_cache">Supprimer le cache</string>
