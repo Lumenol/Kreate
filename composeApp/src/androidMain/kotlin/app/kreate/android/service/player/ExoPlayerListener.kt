@@ -19,6 +19,7 @@ import androidx.media3.session.MediaSession
 import app.kreate.android.Preferences
 import app.kreate.android.R
 import app.kreate.database.models.PersistentQueue
+import app.kreate.di.clearCachedStreamUrlOf
 import co.touchlab.kermit.Logger
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.enums.NotificationButtons
@@ -43,6 +44,8 @@ import org.koin.core.component.inject
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Duration.Companion.seconds
 
+private const val MAX_RECOVERY_ATTEMPTS = 2
+
 @OptIn(ExperimentalAtomicApi::class)
 @UnstableApi
 class ExoPlayerListener(
@@ -60,6 +63,7 @@ class ExoPlayerListener(
     private var errorTimestamp = 0L
     private var lastErrorMessage = ""
     private val logger = Logger.withTag( "Playback" )
+    private var recoveryAttempts = 0
 
     var loudnessEnhancer: LoudnessEnhancer? = null
         private set
@@ -156,6 +160,29 @@ class ExoPlayerListener(
             else -> t.cause?.let( ::traverseErrorStack ) ?: t
         }
 
+    /**
+     * A stream url rejected mid-song (expired, 403...) is fixable by fetching a new one,
+     * so drop the cached url and resume from where playback stopped.
+     *
+     * @return `true` if recovery was started and the error should not be handled further
+     */
+    @MainThread
+    private fun tryRecover( error: PlaybackException ): Boolean {
+        if( error.errorCode != PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
+            || recoveryAttempts >= MAX_RECOVERY_ATTEMPTS
+        ) return false
+        val mediaId = player.currentMediaItem?.mediaId ?: return false
+
+        recoveryAttempts++
+        val position = player.currentPosition
+        logger.w { "re-resolving stream of $mediaId at ${position}ms (attempt $recoveryAttempts/$MAX_RECOVERY_ATTEMPTS)" }
+
+        clearCachedStreamUrlOf( mediaId )
+        player.seekTo( position )
+        player.prepare()
+        return true
+    }
+
     @MainThread
     private fun printErrorMessage( errMsg: String )  {
         // If the same error is set within 10s, it'll be ignored.
@@ -182,6 +209,7 @@ class ExoPlayerListener(
 
     override fun onMediaItemTransition( mediaItem: MediaItem?, reason: Int ) {
         logger.i { "transition to ${mediaItem?.mediaId} (${mediaItem?.mediaMetadata?.title}), reason=$reason" }
+        recoveryAttempts = 0
 
         if ( player.playerError != null ) player.prepare()
 
@@ -217,6 +245,8 @@ class ExoPlayerListener(
                     "at ${player.currentPosition}/${player.duration}ms, root cause: $rootCause"
         }
 
+        if( tryRecover( error ) ) return
+
         when( rootCause ) {
             is PlayableFormatNotFoundException -> context.getString( R.string.error_couldn_t_find_a_playable_audio_format )
             is NoInternetException -> context.getString( R.string.no_connection )
@@ -224,8 +254,6 @@ class ExoPlayerListener(
 
             else -> rootCause.message ?: context.getString( R.string.error_unknown )
         }.also( ::printErrorMessage )
-
-        // TODO: Add additional recovery step if type of error allows it
 
         if ( Preferences.PLAYBACK_SKIP_ON_ERROR.value && player.hasNextMediaItem() )
             player.playNext()
