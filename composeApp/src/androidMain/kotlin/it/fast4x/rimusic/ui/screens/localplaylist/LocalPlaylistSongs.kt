@@ -1,5 +1,6 @@
 package it.fast4x.rimusic.ui.screens.localplaylist
 
+import app.kreate.android.themed.rimusic.component.playlist.displayName
 import app.kreate.android.themed.common.component.DetailHeader
 import app.kreate.android.themed.common.component.DetailMenu
 import app.kreate.android.themed.common.component.DetailSkeleton
@@ -74,7 +75,6 @@ import app.kreate.constant.PlaylistSongSortBy
 import app.kreate.database.models.Song
 import app.kreate.database.models.SongPlaylistMap
 import app.kreate.di.CacheType
-import app.kreate.util.cleanPrefix
 import app.kreate.util.toDuration
 import co.touchlab.kermit.Logger
 import com.github.doyaaaaaken.kotlincsv.client.KotlinCsvExperimental
@@ -459,7 +459,7 @@ fun LocalPlaylistSongs(
                                 )
                             }
                         },
-                        title = cleanPrefix( playlist?.name ?: "" ),
+                        title = playlist?.displayName().orEmpty(),
                         links = emptyList(),
                         details = details,
                         onPlay = {

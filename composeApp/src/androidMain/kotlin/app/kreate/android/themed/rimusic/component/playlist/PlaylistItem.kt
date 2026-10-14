@@ -636,5 +636,5 @@ object PlaylistItem: Visual(), MultiplatformItem {
 
 /** Monthly playlists read "October 2026" instead of their raw "202610" name */
 @Composable
-private fun Playlist.displayName(): String =
+fun Playlist.displayName(): String =
     if( isMonthly ) monthlyPlaylistTitle( name ) ?: cleanName() else cleanName()

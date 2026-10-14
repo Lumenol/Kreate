@@ -1,5 +1,6 @@
 package app.kreate.android.themed.common.component.settings
 
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.annotation.IntRange
 import androidx.annotation.StringRes
 import androidx.compose.foundation.Canvas
@@ -43,7 +44,6 @@ import androidx.compose.ui.unit.dp
 import app.kreate.android.Preferences
 import app.kreate.android.R
 import app.kreate.android.themed.common.component.ColorPickerDialog
-import app.kreate.android.utils.scrollingText
 import app.kreate.component.TextView
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
@@ -128,14 +128,15 @@ object SettingComponents {
                 .alpha(if (isEnabled) 1f else 0.5f)
         ) {
             Column( Modifier.weight( 1f ) ) {
+                // Up to 2 lines instead of scrolling: long titles (French) were cut
                 BasicText(
                     text = title,
-                    maxLines = 1,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
                     style = typography().xs
                                         .semiBold
                                         .copy( colorPalette().text ),
                     modifier = Modifier.padding( bottom = 4.dp )
-                                       .scrollingText()
                 )
 
                 if( subtitle.isNotBlank() )
