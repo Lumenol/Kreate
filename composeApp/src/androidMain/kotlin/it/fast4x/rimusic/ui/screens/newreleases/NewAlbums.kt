@@ -30,7 +30,8 @@ import app.kreate.android.R
 import app.kreate.android.themed.rimusic.component.album.AlbumItem
 import it.fast4x.compose.persist.persist
 import it.fast4x.innertube.Innertube
-import it.fast4x.innertube.requests.discoverPage
+import it.fast4x.innertube.requests.discoverPageNewAlbums
+import it.fast4x.innertube.requests.discoverPageNewAlbumsComplete
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
@@ -46,9 +47,12 @@ import it.fast4x.rimusic.ui.styling.LocalAppearance
 fun NewAlbums(
     navController: NavController
 ) {
-    var discoverPage by persist<Result<Innertube.DiscoverPage>>("home/discoveryAlbums")
+    var discoverPage by persist<Result<Innertube.DiscoverPageAlbums>>("home/newReleaseAlbums")
     LaunchedEffect(Unit) {
-        discoverPage = Innertube.discoverPage()
+        // Full "New releases" listing, falling back to the explore page preview
+        discoverPage = Innertube.discoverPageNewAlbumsComplete()
+                                .takeIf { it.getOrNull()?.newReleaseAlbums?.isNotEmpty() == true }
+                       ?: Innertube.discoverPageNewAlbums()
     }
 
     val navigationBarPosition by Preferences.NAVIGATION_BAR_POSITION

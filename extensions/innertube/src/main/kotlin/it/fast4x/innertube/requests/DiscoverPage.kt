@@ -72,6 +72,7 @@ fun MusicTwoRowItemRenderer.toNewReleaseAlbumPage() = Innertube.AlbumItem(
             endpoint = it.navigationEndpoint?.browseEndpoint
         )
     },
-    year = subtitle?.runs?.lastOrNull()?.text,
+    // Subtitle is "Album • Artist", sometimes followed by the year
+    year = subtitle?.runs?.lastOrNull()?.text?.takeIf { it.length == 4 && it.all( Char::isDigit ) },
     thumbnail = thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()
 )
