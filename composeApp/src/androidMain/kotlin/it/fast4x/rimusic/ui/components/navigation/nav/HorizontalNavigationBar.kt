@@ -40,6 +40,8 @@ import it.fast4x.rimusic.showStatsIconInNav
 import it.fast4x.rimusic.ui.components.themed.Button
 import it.fast4x.rimusic.ui.components.themed.TextIconButton
 import it.fast4x.rimusic.ui.styling.Dimensions
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 
 // Shown when "Navigation bar position" is set to "top" or "bottom"
 class HorizontalNavigationBar(
@@ -158,6 +160,7 @@ class HorizontalNavigationBar(
             ) {
 
                 val scrollState = rememberScrollState()
+                val hairline = colorPalette().textDisabled.copy( alpha = .25f )
                 val roundedCornerShape =
                     if ( NavigationBarPosition.Bottom.isCurrent() )
                         RoundedCornerShape(topStart = 12.dp, topEnd = 12.dp)
@@ -172,8 +175,17 @@ class HorizontalNavigationBar(
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(roundedCornerShape)
-                        .background(colorPalette().background1)
+                        // Flat and neutral like the screen, with a hairline on top,
+                        // instead of a rounded colored card
+                        .background(colorPalette().background0)
+                        .drawBehind {
+                            drawLine(
+                                color = hairline,
+                                start = Offset.Zero,
+                                end = Offset( size.width, 0f ),
+                                strokeWidth = 1.dp.toPx()
+                            )
+                        }
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,

@@ -45,6 +45,15 @@ import me.knighthat.innertube.model.InnertubePlaylist
 import me.knighthat.innertube.model.InnertubeSong
 import org.koin.compose.koinInject
 import kotlin.math.max
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.Constraints
 
 
 object ItemUtils {
@@ -84,9 +93,51 @@ object ItemUtils {
             PlaylistItem.Values.from( appearance )
         }
 
+        // One height for the whole row, computed from ALL its items (not just the
+        // visible ones) so it never changes while scrolling: the tallest cover plus
+        // the tallest text block (title up to two lines, then the subtitle lines
+        // that item really has), so short rows don't keep empty space either
+        val textMeasurer = rememberTextMeasurer()
+        val density = LocalDensity.current
+        val cardHeight = remember( innertubeItems, appearance, density ) {
+            val cardWidthPx = with( density ) { AlbumItem.thumbnailSize().width.roundToPx() }
+            val subtitleLinePx = textMeasurer.measure( "A", albumItemValues.artistsTextStyle ).size.height
+
+            var coverHeight = 0.dp
+            var textPx = 0
+            innertubeItems.forEach { item ->
+                val subtitleLines = when( item ) {
+                    is Innertube.SongItem -> if( item.authors.isNullOrEmpty() ) 0 else 1
+                    is Innertube.VideoItem -> if( item.authors.isNullOrEmpty() ) 0 else 1
+                    is Innertube.AlbumItem -> ( if( item.authors.isNullOrEmpty() ) 0 else 1 ) + ( if( item.year == null ) 0 else 1 )
+                    is Innertube.PlaylistItem -> if( item.channel == null && item.songCount == null ) 0 else 1
+                    is Innertube.ArtistItem -> if( item.subscribersCountText.isNullOrBlank() ) 0 else 1
+                }
+                val cover = when( item ) {
+                    is Innertube.PlaylistItem -> PlaylistItem.thumbnailSize().height
+                    is Innertube.ArtistItem -> ArtistItem.thumbnailSize().height
+                    else -> AlbumItem.thumbnailSize().height
+                }
+                val titlePx = textMeasurer.measure(
+                    text = item.title.orEmpty(),
+                    style = albumItemValues.titleTextStyle,
+                    maxLines = 2,
+                    constraints = Constraints( maxWidth = cardWidthPx )
+                ).size.height
+
+                coverHeight = maxOf( coverHeight, cover )
+                textPx = maxOf( textPx, titlePx + subtitleLines * subtitleLinePx )
+            }
+            // Cover's bottom padding + title's vertical padding (AlbumItem.VERTICAL_SPACING
+            // each) plus a little room for font metrics: 12 dp clipped the subtitle
+            with( density ) { coverHeight + textPx.toDp() } + ( AlbumItem.VERTICAL_SPACING * 3 ).dp + 12.dp
+        }
+
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(COLUMN_SPACING.dp ),
-            modifier = modifier
+            // Same 16 dp start margin as the section headers
+            contentPadding = PaddingValues( horizontal = 16.dp ),
+            modifier = modifier.height( cardHeight )
         ) {
             items(
                 items = innertubeItems,
@@ -94,41 +145,74 @@ object ItemUtils {
             ) { childItem ->
 
                 when ( childItem ) {
-                    is Innertube.SongItem -> SongItem.Render(
-                        innertubeSong = childItem,
-                        hapticFeedback = hapticFeedback,
-                        values = songItemValues,
-                        isPlaying = childItem.key == currentlyPlaying,
+                    // In a row of cards a song is a card too (cover, title, artists),
+                    // not a list row squeezed between them
+                    is Innertube.SongItem -> AlbumItem.VerticalStructure(
+                        widthDp = AlbumItem.thumbnailSize().width,
+                        thumbnail = {
+                            AlbumItem.Thumbnail( childItem.key, childItem.thumbnail?.url )
+                        },
+                        firstLine = {
+                            AlbumItem.Title(
+                                title = childItem.info?.name.orEmpty(),
+                                values = albumItemValues,
+                                textAlign = TextAlign.Start,
+                                maxLines = 2
+                            )
+                        },
+                        secondLine = {
+                            AlbumItem.Artists(
+                                artistsText = childItem.authors?.joinToString( ", " ) { it.name.orEmpty() }.orEmpty(),
+                                values = albumItemValues,
+                                textAlign = TextAlign.Start
+                            )
+                        },
                         onClick = {
                             player.forcePlay( childItem.asMediaItem )
                         },
                         onLongClick = {
-                            val page = MenuPage.Song(childItem.asMediaItem)
-                            menu.show( page, true )
+                            hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
+                            menu.show( MenuPage.Song( childItem.asMediaItem ), true )
                         }
                     )
 
-                    is Innertube.VideoItem -> {
-                        println("Innertube homePage VideoItem: ${childItem.info?.name}")
-                        SongItem.Render(
-                            innertubeVideo = childItem,
-                            hapticFeedback = hapticFeedback,
-                            isPlaying = currentlyPlaying == childItem.key,
-                            values = songItemValues,
-                            thumbnailSizeDp = SongItem.thumbnailSize(),
-                            onClick = {
-                                player.stopRadio()
-                                if ( isVideoEnabled() )
-                                    player.playVideo( childItem.asMediaItem )
-                                else
-                                    player.forcePlay( childItem.asMediaItem )
-                            },
-                            onLongClick = {
-                                val page = MenuPage.Song(childItem.asMediaItem)
-                                menu.show( page, true )
-                            }
-                        )
-                    }
+                    is Innertube.VideoItem -> AlbumItem.VerticalStructure(
+                        widthDp = AlbumItem.thumbnailSize().width,
+                        thumbnail = {
+                            // Videos come as 16:9: crop them square like the other cards
+                            AlbumItem.Thumbnail(
+                                url = childItem.thumbnail?.url,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.padding( bottom = AlbumItem.VERTICAL_SPACING.dp )
+                            )
+                        },
+                        firstLine = {
+                            AlbumItem.Title(
+                                title = childItem.info?.name.orEmpty(),
+                                values = albumItemValues,
+                                textAlign = TextAlign.Start,
+                                maxLines = 2
+                            )
+                        },
+                        secondLine = {
+                            AlbumItem.Artists(
+                                artistsText = childItem.authors?.joinToString( ", " ) { it.name.orEmpty() }.orEmpty(),
+                                values = albumItemValues,
+                                textAlign = TextAlign.Start
+                            )
+                        },
+                        onClick = {
+                            player.stopRadio()
+                            if ( isVideoEnabled() )
+                                player.playVideo( childItem.asMediaItem )
+                            else
+                                player.forcePlay( childItem.asMediaItem )
+                        },
+                        onLongClick = {
+                            hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
+                            menu.show( MenuPage.Song( childItem.asMediaItem ), true )
+                        }
+                    )
 
                     is Innertube.AlbumItem -> AlbumItem.Vertical(
                         innertubeAlbum = childItem,
@@ -259,6 +343,8 @@ object ItemUtils {
 
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(COLUMN_SPACING.dp ),
+            // Same 16 dp start margin as the section headers
+            contentPadding = PaddingValues( horizontal = 16.dp ),
             modifier = modifier
         ) {
             items(

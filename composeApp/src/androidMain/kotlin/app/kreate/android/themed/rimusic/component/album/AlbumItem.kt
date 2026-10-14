@@ -73,16 +73,17 @@ object AlbumItem: Visual(), MultiplatformItem {
         title: String,
         values: Values,
         textAlign: TextAlign,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        maxLines: Int = 1
     ) =
         Text(
             text = title,
             style = values.titleTextStyle,
             color = values.titleColor,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
             textAlign = textAlign,
-            modifier = modifier.scrollingText()
+            modifier = modifier
         )
 
     /**
@@ -107,9 +108,9 @@ object AlbumItem: Visual(), MultiplatformItem {
             style = values.artistsTextStyle,
             color = values.artistsColor,
             maxLines = 1,
-            overflow = TextOverflow.Clip,
+            overflow = TextOverflow.Ellipsis,
             textAlign = textAlign,
-            modifier = modifier.scrollingText()
+            modifier = modifier
         )
 
     /**
@@ -167,7 +168,7 @@ object AlbumItem: Visual(), MultiplatformItem {
         thirdLine: @Composable ColumnScope.() -> Unit = {}
     ) =
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.Start,
             modifier = modifier.requiredWidth( widthDp )
                                .combinedClickable(
                                    onClick = onClick,
@@ -260,7 +261,8 @@ object AlbumItem: Visual(), MultiplatformItem {
                 Title(
                     title = album.cleanTitle(),
                     values = values,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
+                    maxLines = 2,
                     modifier = Modifier.padding( vertical = VERTICAL_SPACING.dp )
                                        .fillMaxWidth( .9f )
                 )
@@ -272,7 +274,7 @@ object AlbumItem: Visual(), MultiplatformItem {
                 Artists(
                     artistsText = album.cleanAuthorsText(),
                     values = values,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
                     modifier = Modifier.fillMaxWidth( .9f )
                 )
             },
@@ -282,7 +284,7 @@ object AlbumItem: Visual(), MultiplatformItem {
                 Year(
                     year = album.year,
                     values = values,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
                     modifier = Modifier.fillMaxWidth( .9f )
                 )
             },

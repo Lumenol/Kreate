@@ -16,6 +16,7 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.extensions.games.pacman.Pacman
 import it.fast4x.rimusic.ui.components.themed.Button
 import it.fast4x.rimusic.ui.styling.favoritesIcon
+import it.fast4x.rimusic.utils.isLandscape
 
 class AppHeader(
     val navController: NavController
@@ -43,7 +44,7 @@ class AppHeader(
         ) {
             Button(
                 R.drawable.chevron_back,
-                colorPalette().favoritesIcon,
+                colorPalette().text,
                 0.dp,
                 24.dp
             ).Draw()
@@ -63,6 +64,8 @@ class AppHeader(
             title = { AppTitle( navController, context ) },
             actions = { ActionBar( navController ) },
             navigationIcon = { BackButton() },
+            // Height is scarce in landscape: a slimmer bar leaves room for content
+            expandedHeight = if( isLandscape ) 48.dp else TopAppBarDefaults.TopAppBarExpandedHeight,
             scrollBehavior = scrollBehavior,
             colors = colors()
         )

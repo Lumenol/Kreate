@@ -1,23 +1,21 @@
 package it.fast4x.rimusic.ui.screens.search
 
-import androidx.compose.animation.AnimatedVisibility
+import app.kreate.android.themed.common.component.DetailSkeleton
+import it.fast4x.rimusic.ui.components.ButtonsRow
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.ui.focus.FocusRequester
+import kotlinx.coroutines.delay
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -29,13 +27,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import app.kreate.android.R
 import it.fast4x.compose.persist.PersistMapCleanup
-import it.fast4x.rimusic.colorPalette
-import it.fast4x.rimusic.enums.UiType
-import it.fast4x.rimusic.typography
-import it.fast4x.rimusic.ui.components.Skeleton
-import it.fast4x.rimusic.ui.components.themed.IconButton
-import it.fast4x.rimusic.ui.styling.favoritesIcon
-import it.fast4x.rimusic.utils.secondary
 
 @ExperimentalTextApi
 @ExperimentalFoundationApi
@@ -71,88 +62,48 @@ fun SearchScreen(
 
     PersistMapCleanup(tagPrefix = "search/")
 
-            val decorationBox: @Composable (@Composable () -> Unit) -> Unit = { innerTextField ->
-                Box(
-                    contentAlignment = Alignment.CenterStart,
-                    modifier = Modifier
-                       // .weight(1f)
-                        .padding(horizontal = 10.dp)
-                ) {
-                    if ( UiType.ViMusic.isCurrent() )
-                        Column (
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                           // if (applyFontPadding)
-                               Spacer(modifier = Modifier.padding(top = 5.dp))
+    // The field now sits in the top bar, next to "back"; each mode keeps
+    // its own list below. The link mode has a field of its own.
+    val decorationBox: @Composable (@Composable () -> Unit) -> Unit = { it() }
+    val focusRequester = remember { FocusRequester() }
+    LaunchedEffect( tabIndex ) {
+        if( tabIndex == 2 ) return@LaunchedEffect
+        delay( 300 )
+        focusRequester.requestFocus()
+    }
 
-                            IconButton(
-                                onClick = {},
-                                icon = R.drawable.search,
-                                color = colorPalette().favoritesIcon,
-                                modifier = Modifier
-                                    //.align(Alignment.CenterStart)
-                                    .size(20.dp)
-                            )
-                        }
-                }
-                Box(
-                    contentAlignment = Alignment.CenterStart,
-                    modifier = Modifier
-                       // .weight(1f)
-                        .padding(horizontal = 40.dp)
-                ) {
-                    AnimatedVisibility(
-                        visible = textFieldValue.text.isEmpty(),
-                        enter = fadeIn(tween(300)),
-                        exit = fadeOut(tween(300)),
-                        modifier = Modifier
-                            .align(Alignment.Center)
-                    ) {
-                        BasicText(
-                            text = stringResource( android.R.string.search_go ),
-                            maxLines = 1,
-                            style = typography().l.secondary,
+    DetailSkeleton(
+        navController = navController,
+        miniPlayer = miniPlayer,
+        title = {
+            // The link mode has its own title and field
+            if( tabIndex != 2 )
+                SearchField(
+                    value = textFieldValue,
+                    onValueChange = onTextFieldValueChanged,
+                    focusRequester = focusRequester,
+                    onSearch = if( tabIndex == 0 ) {
+                        { if( textFieldValue.text.isNotEmpty() ) onSearch( textFieldValue.text ) }
+                    } else null
+                )
+        }
+    ) {
+        Column( Modifier.fillMaxSize() ) {
+            // Used to be a bottom bar of its own
+            ButtonsRow(
+                chips = listOf(
+                    0 to stringResource( R.string.online ),
+                    1 to stringResource( R.string.library ),
+                    2 to stringResource( R.string.go_to_link )
+                ),
+                currentValue = tabIndex,
+                onValueUpdate = onTabChanged,
+                modifier = Modifier.padding( bottom = 4.dp )
+            )
 
-                        )
-                    }
-                    innerTextField()
-                }
-                Box(
-                    contentAlignment = Alignment.CenterEnd,
-                    modifier = Modifier
-                        // .weight(1f)
-                        .padding(horizontal = 10.dp)
-                ) {
-                    Column (
-                        verticalArrangement = Arrangement.Center
-                    ) {
-
-                        Spacer(modifier = Modifier.padding(top = 5.dp))
-
-                        IconButton(
-                            onClick = { onTextFieldValueChanged(TextFieldValue("")) },
-                            icon = R.drawable.close,
-                            color = colorPalette().favoritesIcon,
-                            modifier = Modifier
-                                .size(24.dp)
-                        )
-                    }
-                }
-            }
-
-            Skeleton(
-                navController,
-                tabIndex,
-                onTabChanged,
-                miniPlayer,
-                navBarContent = { item ->
-                    item(0, stringResource(R.string.online), R.drawable.globe)
-                    item(1, stringResource(R.string.library), R.drawable.library)
-                    item(2, stringResource(R.string.go_to_link), R.drawable.link)
-                }
-            ) { currentTabIndex ->
-                saveableStateHolder.SaveableStateProvider(currentTabIndex) {
-                    when (currentTabIndex) {
+            Box( Modifier.weight( 1f ) ) {
+                saveableStateHolder.SaveableStateProvider(tabIndex) {
+                    when (tabIndex) {
                         0 -> OnlineSearch(
                             navController = navController,
                             textFieldValue = textFieldValue,
@@ -169,10 +120,7 @@ fun SearchScreen(
                             onAction1 = { onTabChanged(0) },
                             onAction2 = { onTabChanged(1) },
                             onAction3 = { onTabChanged(2) },
-                            onAction4 = {
-                                //onGoToHome()
-                                //pop()
-                            },
+                            onAction4 = {},
                         )
 
                         2 -> GoToLink(
@@ -183,12 +131,11 @@ fun SearchScreen(
                             onAction1 = { onTabChanged(0) },
                             onAction2 = { onTabChanged(1) },
                             onAction3 = { onTabChanged(2) },
-                            onAction4 = {
-                                //onGoToHome()
-                                //pop()
-                            },
+                            onAction4 = {},
                         )
                     }
                 }
             }
+        }
+    }
 }

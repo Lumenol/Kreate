@@ -210,12 +210,10 @@ fun HomeAlbums(
         ) {
             Column( Modifier.fillMaxSize() ) {
                 // Sticky tab's title
-                TabHeader(R.string.albums) {
+                // The Library's chips already name the tab: count, then every action in "⋮"
+                TabToolBar.Compact( listOf( sort, search, randomizer, shuffle, itemSize ) ) {
                     HeaderInfo(items.size.toString(), R.drawable.album)
                 }
-
-                // Sticky tab's tool bar
-                TabToolBar.Buttons( sort, search, randomizer, shuffle, itemSize )
 
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,

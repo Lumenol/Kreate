@@ -160,6 +160,10 @@ import java.util.Locale
 import java.util.Objects
 import kotlin.math.sqrt
 import kotlin.system.exitProcess
+import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.enums.NavigationBarPosition
+import it.fast4x.rimusic.enums.PlayerTimelineType
+import it.fast4x.rimusic.enums.PlayerPlayButtonType
 
 
 @UnstableApi
@@ -208,6 +212,29 @@ MainActivity :
         super.onCreate(savedInstanceState)
 
         UpdatePlugins.execute( this )
+
+        // Dynamic used to be the default palette, so it's stored for most users even
+        // though they never picked it: switch them once to the new neutral default.
+        // Choosing Dynamic again in settings afterwards is kept.
+        if( !Preferences.NEUTRAL_PALETTE_MIGRATED.value ) {
+            if( Preferences.COLOR_PALETTE.value == ColorPaletteName.Dynamic )
+                Preferences.COLOR_PALETTE.value = ColorPaletteName.Default
+            Preferences.NEUTRAL_PALETTE_MIGRATED.value = true
+        }
+
+        // Same for the player: its old defaults are stored too. Apply the redesigned
+        // layout once (plain progress bar, elapsed / total time only, round play
+        // button, ⋮ menu shown, no duplicate repeat); later changes in settings stay.
+        if( !Preferences.REDESIGN_PLAYER_MIGRATED.value ) {
+            Preferences.PLAYER_TIMELINE_TYPE.value = PlayerTimelineType.Default
+            Preferences.PLAYER_PLAY_BUTTON_TYPE.value = PlayerPlayButtonType.Default
+            Preferences.PLAYER_SHOW_SONGS_REMAINING_TIME.value = false
+            Preferences.PLAYER_SHOW_SEEK_BUTTONS.value = false
+            Preferences.PLAYER_SHOW_TOTAL_QUEUE_TIME.value = false
+            Preferences.PLAYER_ACTION_LOOP.value = false
+            Preferences.PLAYER_ACTION_SHOW_MENU.value = true
+            Preferences.REDESIGN_PLAYER_MIGRATED.value = true
+        }
 
         MonetCompat.enablePaletteCompat()
 
@@ -316,6 +343,8 @@ MainActivity :
             window.addFlags( WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON )
 
         setContent {
+            val landscape = isLandscape
+            LaunchedEffect( landscape ) { NavigationBarPosition.isLandscape.value = landscape }
             val colorPaletteMode by Preferences.THEME_MODE
             val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
 
@@ -922,7 +951,7 @@ MainActivity :
                                     if ( !song.explicit && !Preferences.PARENTAL_CONTROL.value )
                                         player.forcePlay(song.asMediaItem)
                                     else
-                                        Toaster.w( "Parental control is enabled" )
+                                        Toaster.w( R.string.info_parental_control_enabled )
                                 }
                             }
                         }

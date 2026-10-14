@@ -45,7 +45,8 @@ fun Title(
                 if (enableClick)
                     onClick?.invoke()
             }
-            .padding(horizontal = 12.dp, vertical = verticalPadding)
+            // Same 16 dp side margin as the other section headers
+            .padding(horizontal = 16.dp, vertical = verticalPadding)
     ) {
         Text(
             text = title,
@@ -88,7 +89,7 @@ fun Title2Actions(
                 if (enableClick)
                     onClick1?.invoke()
             }
-            .padding(horizontal = 12.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
         Text(
             text = title,

@@ -17,6 +17,7 @@ import app.kreate.android.Preferences
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.BuiltInPlaylist
 import it.fast4x.rimusic.enums.ColorPaletteMode
+import androidx.compose.foundation.shape.CircleShape
 
 @Composable
 fun <E> ButtonsRow(
@@ -37,16 +38,16 @@ fun <E> ButtonsRow(
             FilterChip(
                 label = { Text(label) },
                 selected = currentValue == value,
+                // Filled pills, the selected one inverted (white on dark), like the
+                // filters of YouTube Music and Spotify, instead of outlined chips
+                shape = CircleShape,
+                border = null,
                 colors = FilterChipDefaults
                     .filterChipColors(
-                        containerColor = colorPalette().background1,
+                        containerColor = colorPalette().background2,
                         labelColor = colorPalette().text,
-                        selectedContainerColor = when (colorPaletteMode) {
-                            ColorPaletteMode.Dark, ColorPaletteMode.PitchBlack
-                                -> colorPalette().textDisabled
-                            else -> colorPalette().background3
-                        } ,
-                        selectedLabelColor = colorPalette().text,
+                        selectedContainerColor = colorPalette().text,
+                        selectedLabelColor = colorPalette().background0,
                     ),
                 onClick = { onValueUpdate(value) }
             )
@@ -75,16 +76,16 @@ fun ButtonsRow(
             FilterChip(
                 label = { Text( playlistType.text ) },
                 selected = currentValue == playlistType,
+                // Filled pills, the selected one inverted (white on dark), like the
+                // filters of YouTube Music and Spotify, instead of outlined chips
+                shape = CircleShape,
+                border = null,
                 colors = FilterChipDefaults
                     .filterChipColors(
-                        containerColor = colorPalette().background1,
+                        containerColor = colorPalette().background2,
                         labelColor = colorPalette().text,
-                        selectedContainerColor = when (colorPaletteMode) {
-                            ColorPaletteMode.Dark, ColorPaletteMode.PitchBlack
-                                -> colorPalette().textDisabled
-                            else -> colorPalette().background3
-                        } ,
-                        selectedLabelColor = colorPalette().text,
+                        selectedContainerColor = colorPalette().text,
+                        selectedLabelColor = colorPalette().background0,
                     ),
                 onClick = { onValueUpdate(playlistType) }
             )

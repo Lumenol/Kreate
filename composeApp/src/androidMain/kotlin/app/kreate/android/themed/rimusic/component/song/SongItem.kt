@@ -112,8 +112,8 @@ object SongItem: Visual() {
             style = values.titleTextStyle,
             color = values.titleColor,
             maxLines = 1,
-            overflow = TextOverflow.Clip,
-            modifier = modifier.scrollingText()
+            overflow = TextOverflow.Ellipsis,
+            modifier = modifier
         )
 
     /**
@@ -137,8 +137,8 @@ object SongItem: Visual() {
             style = values.artistsTextStyle,
             color = values.artistsColor,
             maxLines = 1,
-            overflow = TextOverflow.Clip,
-            modifier = modifier.scrollingText()
+            overflow = TextOverflow.Ellipsis,
+            modifier = modifier
         )
 
     /**
@@ -163,8 +163,8 @@ object SongItem: Visual() {
             style = values.durationTextStyle,
             color = values.durationColor,
             maxLines = 1,
-            overflow = TextOverflow.Clip,
-            modifier = modifier.scrollingText()
+            overflow = TextOverflow.Ellipsis,
+            modifier = modifier
         )
 
     /**
@@ -459,7 +459,7 @@ object SongItem: Visual() {
                 )
 
                 if( !song.isLocal )
-                    CacheAndDownloadIcon( song.id, song, values, MyDownloadHelper::handleDownload , modifier ) {
+                    CacheAndDownloadIcon( song.id, song, values, MyDownloadHelper::handleDownload ) {
                         val cache: Cache by inject(Cache::class.java, CacheType.CACHE)
                         cache.removeResource( song.id )
                     }

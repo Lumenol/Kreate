@@ -1,22 +1,25 @@
 package it.fast4x.rimusic.ui.screens.localplaylist
 
+import app.kreate.android.themed.rimusic.component.playlist.displayName
+import app.kreate.android.themed.common.component.DetailHeader
+import app.kreate.android.themed.common.component.DetailMenu
+import app.kreate.android.themed.common.component.DetailSkeleton
+import app.kreate.android.themed.common.component.LabeledAction
+import androidx.compose.ui.unit.DpSize
+import androidx.compose.ui.res.stringResource
 import android.annotation.SuppressLint
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -72,7 +75,6 @@ import app.kreate.constant.PlaylistSongSortBy
 import app.kreate.database.models.Song
 import app.kreate.database.models.SongPlaylistMap
 import app.kreate.di.CacheType
-import app.kreate.util.cleanPrefix
 import app.kreate.util.toDuration
 import co.touchlab.kermit.Logger
 import com.github.doyaaaaaken.kotlincsv.client.KotlinCsvExperimental
@@ -89,15 +91,10 @@ import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.MenuState
 import it.fast4x.rimusic.ui.components.SwipeableQueueItem
-import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
-import it.fast4x.rimusic.ui.components.tab.toolbar.Button
 import it.fast4x.rimusic.ui.components.tab.toolbar.Dialog
 import it.fast4x.rimusic.ui.components.themed.Enqueue
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
-import it.fast4x.rimusic.ui.components.themed.HeaderIconButton
-import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
 import it.fast4x.rimusic.ui.components.themed.IconButton
-import it.fast4x.rimusic.ui.components.themed.IconInfo
 import it.fast4x.rimusic.ui.components.themed.ListenOnYouTube
 import it.fast4x.rimusic.ui.components.themed.PlayNext
 import it.fast4x.rimusic.ui.components.themed.PlaylistsMenu
@@ -119,7 +116,6 @@ import it.fast4x.rimusic.utils.enqueue
 import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import it.fast4x.rimusic.utils.isAtLeastAndroid14
-import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.manageDownload
 import it.fast4x.rimusic.utils.saveImageToInternalStorage
 import it.fast4x.rimusic.utils.semiBold
@@ -152,6 +148,7 @@ import kotlin.time.Duration
 fun LocalPlaylistSongs(
     navController: NavController,
     playlistId: Long,
+    miniPlayer: @Composable () -> Unit = {},
     menu: BottomMenu = LocalBottomMenu.current,
     menuState: MenuState = LocalMenuState.current,
     viewModel: LocalPlaylistViewModel = koinViewModel { parametersOf(menuState) }
@@ -390,360 +387,286 @@ fun LocalPlaylistSongs(
         SongItem.Values.from( colorPalette, typography )
     }
 
-    Box(
-        modifier = Modifier
-            .background(colorPalette().background0)
-            //.fillMaxSize()
-            .fillMaxHeight()
-            .fillMaxWidth(
-                if (NavigationBarPosition.Right.isCurrent())
-                    Dimensions.contentWidthRightBar
-                else
-                    1f
+    DetailSkeleton(
+        navController = navController,
+        miniPlayer = miniPlayer,
+        actions = {
+            DetailMenu(
+                buildList {
+                    if ( viewModel.sort.sortBy == PlaylistSongSortBy.POSITION )
+                        add( positionLock )
+                    add( playNext )
+                    add( enqueue )
+                    add( addToPlaylist )
+                    add( addToFavorite )
+                    add( itemSelector )
+                    add( deleteDownloadsDialog )
+                    if( !playlist?.browseId.isNullOrBlank() ) {
+                        add( syncComponent )
+                        add( listenOnYT )
+                    }
+                    add( renumberDialog )
+                    add( exportDialog )
+                    add( thumbnailPicker )
+                    add( resetThumbnail )
+                    add( resetCache )
+                    add( deleteDialog )
+                }
             )
+        }
     ) {
-        //LookaheadScope {
-        LazyColumn(
-            state = reorderingState.lazyListState,
-            contentPadding = PaddingValues(bottom = Dimensions.bottomSpacer),
+        Box(
             modifier = Modifier
                 .background(colorPalette().background0)
-                .fillMaxSize()
-        ) {
-            item(
-                key = "header",
-                contentType = 0
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-
-                    HeaderWithIcon(
-                        title = cleanPrefix( playlist?.name ?: "" ),
-                        iconId = R.drawable.playlist,
-                        enabled = true,
-                        showIcon = false,
-                        modifier = Modifier
-                            .padding(bottom = 8.dp),
-                        onClick = {}
-                    )
-
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        //.background(colorPalette().background4)
-                        .fillMaxSize(0.99F)
-                        .background(
-                            color = colorPalette().background1,
-                            shape = thumbnailRoundness.shape
-                        )
-                ) {
-
-                    playlist?.let {
-                        PlaylistItem.Thumbnail(
-                            playlist = it,
-                            modifier = Modifier.padding( all = 14.dp ),
-                            showPlatformIcon = false
-                        )
-                    }
-
-
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.Start,
-                        modifier = Modifier
-                            //.fillMaxHeight()
-                            .padding(end = 10.dp)
-                            .fillMaxWidth(if (isLandscape) 0.90f else 0.80f)
-                    ) {
-                        Spacer(modifier = Modifier.height(10.dp))
-                        IconInfo(
-                            title = items.size.toString(),
-                            icon = painterResource(R.drawable.musical_notes)
-                        )
-                        Spacer(modifier = Modifier.height(5.dp))
-
-                        val totalDuration by remember {derivedStateOf {
-                            items.fastFold( Duration.ZERO ) { acc, song ->
-                                acc + song.durationText.toDuration()
-                            }
-                        }}
-                        IconInfo(
-                            title = totalDuration.toString(),
-                            icon = painterResource(R.drawable.time)
-                        )
-                        if (isRecommendationEnabled) {
-                            Spacer(modifier = Modifier.height(5.dp))
-                            IconInfo(
-                                title = relatedSongs.size.toString(),
-                                icon = painterResource(R.drawable.smart_shuffle)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(30.dp))
-                    }
-
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        HeaderIconButton(
-                            icon = R.drawable.smart_shuffle,
-                            enabled = true,
-                            color = if (isRecommendationEnabled) colorPalette().text else colorPalette().textDisabled,
-                            onClick = {},
-                            modifier = Modifier
-                                .combinedClickable(
-                                    onClick = {
-                                        isRecommendationEnabled = !isRecommendationEnabled
-                                    },
-                                    onLongClick = {
-                                        Toaster.i( R.string.info_smart_recommendation )
-                                    }
-                                )
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        shuffle.ToolBarButton()
-                        Spacer(modifier = Modifier.height(10.dp))
-                        search.ToolBarButton()
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                TabToolBar.Buttons(
-                    mutableListOf<Button>().apply {
-                        if (playlistNotMonthlyType)
-                            this.add( pin )
-                        if ( viewModel.sort.sortBy == PlaylistSongSortBy.POSITION )
-                            this.add( positionLock )
-
-                        this.add( downloadAllDialog )
-                        this.add( deleteDownloadsDialog )
-                        this.add( itemSelector )
-                        this.add( playNext )
-                        this.add( enqueue )
-                        this.add( addToFavorite )
-                        this.add( addToPlaylist )
-                        if( !playlist?.browseId.isNullOrBlank() ) {
-                            this.add( syncComponent )
-                            this.add( listenOnYT )
-                        }
-                        this.add( renameDialog )
-                        this.add( renumberDialog )
-                        this.add( deleteDialog )
-                        this.add( exportDialog )
-                        this.add( thumbnailPicker )
-                        this.add( resetThumbnail )
-                        this.add( resetCache )
-                    }
+                //.fillMaxSize()
+                .fillMaxHeight()
+                .fillMaxWidth(
+                    if (NavigationBarPosition.Right.isCurrent())
+                        Dimensions.contentWidthRightBar
+                    else
+                        1f
                 )
-
-                if ( autosync && playlist?.browseId.isNullOrBlank() ) {
-                    sync()
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                /*        */
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp)
-                        .fillMaxWidth()
+        ) {
+            //LookaheadScope {
+            LazyColumn(
+                state = reorderingState.lazyListState,
+                contentPadding = PaddingValues(bottom = Dimensions.bottomSpacer),
+                modifier = Modifier
+                    .background(colorPalette().background0)
+                    .fillMaxSize()
+            ) {
+                item(
+                    key = "header",
+                    contentType = 0
                 ) {
+                    val details = remember( items ) {
+                        val minutes = items.fastFold( Duration.ZERO ) { acc, song ->
+                            acc + song.durationText.toDuration()
+                        }.inWholeMinutes
+                        val duration = if( minutes >= 60 ) "%d h %02d".format( minutes / 60, minutes % 60 ) else "$minutes min"
+                        "${context.resources.getQuantityString( R.plurals.song, items.size, items.size )} · $duration"
+                    }
 
-                    viewModel.sort.ToolBarButton()
+                    DetailHeader(
+                        cover = null,
+                        coverContent = { coverModifier ->
+                            playlist?.let {
+                                PlaylistItem.Thumbnail(
+                                    playlist = it,
+                                    modifier = coverModifier,
+                                    sizeDp = DpSize( 208.dp, 208.dp ),
+                                    showPlatformIcon = false
+                                )
+                            }
+                        },
+                        title = playlist?.displayName().orEmpty(),
+                        links = emptyList(),
+                        details = details,
+                        onPlay = {
+                            player.stopRadio()
+                            player.forcePlayFromBeginning( getMediaItems() )
+                        },
+                        onShuffle = shuffle::onShortClick
+                    ) {
+                        if( playlistNotMonthlyType )
+                            LabeledAction( pin, stringResource( R.string.word_pin ) )
+                        LabeledAction( downloadAllDialog, stringResource( R.string.download ) )
+                        // Smart recommendation: related songs mixed into the playlist
+                        LabeledAction(
+                            icon = painterResource( R.drawable.smart_shuffle ),
+                            label = stringResource( R.string.word_suggestions ),
+                            selected = isRecommendationEnabled,
+                            onClick = { isRecommendationEnabled = !isRecommendationEnabled }
+                        )
+                        LabeledAction( renameDialog, stringResource( R.string.rename ) )
+                    }
 
                     Row(
-                        horizontalArrangement = Arrangement.End,
                         verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) { locator.ToolBarButton() }
-
-                }
-
-                search.SearchBar()
-            }
-
-            itemsIndexed(
-                items = itemsOnDisplay,
-                key = { _, song -> song.id },
-                contentType = { _, song -> song },
-            ) { index, song ->
-                val mediaItem = song.asMediaItem
-
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .draggedItem(
-                            reorderingState = reorderingState,
-                            index = index
-                        )
-                        .zIndex(2f)
-                ) {
-                    val isLocal by remember { derivedStateOf { song.isLocal } }
-
-                    // Drag anchor
-                    if ( !positionLock.isLocked() ) {
-                        Box(
-                            modifier = Modifier
-                                .padding(end = 16.dp) // Accommodate horizontal padding of SongItem
-                                               .size(24.dp)
-                                .zIndex(2f)
-                                .align(Alignment.CenterEnd),
-                            contentAlignment = Alignment.Center
-                        ) {
-
-                            IconButton(
-                                icon = R.drawable.reorder,
-                                color = colorPalette().textDisabled,
-                                indication = rippleIndication,
-                                onClick = {},
-                                modifier = Modifier
-                                    .reorder(
-                                        reorderingState = reorderingState,
-                                        index = index
-                                    )
-                            )
-                        }
+                        modifier = Modifier.padding( horizontal = 10.dp ).fillMaxWidth()
+                    ) {
+                        viewModel.sort.ToolBarButton()
+                        Spacer( Modifier.weight( 1f ) )
+                        search.ToolBarButton()
+                        locator.ToolBarButton()
                     }
 
-                    SwipeableQueueItem(
-                        mediaItem = mediaItem,
-                        onPlayNext = {
-                            player.addNext(mediaItem)
-                        },
-                        onRemoveFromQueue = {
-                            Database.asyncTransaction {
-                                songPlaylistMapTable.deleteBySongId( song.id, playlistId )
-                            }
+                    search.SearchBar()
+                }
 
-                            Toaster.s(
-                                context.getString(
-                                    R.string.success_removed_song_from_playlist,
-                                    "${song.cleanArtistsText()} - ${song.cleanTitle()}",
-                                    playlist!!.name
-                                )
+                itemsIndexed(
+                    items = itemsOnDisplay,
+                    key = { _, song -> song.id },
+                    contentType = { _, song -> song },
+                ) { index, song ->
+                    val mediaItem = song.asMediaItem
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .draggedItem(
+                                reorderingState = reorderingState,
+                                index = index
                             )
-                        },
-                        onDownload = {
-                            val cache: Cache by inject(Cache::class.java, CacheType.CACHE)
-                            cache.removeResource(song.id)
-                            Database.asyncTransaction {
-                                formatTable.updateContentLengthOf( song.id )
-                            }
+                            .zIndex(2f)
+                    ) {
+                        val isLocal by remember { derivedStateOf { song.isLocal } }
 
-                            if (!isLocal) {
-                                manageDownload(
-                                    context = context,
-                                    mediaItem = mediaItem,
-                                    downloadState = song.isLocal
+                        // Drag anchor
+                        if ( !positionLock.isLocked() ) {
+                            Box(
+                                modifier = Modifier
+                                    .padding(end = 16.dp) // Accommodate horizontal padding of SongItem
+                                                   .size(24.dp)
+                                    .zIndex(2f)
+                                    .align(Alignment.CenterEnd),
+                                contentAlignment = Alignment.Center
+                            ) {
+
+                                IconButton(
+                                    icon = R.drawable.reorder,
+                                    color = colorPalette().textDisabled,
+                                    indication = rippleIndication,
+                                    onClick = {},
+                                    modifier = Modifier
+                                        .reorder(
+                                            reorderingState = reorderingState,
+                                            index = index
+                                        )
                                 )
                             }
-                        },
-                        onEnqueue = {
-                            player.enqueue(mediaItem)
-                        },
-                    ) {
-                        SongItem.Render(
-                            song = song,
-                            hapticFeedback = hapticFeedback,
-                            isPlaying = song.shallowCompare( currentMediaItem ),
-                            values = songItemValues,
-                            isInPlaylistScreen = true,
-                            itemSelector = itemSelector,
-                            isRecommended = song in relatedSongs,
-                            trailingContent = {
-                                if( !positionLock.isLocked() )
-                                    // Create a fake box to store drag anchor and checkbox
-                                    Box( Modifier.width( 24.dp ) )
+                        }
+
+                        SwipeableQueueItem(
+                            mediaItem = mediaItem,
+                            onPlayNext = {
+                                player.addNext(mediaItem)
                             },
-                            thumbnailOverlay = {
-                                if ( viewModel.sort.sortBy == PlaylistSongSortBy.TOTAL_PLAY_TIME ) {
-                                    BasicText(
-                                        text = song.formattedTotalPlayTime,
-                                        style = typography().xxs.semiBold.center.color(
-                                            colorPalette().onOverlay
-                                        ),
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(
-                                                brush = Brush.verticalGradient(
-                                                    colors = listOf(
-                                                        Color.Transparent,
-                                                        colorPalette().overlay
-                                                    )
-                                                ),
-                                                shape = thumbnailShape()
-                                            )
-                                            .padding(horizontal = 8.dp, vertical = 4.dp)
-                                            .align(Alignment.BottomCenter)
+                            onRemoveFromQueue = {
+                                Database.asyncTransaction {
+                                    songPlaylistMapTable.deleteBySongId( song.id, playlistId )
+                                }
+
+                                Toaster.s(
+                                    context.getString(
+                                        R.string.success_removed_song_from_playlist,
+                                        "${song.cleanArtistsText()} - ${song.cleanTitle()}",
+                                        playlist!!.name
+                                    )
+                                )
+                            },
+                            onDownload = {
+                                val cache: Cache by inject(Cache::class.java, CacheType.CACHE)
+                                cache.removeResource(song.id)
+                                Database.asyncTransaction {
+                                    formatTable.updateContentLengthOf( song.id )
+                                }
+
+                                if (!isLocal) {
+                                    manageDownload(
+                                        context = context,
+                                        mediaItem = mediaItem,
+                                        downloadState = song.isLocal
                                     )
                                 }
                             },
-                            onClick = {
-                                player.stopRadio()
-
-                                val selectedSongs = getSongs()
-                                if( song in selectedSongs )
-                                    player.forcePlayAtIndex(
-                                        selectedSongs.fastMap( Song::asMediaItem ),
-                                        selectedSongs.indexOf( song )
-                                    )
-                                else
-                                    player.forcePlayAtIndex(
-                                        itemsOnDisplay.fastMap( Song::asMediaItem ),
-                                        index
-                                    )
-
-                                /*
-                                    Due to the small size of checkboxes,
-                                    we shouldn't disable [itemSelector]
-                                 */
-
-                                search.hideIfEmpty()
+                            onEnqueue = {
+                                player.enqueue(mediaItem)
                             },
-                            onLongClick = {
-                                val page =
-                                    if( isLocal )
-                                        MenuPage.LocalPlaylistLocalSong(playlist!!, mediaItem)
+                        ) {
+                            SongItem.Render(
+                                song = song,
+                                hapticFeedback = hapticFeedback,
+                                isPlaying = song.shallowCompare( currentMediaItem ),
+                                values = songItemValues,
+                                isInPlaylistScreen = true,
+                                itemSelector = itemSelector,
+                                isRecommended = song in relatedSongs,
+                                trailingContent = {
+                                    if( !positionLock.isLocked() )
+                                        // Create a fake box to store drag anchor and checkbox
+                                        Box( Modifier.width( 24.dp ) )
+                                },
+                                thumbnailOverlay = {
+                                    if ( viewModel.sort.sortBy == PlaylistSongSortBy.TOTAL_PLAY_TIME ) {
+                                        BasicText(
+                                            text = song.formattedTotalPlayTime,
+                                            style = typography().xxs.semiBold.center.color(
+                                                colorPalette().onOverlay
+                                            ),
+                                            maxLines = 2,
+                                            overflow = TextOverflow.Ellipsis,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .background(
+                                                    brush = Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            Color.Transparent,
+                                                            colorPalette().overlay
+                                                        )
+                                                    ),
+                                                    shape = thumbnailShape()
+                                                )
+                                                .padding(horizontal = 8.dp, vertical = 4.dp)
+                                                .align(Alignment.BottomCenter)
+                                        )
+                                    }
+                                },
+                                onClick = {
+                                    player.stopRadio()
+
+                                    val selectedSongs = getSongs()
+                                    if( song in selectedSongs )
+                                        player.forcePlayAtIndex(
+                                            selectedSongs.fastMap( Song::asMediaItem ),
+                                            selectedSongs.indexOf( song )
+                                        )
                                     else
-                                        MenuPage.LocalPlaylistSong(playlist!!, mediaItem)
-                                menu.show( page, true )
-                            }
-                        )
-                    }
-                }
+                                        player.forcePlayAtIndex(
+                                            itemsOnDisplay.fastMap( Song::asMediaItem ),
+                                            index
+                                        )
 
-            }
-        }
+                                    /*
+                                        Due to the small size of checkboxes,
+                                        we shouldn't disable [itemSelector]
+                                     */
 
-        FloatingActionsContainerWithScrollToTop(lazyListState = lazyListState)
-
-        val showFloatingIcon by Preferences.SHOW_FLOATING_ICON
-        if ( UiType.ViMusic.isCurrent() && showFloatingIcon )
-            FloatingActionsContainerWithScrollToTop(
-                lazyListState = lazyListState,
-                iconId = R.drawable.shuffle,
-                visible = !reorderingState.isDragging,
-                onClick = {
-                    getMediaItems().let { songs ->
-                        if (songs.isNotEmpty()) {
-                            player.stopRadio()
-                            player
-                                  ?.forcePlayFromBeginning( songs.shuffled() )
+                                    search.hideIfEmpty()
+                                },
+                                onLongClick = {
+                                    val page =
+                                        if( isLocal )
+                                            MenuPage.LocalPlaylistLocalSong(playlist!!, mediaItem)
+                                        else
+                                            MenuPage.LocalPlaylistSong(playlist!!, mediaItem)
+                                    menu.show( page, true )
+                                }
+                            )
                         }
                     }
+
                 }
-            )
+            }
+
+            FloatingActionsContainerWithScrollToTop(lazyListState = lazyListState)
+
+            val showFloatingIcon by Preferences.SHOW_FLOATING_ICON
+            if ( UiType.ViMusic.isCurrent() && showFloatingIcon )
+                FloatingActionsContainerWithScrollToTop(
+                    lazyListState = lazyListState,
+                    iconId = R.drawable.shuffle,
+                    visible = !reorderingState.isDragging,
+                    onClick = {
+                        getMediaItems().let { songs ->
+                            if (songs.isNotEmpty()) {
+                                player.stopRadio()
+                                player
+                                      ?.forcePlayFromBeginning( songs.shuffled() )
+                            }
+                        }
+                    }
+                )
+        }
     }
 }

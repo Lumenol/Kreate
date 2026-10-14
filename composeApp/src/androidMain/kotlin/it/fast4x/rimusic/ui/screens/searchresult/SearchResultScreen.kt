@@ -1,12 +1,20 @@
 package it.fast4x.rimusic.ui.screens.searchresult
 
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.Spacer
+import it.fast4x.rimusic.ui.screens.search.ArtistRow
+import app.kreate.android.themed.common.component.DetailSkeleton
+import it.fast4x.rimusic.ui.components.ButtonsRow
+import it.fast4x.rimusic.ui.screens.search.SearchQueryPill
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import android.annotation.SuppressLint
 import android.net.Uri
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -50,11 +58,9 @@ import it.fast4x.innertube.utils.from
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.ui.components.LocalMenuState
-import it.fast4x.rimusic.ui.components.Skeleton
 import it.fast4x.rimusic.ui.components.SwipeableAlbumItem
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
 import it.fast4x.rimusic.ui.components.themed.NonQueuedMediaItemMenu
-import it.fast4x.rimusic.ui.components.themed.Title
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.LocalAppearance
 import it.fast4x.rimusic.ui.styling.px
@@ -102,20 +108,11 @@ fun SearchResultScreen(
     val isVideoEnabled by Preferences.PLAYER_ACTION_TOGGLE_VIDEO
     val parentalControlEnabled by Preferences.PARENTAL_CONTROL
 
+    // The query is in the top bar now, the types are chips above the list.
+    // Not 0 dp: an empty header lets the list anchor on the "loading" row
+    // and stay scrolled to the bottom once results arrive.
     val headerContent: @Composable (textButton: (@Composable () -> Unit)?) -> Unit = {
-        Title(
-            title = stringResource(R.string.search_results_for),
-            verticalPadding = 4.dp
-        )
-        Title(
-            title = query,
-            icon = R.drawable.pencil,
-            onClick = {
-                navController.navigate( "${NavRoutes.search}?text=${Uri.encode( query )}")
-            },
-            verticalPadding = 4.dp
-        )
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer( Modifier.height( 4.dp ) )
     }
 
     val emptyItemsText = stringResource(R.string.no_results_found)
@@ -125,475 +122,493 @@ fun SearchResultScreen(
         SongItem.Values.from( colorPalette, typography )
     }
 
-    Skeleton(
-        navController,
-        tabIndex,
-        onTabIndexChanges,
-        miniPlayer,
-        navBarContent = { item ->
-            item(0, stringResource(R.string.songs), R.drawable.musical_notes)
-            item(1, stringResource(R.string.albums), R.drawable.album)
-            item(2, stringResource(R.string.artists), R.drawable.artist)
-            item(3, stringResource(R.string.videos), R.drawable.video)
-            item(4, stringResource(R.string.playlists), R.drawable.playlist)
-            item(5, stringResource(R.string.featured), R.drawable.featured_playlist)
-            item(6, stringResource(R.string.podcasts), R.drawable.podcast)
+    DetailSkeleton(
+        navController = navController,
+        miniPlayer = miniPlayer,
+        title = {
+            SearchQueryPill(
+                query = query,
+                onEdit = { navController.navigate( "${NavRoutes.search}?text=${Uri.encode( query )}" ) },
+                onClear = { navController.navigate( "${NavRoutes.search}?text=" ) }
+            )
         }
-    ) { currentTabIndex ->
-        saveableStateHolder.SaveableStateProvider(currentTabIndex) {
-            when ( currentTabIndex ) {
-                0 -> {
-                    ItemsPage(
-                        tag = "searchResults/$query/songs",
-                        itemsPageProvider = { continuation ->
-                            if (continuation == null) {
-                                Innertube.searchPage(
-                                    body = SearchBody(
-                                        query = query,
-                                        params = Innertube.SearchFilter.Song.value
-                                    ),
-                                    fromMusicShelfRendererContent = Innertube.SongItem.Companion::from
-                                )
-                            } else {
-                                Innertube.searchPage(
-                                    body = ContinuationBody(continuation = continuation),
-                                    fromMusicShelfRendererContent = Innertube.SongItem.Companion::from
-                                )
-                            }
-                        },
-                        emptyItemsText = emptyItemsText,
-                        headerContent = headerContent,
-                        itemContent = { song ->
-                            if (parentalControlEnabled && song.explicit)
-                                return@ItemsPage
-
-                            val mediaItem = song.asMediaItem
-                            val isDownloaded =
-                                isDownloadedSong(mediaItem.mediaId)
-
-                            SwipeablePlaylistItem(
-                                mediaItem = mediaItem,
-                                onPlayNext = {
-                                    player.addNext(mediaItem)
-                                },
-                                onDownload = {
-                                    val cache: Cache by inject(Cache::class.java, CacheType.CACHE)
-                                    cache.removeResource(song.key)
-                                    Database.asyncTransaction {
-                                        formatTable.updateContentLengthOf( song.key )
+    ) {
+        val currentTabIndex = tabIndex
+        Column( Modifier.fillMaxSize() ) {
+            // Used to be 7 tabs at the bottom, their names cut off
+            ButtonsRow(
+                chips = listOf(
+                    0 to stringResource( R.string.songs ),
+                    2 to stringResource( R.string.artists ),
+                    1 to stringResource( R.string.albums ),
+                    3 to stringResource( R.string.videos ),
+                    4 to stringResource( R.string.playlists ),
+                    5 to stringResource( R.string.featured ),
+                    6 to stringResource( R.string.podcasts )
+                ),
+                currentValue = currentTabIndex,
+                onValueUpdate = onTabIndexChanges,
+                modifier = Modifier.padding( bottom = 4.dp )
+            )
+            Box( Modifier.weight( 1f ) ) {
+                saveableStateHolder.SaveableStateProvider(currentTabIndex) {
+                    when ( currentTabIndex ) {
+                        0 -> {
+                            ItemsPage(
+                                tag = "searchResults/$query/songs",
+                                itemsPageProvider = { continuation ->
+                                    if (continuation == null) {
+                                        Innertube.searchPage(
+                                            body = SearchBody(
+                                                query = query,
+                                                params = Innertube.SearchFilter.Song.value
+                                            ),
+                                            fromMusicShelfRendererContent = Innertube.SongItem.Companion::from
+                                        )
+                                    } else {
+                                        Innertube.searchPage(
+                                            body = ContinuationBody(continuation = continuation),
+                                            fromMusicShelfRendererContent = Innertube.SongItem.Companion::from
+                                        )
                                     }
-                                    manageDownload(
-                                        context = context,
+                                },
+                                emptyItemsText = emptyItemsText,
+                                headerContent = headerContent,
+                                itemContent = { song ->
+                                    if (parentalControlEnabled && song.explicit)
+                                        return@ItemsPage
+
+                                    val mediaItem = song.asMediaItem
+                                    val isDownloaded =
+                                        isDownloadedSong(mediaItem.mediaId)
+
+                                    SwipeablePlaylistItem(
                                         mediaItem = mediaItem,
-                                        downloadState = isDownloaded
-                                    )
-                                },
-                                onEnqueue = {
-                                    player.enqueue(mediaItem)
-                                }
-                            ) {
-                                SongItem.Render(
-                                    song = song.asSong,
-                                    hapticFeedback = hapticFeedback,
-                                    isPlaying = song.shallowCompare( currentMediaItem ),
-                                    values = songItemValues,
-                                    onClick = {
-                                        player.startRadio( mediaItem, false, song.info?.endpoint )
-                                    },
-                                    onLongClick = {
-                                        val page = MenuPage.Song(mediaItem)
-                                        menu.show( page, true )
+                                        onPlayNext = {
+                                            player.addNext(mediaItem)
+                                        },
+                                        onDownload = {
+                                            val cache: Cache by inject(Cache::class.java, CacheType.CACHE)
+                                            cache.removeResource(song.key)
+                                            Database.asyncTransaction {
+                                                formatTable.updateContentLengthOf( song.key )
+                                            }
+                                            manageDownload(
+                                                context = context,
+                                                mediaItem = mediaItem,
+                                                downloadState = isDownloaded
+                                            )
+                                        },
+                                        onEnqueue = {
+                                            player.enqueue(mediaItem)
+                                        }
+                                    ) {
+                                        SongItem.Render(
+                                            song = song.asSong,
+                                            hapticFeedback = hapticFeedback,
+                                            isPlaying = song.shallowCompare( currentMediaItem ),
+                                            values = songItemValues,
+                                            onClick = {
+                                                player.startRadio( mediaItem, false, song.info?.endpoint )
+                                            },
+                                            onLongClick = {
+                                                val page = MenuPage.Song(mediaItem)
+                                                menu.show( page, true )
+                                            }
+                                        )
                                     }
-                                )
-                            }
-                        },
-                        itemPlaceholderContent = { SongItem.Placeholder() }
-                    )
-                }
-
-                1 -> {
-                    ItemsPage(
-                        tag = "searchResults/$query/albums",
-                        itemsPageProvider = { continuation ->
-                            if (continuation == null) {
-                                Innertube.searchPage(
-                                    body = SearchBody(
-                                        query = query,
-                                        params = Innertube.SearchFilter.Album.value
-                                    ),
-                                    fromMusicShelfRendererContent = Innertube.AlbumItem::from
-                                )
-                            } else {
-                                Innertube.searchPage(
-                                    body = ContinuationBody(continuation = continuation),
-                                    fromMusicShelfRendererContent = Innertube.AlbumItem::from
-                                )
-                            }
-                        },
-                        emptyItemsText = emptyItemsText,
-                        headerContent = headerContent,
-                        itemContent = { album ->
-                            var albumPage by persist<Innertube.PlaylistOrAlbumPage?>("album/${album.key}/albumPage")
-                            SwipeableAlbumItem(
-                                albumItem = album,
-                                onPlayNext = {
-                                    CoroutineScope(Dispatchers.IO).launch {
-                                        Database.albumTable
-                                                .findById( album.key )
-                                                .combine(snapshotFlow { currentTabIndex }) { album, tabIndex -> album to tabIndex }
-                                                .collect {
-                                                    if (albumPage == null)
-                                                        withContext(Dispatchers.IO) {
-                                                            Innertube.albumPage(
-                                                                BrowseBody(
-                                                                    browseId = album.key
-                                                                )
-                                                            )
-                                                                ?.onSuccess { currentAlbumPage ->
-                                                                    albumPage =
-                                                                        currentAlbumPage
-
-                                                                    println("mediaItem success home album songsPage ${currentAlbumPage.songsPage} description ${currentAlbumPage.description} year ${currentAlbumPage.year}")
-
-                                                                    albumPage
-                                                                        ?.songsPage
-                                                                        ?.items
-                                                                        ?.map(
-                                                                            Innertube.SongItem::asMediaItem
-                                                                        )
-                                                                        ?.let { it1 ->
-                                                                            withContext(Dispatchers.Main) {
-                                                                                player.addNext(
-                                                                                    it1,
-                                                                                    context
-                                                                                )
-                                                                            }
-                                                                        }
-                                                                    println("mediaItem success add in queue album songsPage ${albumPage
-                                                                        ?.songsPage
-                                                                        ?.items?.size}")
-
-                                                                }
-                                                                ?.onFailure {
-                                                                    println("mediaItem error searchResultScreen album ${it.stackTraceToString()}")
-                                                                }
-                                                        }
-                                                }
-                                    }
-
                                 },
-                                onEnqueue = {
-                                    CoroutineScope(Dispatchers.IO).launch {
-                                        Database.albumTable
-                                                .findById( album.key )
-                                                .combine(snapshotFlow { currentTabIndex }) { album, tabIndex -> album to tabIndex }
-                                                .collect {
-                                                    if (albumPage == null)
-                                                        withContext(Dispatchers.IO) {
-                                                            Innertube.albumPage(
-                                                                BrowseBody(
-                                                                    browseId = album.key
-                                                                )
-                                                            )
-                                                                ?.onSuccess { currentAlbumPage ->
-                                                                    albumPage =
-                                                                        currentAlbumPage
+                                itemPlaceholderContent = { SongItem.Placeholder() }
+                            )
+                        }
 
-                                                                    println("mediaItem success home album songsPage ${currentAlbumPage.songsPage} description ${currentAlbumPage.description} year ${currentAlbumPage.year}")
-
-                                                                    albumPage
-                                                                        ?.songsPage
-                                                                        ?.items
-                                                                        ?.map(
-                                                                            Innertube.SongItem::asMediaItem
-                                                                        )
-                                                                        ?.let { it1 ->
-                                                                            withContext(Dispatchers.Main) {
-                                                                                player.enqueue(
-                                                                                    it1,
-                                                                                    context
-                                                                                )
-                                                                            }
-                                                                        }
-                                                                    println("mediaItem success add in queue album songsPage ${albumPage
-                                                                        ?.songsPage
-                                                                        ?.items?.size}")
-
-                                                                }
-                                                                ?.onFailure {
-                                                                    println("mediaItem error searchResultScreen album ${it.stackTraceToString()}")
-                                                                }
-
-                                                        }
-
-                                                    //}
-                                                }
-
+                        1 -> {
+                            ItemsPage(
+                                tag = "searchResults/$query/albums",
+                                itemsPageProvider = { continuation ->
+                                    if (continuation == null) {
+                                        Innertube.searchPage(
+                                            body = SearchBody(
+                                                query = query,
+                                                params = Innertube.SearchFilter.Album.value
+                                            ),
+                                            fromMusicShelfRendererContent = Innertube.AlbumItem::from
+                                        )
+                                    } else {
+                                        Innertube.searchPage(
+                                            body = ContinuationBody(continuation = continuation),
+                                            fromMusicShelfRendererContent = Innertube.AlbumItem::from
+                                        )
                                     }
-
                                 },
-                                onBookmark = {
-                                    CoroutineScope(Dispatchers.IO).launch {
-                                        Database.albumTable
-                                                .findById( album.key )
-                                                .combine(snapshotFlow { currentTabIndex }) { album, tabIndex -> album to tabIndex }
-                                                .collect {
-                                                    if (albumPage == null)
-                                                        withContext(Dispatchers.IO) {
-                                                            Innertube.albumPage(
-                                                                BrowseBody(
-                                                                    browseId = album.key
-                                                                )
-                                                            )
-                                                                ?.onSuccess { currentAlbumPage ->
-                                                                    albumPage =
-                                                                        currentAlbumPage
-
-                                                                    println("mediaItem success home album songsPage ${currentAlbumPage.songsPage} description ${currentAlbumPage.description} year ${currentAlbumPage.year}")
-
-                                                                    Database.albumTable.upsert(
-                                                                        Album(
-                                                                            id = album.key,
-                                                                            title = currentAlbumPage.title,
-                                                                            thumbnailUrl = currentAlbumPage.thumbnail?.url,
-                                                                            year = currentAlbumPage.year,
-                                                                            authorsText = currentAlbumPage.authors?.joinToString( "" ) { it.name ?: "" },
-                                                                            shareUrl = currentAlbumPage.url,
-                                                                            timestamp = System.currentTimeMillis(),
-                                                                            bookmarkedAt = System.currentTimeMillis()
+                                emptyItemsText = emptyItemsText,
+                                headerContent = headerContent,
+                                itemContent = { album ->
+                                    var albumPage by persist<Innertube.PlaylistOrAlbumPage?>("album/${album.key}/albumPage")
+                                    SwipeableAlbumItem(
+                                        albumItem = album,
+                                        onPlayNext = {
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                Database.albumTable
+                                                        .findById( album.key )
+                                                        .combine(snapshotFlow { currentTabIndex }) { album, tabIndex -> album to tabIndex }
+                                                        .collect {
+                                                            if (albumPage == null)
+                                                                withContext(Dispatchers.IO) {
+                                                                    Innertube.albumPage(
+                                                                        BrowseBody(
+                                                                            browseId = album.key
                                                                         )
                                                                     )
+                                                                        ?.onSuccess { currentAlbumPage ->
+                                                                            albumPage =
+                                                                                currentAlbumPage
 
-                                                                    currentAlbumPage.songsPage
-                                                                                    ?.items
-                                                                                    ?.map( Innertube.SongItem::asMediaItem )
-                                                                                    ?.onEach( Database::insertIgnore )
-                                                                                    ?.mapIndexed { position, mediaItem ->
-                                                                                        SongAlbumMap(
-                                                                                            songId = mediaItem.mediaId,
-                                                                                            albumId = album.key,
-                                                                                            position = position
+                                                                            println("mediaItem success home album songsPage ${currentAlbumPage.songsPage} description ${currentAlbumPage.description} year ${currentAlbumPage.year}")
+
+                                                                            albumPage
+                                                                                ?.songsPage
+                                                                                ?.items
+                                                                                ?.map(
+                                                                                    Innertube.SongItem::asMediaItem
+                                                                                )
+                                                                                ?.let { it1 ->
+                                                                                    withContext(Dispatchers.Main) {
+                                                                                        player.addNext(
+                                                                                            it1,
+                                                                                            context
                                                                                         )
                                                                                     }
-                                                                                    ?.also( Database.songAlbumMapTable::upsert )
-                                                                }
-                                                                ?.onFailure {
-                                                                    println("mediaItem error searchResultScreen album ${it.stackTraceToString()}")
-                                                                }
+                                                                                }
+                                                                            println("mediaItem success add in queue album songsPage ${albumPage
+                                                                                ?.songsPage
+                                                                                ?.items?.size}")
 
+                                                                        }
+                                                                        ?.onFailure {
+                                                                            println("mediaItem error searchResultScreen album ${it.stackTraceToString()}")
+                                                                        }
+                                                                }
                                                         }
-                                                }
+                                            }
+
+                                        },
+                                        onEnqueue = {
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                Database.albumTable
+                                                        .findById( album.key )
+                                                        .combine(snapshotFlow { currentTabIndex }) { album, tabIndex -> album to tabIndex }
+                                                        .collect {
+                                                            if (albumPage == null)
+                                                                withContext(Dispatchers.IO) {
+                                                                    Innertube.albumPage(
+                                                                        BrowseBody(
+                                                                            browseId = album.key
+                                                                        )
+                                                                    )
+                                                                        ?.onSuccess { currentAlbumPage ->
+                                                                            albumPage =
+                                                                                currentAlbumPage
+
+                                                                            println("mediaItem success home album songsPage ${currentAlbumPage.songsPage} description ${currentAlbumPage.description} year ${currentAlbumPage.year}")
+
+                                                                            albumPage
+                                                                                ?.songsPage
+                                                                                ?.items
+                                                                                ?.map(
+                                                                                    Innertube.SongItem::asMediaItem
+                                                                                )
+                                                                                ?.let { it1 ->
+                                                                                    withContext(Dispatchers.Main) {
+                                                                                        player.enqueue(
+                                                                                            it1,
+                                                                                            context
+                                                                                        )
+                                                                                    }
+                                                                                }
+                                                                            println("mediaItem success add in queue album songsPage ${albumPage
+                                                                                ?.songsPage
+                                                                                ?.items?.size}")
+
+                                                                        }
+                                                                        ?.onFailure {
+                                                                            println("mediaItem error searchResultScreen album ${it.stackTraceToString()}")
+                                                                        }
+
+                                                                }
+
+                                                            //}
+                                                        }
+
+                                            }
+
+                                        },
+                                        onBookmark = {
+                                            CoroutineScope(Dispatchers.IO).launch {
+                                                Database.albumTable
+                                                        .findById( album.key )
+                                                        .combine(snapshotFlow { currentTabIndex }) { album, tabIndex -> album to tabIndex }
+                                                        .collect {
+                                                            if (albumPage == null)
+                                                                withContext(Dispatchers.IO) {
+                                                                    Innertube.albumPage(
+                                                                        BrowseBody(
+                                                                            browseId = album.key
+                                                                        )
+                                                                    )
+                                                                        ?.onSuccess { currentAlbumPage ->
+                                                                            albumPage =
+                                                                                currentAlbumPage
+
+                                                                            println("mediaItem success home album songsPage ${currentAlbumPage.songsPage} description ${currentAlbumPage.description} year ${currentAlbumPage.year}")
+
+                                                                            Database.albumTable.upsert(
+                                                                                Album(
+                                                                                    id = album.key,
+                                                                                    title = currentAlbumPage.title,
+                                                                                    thumbnailUrl = currentAlbumPage.thumbnail?.url,
+                                                                                    year = currentAlbumPage.year,
+                                                                                    authorsText = currentAlbumPage.authors?.joinToString( "" ) { it.name ?: "" },
+                                                                                    shareUrl = currentAlbumPage.url,
+                                                                                    timestamp = System.currentTimeMillis(),
+                                                                                    bookmarkedAt = System.currentTimeMillis()
+                                                                                )
+                                                                            )
+
+                                                                            currentAlbumPage.songsPage
+                                                                                            ?.items
+                                                                                            ?.map( Innertube.SongItem::asMediaItem )
+                                                                                            ?.onEach( Database::insertIgnore )
+                                                                                            ?.mapIndexed { position, mediaItem ->
+                                                                                                SongAlbumMap(
+                                                                                                    songId = mediaItem.mediaId,
+                                                                                                    albumId = album.key,
+                                                                                                    position = position
+                                                                                                )
+                                                                                            }
+                                                                                            ?.also( Database.songAlbumMapTable::upsert )
+                                                                        }
+                                                                        ?.onFailure {
+                                                                            println("mediaItem error searchResultScreen album ${it.stackTraceToString()}")
+                                                                        }
+
+                                                                }
+                                                        }
+                                            }
+                                        }
+                                    ) {
+                                        val appearance = LocalAppearance.current
+                                        val albumItemValues = remember( appearance ) {
+                                            AlbumItem.Values.from( appearance )
+                                        }
+
+                                        AlbumItem.Horizontal( album, albumItemValues, navController )
                                     }
-                                }
-                            ) {
-                                val appearance = LocalAppearance.current
-                                val albumItemValues = remember( appearance ) {
-                                    AlbumItem.Values.from( appearance )
-                                }
-
-                                AlbumItem.Horizontal( album, albumItemValues, navController )
-                            }
-                        },
-                        itemPlaceholderContent = {
-                            AlbumItem.VerticalPlaceholder()
-                        }
-                    )
-                }
-
-                2 -> {
-                    val artistItemValues = remember( colorPalette, typography ) {
-                        ArtistItem.Values.from( colorPalette, typography )
-                    }
-
-                    ItemsPage(
-                        tag = "searchResults/$query/artists",
-                        itemsPageProvider = { continuation ->
-                            if (continuation == null) {
-                                Innertube.searchPage(
-                                    body = SearchBody(
-                                        query = query,
-                                        params = Innertube.SearchFilter.Artist.value
-                                    ),
-                                    fromMusicShelfRendererContent = Innertube.ArtistItem::from
-                                )
-                            } else {
-                                Innertube.searchPage(
-                                    body = ContinuationBody(continuation = continuation),
-                                    fromMusicShelfRendererContent = Innertube.ArtistItem::from
-                                )
-                            }
-                        },
-                        emptyItemsText = emptyItemsText,
-                        headerContent = headerContent,
-                        itemContent = { artist ->
-                            ArtistItem.Render( artist, artistItemValues, navController )
-                        },
-                        itemPlaceholderContent = {
-                            ArtistItem.Placeholder()
-                        }
-                    )
-                }
-
-                3 -> {
-                    val menuState = LocalMenuState.current
-                    val thumbnailHeightDp = 72.dp
-                    val thumbnailWidthDp = 128.dp
-
-                    ItemsPage(
-                        tag = "searchResults/$query/videos",
-                        itemsPageProvider = { continuation ->
-                            if (continuation == null) {
-                                Innertube.searchPage(
-                                    body = SearchBody(
-                                        query = query,
-                                        params = Innertube.SearchFilter.Video.value
-                                    ),
-                                    fromMusicShelfRendererContent = Innertube.VideoItem::from
-                                )
-                            } else {
-                                Innertube.searchPage(
-                                    body = ContinuationBody(continuation = continuation),
-                                    fromMusicShelfRendererContent = Innertube.VideoItem::from
-                                )
-                            }
-                        },
-                        emptyItemsText = emptyItemsText,
-                        headerContent = headerContent,
-                        itemContent = { video ->
-                            SwipeablePlaylistItem(
-                                mediaItem = video.asMediaItem,
-                                onPlayNext = {
-                                    player.addNext(video.asMediaItem)
                                 },
-                                onDownload = {
-                                    Toaster.w( R.string.downloading_videos_not_supported )
-                                },
-                                onEnqueue = {
-                                    player.enqueue(video.asMediaItem)
+                                itemPlaceholderContent = {
+                                    AlbumItem.VerticalPlaceholder()
                                 }
-                            ) {
-                                SongItem.Render(
-                                    innertubeVideo = video,
-                                    hapticFeedback = hapticFeedback,
-                                    isPlaying = video.shallowCompare( currentMediaItem ),
-                                    values = songItemValues,
-                                    thumbnailSizeDp = DpSize(thumbnailWidthDp, thumbnailHeightDp),
-                                    onLongClick = {
-                                        menuState.display {
-                                            NonQueuedMediaItemMenu(
-                                                navController = navController,
-                                                mediaItem = video.asMediaItem,
-                                                onDismiss = menuState::hide
-                                            )
-                                        };
-                                        hapticFeedback.performHapticFeedback(
-                                            HapticFeedbackType.LongPress
+                            )
+                        }
+
+                        2 -> {
+                            ItemsPage(
+                                tag = "searchResults/$query/artists",
+                                itemsPageProvider = { continuation ->
+                                    if (continuation == null) {
+                                        Innertube.searchPage(
+                                            body = SearchBody(
+                                                query = query,
+                                                params = Innertube.SearchFilter.Artist.value
+                                            ),
+                                            fromMusicShelfRendererContent = Innertube.ArtistItem::from
                                         )
-                                    },
-                                    onClick = {
-                                        player.stopRadio()
-                                        if (isVideoEnabled)
-                                            player.playVideo(video.asMediaItem)
-                                        else
-                                            player.forcePlay(video.asMediaItem)
+                                    } else {
+                                        Innertube.searchPage(
+                                            body = ContinuationBody(continuation = continuation),
+                                            fromMusicShelfRendererContent = Innertube.ArtistItem::from
+                                        )
                                     }
-                                )
-                            }
-                        },
-                        itemPlaceholderContent = {
-                            SongItem.Placeholder(
-                                DpSize(thumbnailWidthDp, thumbnailHeightDp)
-                            )
-                        }
-                    )
-                }
-
-                4, 5 -> {
-                    val playlistItemValues = remember( colorPalette, typography ) {
-                        PlaylistItem.Values.from( colorPalette, typography )
-                    }
-
-                    ItemsPage(
-                        tag = "searchResults/$query/${
-                            when (currentTabIndex) {
-                                4 -> "playlists"
-                                else -> "featured"
-                            }
-                        }",
-                        itemsPageProvider = { continuation ->
-                            if (continuation == null) {
-                                val filter = when (currentTabIndex) {
-                                    4 -> Innertube.SearchFilter.CommunityPlaylist
-                                    else -> Innertube.SearchFilter.FeaturedPlaylist
-                                }
-
-                                Innertube.searchPage(
-                                    body = SearchBody(query = query, params = filter.value),
-                                    fromMusicShelfRendererContent = Innertube.PlaylistItem::from
-                                )
-                            } else {
-                                Innertube.searchPage(
-                                    body = ContinuationBody(continuation = continuation),
-                                    fromMusicShelfRendererContent = Innertube.PlaylistItem::from
-                                )
-                            }
-                        },
-                        emptyItemsText = emptyItemsText,
-                        headerContent = headerContent,
-                        itemContent = { playlist ->
-                            PlaylistItem.Horizontal(
-                                innertubePlaylist = playlist,
-                                values = playlistItemValues,
-                                navController = navController
-                            )
-                        },
-                        itemPlaceholderContent = {
-                            PlaylistItem.VerticalPlaceholder()
-                        }
-                    )
-                }
-
-                6 -> {
-                    val thumbnailSizeDp = Dimensions.thumbnails.playlist
-                    val thumbnailSizePx = thumbnailSizeDp.px
-
-                    val playlistItemValues = remember( colorPalette, typography ) {
-                        PlaylistItem.Values.from( colorPalette, typography )
-                    }
-
-                    ItemsPage(
-                        tag = "searchResults/$query/podcasts",
-                        itemsPageProvider = { continuation ->
-                            if (continuation == null) {
-                                val filter = Innertube.SearchFilter.Podcast
-
-                                Innertube.searchPage(
-                                    body = SearchBody(query = query, params = filter.value),
-                                    fromMusicShelfRendererContent = Innertube.PlaylistItem::from
-                                )
-                            } else {
-                                Innertube.searchPage(
-                                    body = ContinuationBody(continuation = continuation),
-                                    fromMusicShelfRendererContent = Innertube.PlaylistItem::from
-                                )
-                            }
-                        },
-                        emptyItemsText = emptyItemsText,
-                        headerContent = headerContent,
-                        itemContent = { playlist ->
-                            PlaylistItem.Vertical(
-                                innertubePlaylist = playlist,
-                                values = playlistItemValues,
-                                navController = null,
-                                modifier = Modifier.clickable {
-                                    NavRoutes.podcast.navigateHere( navController, playlist.key )
+                                },
+                                emptyItemsText = emptyItemsText,
+                                headerContent = headerContent,
+                                itemContent = { artist ->
+                                    ArtistRow(
+                                        name = artist.title.orEmpty(),
+                                        thumbnailUrl = artist.thumbnail?.url,
+                                        detail = artist.subscribersCountText ?: stringResource( R.string.word_artist )
+                                    ) {
+                                        NavRoutes.YT_ARTIST.navigateHere( navController, artist.key )
+                                    }
+                                },
+                                itemPlaceholderContent = {
+                                    ArtistItem.Placeholder()
                                 }
                             )
-                        },
-                        itemPlaceholderContent = {
-                            PlaylistItem.VerticalPlaceholder()
                         }
-                    )
+
+                        3 -> {
+                            val menuState = LocalMenuState.current
+                            val thumbnailHeightDp = 72.dp
+                            val thumbnailWidthDp = 128.dp
+
+                            ItemsPage(
+                                tag = "searchResults/$query/videos",
+                                itemsPageProvider = { continuation ->
+                                    if (continuation == null) {
+                                        Innertube.searchPage(
+                                            body = SearchBody(
+                                                query = query,
+                                                params = Innertube.SearchFilter.Video.value
+                                            ),
+                                            fromMusicShelfRendererContent = Innertube.VideoItem::from
+                                        )
+                                    } else {
+                                        Innertube.searchPage(
+                                            body = ContinuationBody(continuation = continuation),
+                                            fromMusicShelfRendererContent = Innertube.VideoItem::from
+                                        )
+                                    }
+                                },
+                                emptyItemsText = emptyItemsText,
+                                headerContent = headerContent,
+                                itemContent = { video ->
+                                    SwipeablePlaylistItem(
+                                        mediaItem = video.asMediaItem,
+                                        onPlayNext = {
+                                            player.addNext(video.asMediaItem)
+                                        },
+                                        onDownload = {
+                                            Toaster.w( R.string.downloading_videos_not_supported )
+                                        },
+                                        onEnqueue = {
+                                            player.enqueue(video.asMediaItem)
+                                        }
+                                    ) {
+                                        SongItem.Render(
+                                            innertubeVideo = video,
+                                            hapticFeedback = hapticFeedback,
+                                            isPlaying = video.shallowCompare( currentMediaItem ),
+                                            values = songItemValues,
+                                            thumbnailSizeDp = DpSize(thumbnailWidthDp, thumbnailHeightDp),
+                                            onLongClick = {
+                                                menuState.display {
+                                                    NonQueuedMediaItemMenu(
+                                                        navController = navController,
+                                                        mediaItem = video.asMediaItem,
+                                                        onDismiss = menuState::hide
+                                                    )
+                                                };
+                                                hapticFeedback.performHapticFeedback(
+                                                    HapticFeedbackType.LongPress
+                                                )
+                                            },
+                                            onClick = {
+                                                player.stopRadio()
+                                                if (isVideoEnabled)
+                                                    player.playVideo(video.asMediaItem)
+                                                else
+                                                    player.forcePlay(video.asMediaItem)
+                                            }
+                                        )
+                                    }
+                                },
+                                itemPlaceholderContent = {
+                                    SongItem.Placeholder(
+                                        DpSize(thumbnailWidthDp, thumbnailHeightDp)
+                                    )
+                                }
+                            )
+                        }
+
+                        4, 5 -> {
+                            val playlistItemValues = remember( colorPalette, typography ) {
+                                PlaylistItem.Values.from( colorPalette, typography )
+                            }
+
+                            ItemsPage(
+                                tag = "searchResults/$query/${
+                                    when (currentTabIndex) {
+                                        4 -> "playlists"
+                                        else -> "featured"
+                                    }
+                                }",
+                                itemsPageProvider = { continuation ->
+                                    if (continuation == null) {
+                                        val filter = when (currentTabIndex) {
+                                            4 -> Innertube.SearchFilter.CommunityPlaylist
+                                            else -> Innertube.SearchFilter.FeaturedPlaylist
+                                        }
+
+                                        Innertube.searchPage(
+                                            body = SearchBody(query = query, params = filter.value),
+                                            fromMusicShelfRendererContent = Innertube.PlaylistItem::from
+                                        )
+                                    } else {
+                                        Innertube.searchPage(
+                                            body = ContinuationBody(continuation = continuation),
+                                            fromMusicShelfRendererContent = Innertube.PlaylistItem::from
+                                        )
+                                    }
+                                },
+                                emptyItemsText = emptyItemsText,
+                                headerContent = headerContent,
+                                itemContent = { playlist ->
+                                    PlaylistItem.Horizontal(
+                                        innertubePlaylist = playlist,
+                                        values = playlistItemValues,
+                                        navController = navController
+                                    )
+                                },
+                                itemPlaceholderContent = {
+                                    PlaylistItem.VerticalPlaceholder()
+                                }
+                            )
+                        }
+
+                        6 -> {
+                            val thumbnailSizeDp = Dimensions.thumbnails.playlist
+                            val thumbnailSizePx = thumbnailSizeDp.px
+
+                            val playlistItemValues = remember( colorPalette, typography ) {
+                                PlaylistItem.Values.from( colorPalette, typography )
+                            }
+
+                            ItemsPage(
+                                tag = "searchResults/$query/podcasts",
+                                itemsPageProvider = { continuation ->
+                                    if (continuation == null) {
+                                        val filter = Innertube.SearchFilter.Podcast
+
+                                        Innertube.searchPage(
+                                            body = SearchBody(query = query, params = filter.value),
+                                            fromMusicShelfRendererContent = Innertube.PlaylistItem::from
+                                        )
+                                    } else {
+                                        Innertube.searchPage(
+                                            body = ContinuationBody(continuation = continuation),
+                                            fromMusicShelfRendererContent = Innertube.PlaylistItem::from
+                                        )
+                                    }
+                                },
+                                emptyItemsText = emptyItemsText,
+                                headerContent = headerContent,
+                                itemContent = { playlist ->
+                                    PlaylistItem.Vertical(
+                                        innertubePlaylist = playlist,
+                                        values = playlistItemValues,
+                                        navController = null,
+                                        modifier = Modifier.clickable {
+                                            NavRoutes.podcast.navigateHere( navController, playlist.key )
+                                        }
+                                    )
+                                },
+                                itemPlaceholderContent = {
+                                    PlaylistItem.VerticalPlaceholder()
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }

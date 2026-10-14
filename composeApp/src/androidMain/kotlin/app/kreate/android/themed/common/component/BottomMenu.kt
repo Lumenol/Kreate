@@ -89,6 +89,14 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import me.knighthat.component.dialog.Dialog
 import me.knighthat.sync.YouTubeSync
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import app.kreate.android.themed.common.component.menu.SongPlayNextButton
+import app.kreate.android.themed.common.component.menu.AddSongToPlaylistButton
+import androidx.compose.ui.res.stringResource
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.semiBold
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -173,6 +181,7 @@ class BottomMenu {
                                 )
                             }
 
+                            Column {
                             SongItem.Structure(
                                 modifier = Modifier.padding(
                                     top = 5.dp,
@@ -207,26 +216,45 @@ class BottomMenu {
                                             },
                                             modifier = Modifier.padding( all = 4.dp ).size( 20.dp )
                                         )
-
-                                        if( !song.isLocal )
-                                            IconButton(
-                                                icon = R.drawable.share_social,
-                                                color = colorPalette.text,
-                                                onClick = {
-                                                    val intent = Intent(Intent.ACTION_SEND).apply {
-                                                        type = "text/plain"
-                                                        putExtra( Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${song.id}" )
-                                                    }
-
-                                                    context.startActivity(
-                                                        Intent.createChooser( intent, null )
-                                                    )
-                                                },
-                                                modifier = Modifier.padding( all = 4.dp ).size( 20.dp )
-                                            )
                                     }
                                 }
                             )
+
+                            // The 3 most used actions as big buttons, like YouTube Music
+                            if( currentScreen !is MenuPage.AddToPlaylist )
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy( 8.dp ),
+                                    modifier = Modifier.padding( start = 16.dp, end = 16.dp, bottom = 12.dp )
+                                ) {
+                                    QuickAction(
+                                        text = stringResource( R.string.quick_play_next ),
+                                        iconId = R.drawable.play_skip_forward,
+                                        modifier = Modifier.weight( 1f )
+                                    ) {
+                                        SongPlayNextButton().onClick( this@BottomMenu, currentScreen.song )
+                                        hide()
+                                    }
+                                    QuickAction(
+                                        text = stringResource( R.string.quick_add_to_playlist ),
+                                        iconId = R.drawable.add_in_playlist,
+                                        modifier = Modifier.weight( 1f )
+                                    ) {
+                                        AddSongToPlaylistButton().onClick( this@BottomMenu, currentScreen.song )
+                                    }
+                                    if( !song.isLocal )
+                                        QuickAction(
+                                            text = stringResource( R.string.share ),
+                                            iconId = R.drawable.share_social,
+                                            modifier = Modifier.weight( 1f )
+                                        ) {
+                                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                                type = "text/plain"
+                                                putExtra( Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=${song.id}" )
+                                            }
+                                            context.startActivity( Intent.createChooser( intent, null ) )
+                                        }
+                                }
+                            }
                         }
                     else if( currentScreen is MenuPage.LocalPlaylist )
                         Surface(
@@ -415,3 +443,35 @@ class BottomMenu {
         }
     }
 }
+
+/** Big labelled button for the most used actions on top of the song menu */
+@Composable
+private fun QuickAction(
+    text: String,
+    iconId: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) =
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy( 6.dp ),
+        modifier = modifier.clip( RoundedCornerShape( 12.dp ) )
+                           .background( colorPalette().background2 )
+                           .clickable( onClick = onClick )
+                           .padding( vertical = 12.dp, horizontal = 4.dp )
+    ) {
+        Icon(
+            painter = painterResource( iconId ),
+            contentDescription = null,
+            tint = colorPalette().text,
+            modifier = Modifier.size( 22.dp )
+        )
+        Text(
+            text = text,
+            color = colorPalette().text,
+            style = typography().xxs.semiBold,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            textAlign = TextAlign.Center
+        )
+    }

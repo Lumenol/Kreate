@@ -95,16 +95,17 @@ object PlaylistItem: Visual(), MultiplatformItem {
         title: String,
         values: Values,
         textAlign: TextAlign,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        maxLines: Int = 1
     ) =
         Text(
             text = title,
             style = values.titleTextStyle,
             color = values.titleColor,
-            maxLines = 1,
-            overflow = TextOverflow.Clip,
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
             textAlign = textAlign,
-            modifier = modifier.scrollingText()
+            modifier = modifier
         )
 
     /**
@@ -129,9 +130,9 @@ object PlaylistItem: Visual(), MultiplatformItem {
             style = values.subtitleTextStyle,
             color = values.subtitleTextColor,
             maxLines = 1,
-            overflow = TextOverflow.Clip,
+            overflow = TextOverflow.Ellipsis,
             textAlign = textAlign,
-            modifier = modifier.scrollingText()
+            modifier = modifier
         )
 
     @Composable
@@ -287,7 +288,7 @@ object PlaylistItem: Visual(), MultiplatformItem {
         secondLine: @Composable ColumnScope.() -> Unit = {}
     ) =
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.Start,
             modifier = modifier.requiredWidth( widthDp )
                                .combinedClickable(
                                    onClick = onClick,
@@ -393,7 +394,7 @@ object PlaylistItem: Visual(), MultiplatformItem {
                     }
             },
             firstLine = {
-                Title( playlist.displayName(), values, TextAlign.Center )
+                Title( playlist.displayName(), values, TextAlign.Start, maxLines = 2 )
             },
             onClick = click@ {
                 onClick.invoke()
@@ -434,7 +435,8 @@ object PlaylistItem: Visual(), MultiplatformItem {
                 Title(
                     title = innertubePlaylist.title.orEmpty(),
                     values = values,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Start,
+                    maxLines = 2
                 )
             },
             onClick = click@ {
@@ -473,7 +475,8 @@ object PlaylistItem: Visual(), MultiplatformItem {
                 Title(
                     title = innertubePlaylist.name,
                     values = values,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Start,
+                    maxLines = 2
                 )
             },
             secondLine = nd@ {
@@ -491,7 +494,7 @@ object PlaylistItem: Visual(), MultiplatformItem {
                 Subtitle(
                     text = subtitle,
                     values = values,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Start
                 )
             },
             onClick = click@ {
@@ -633,5 +636,5 @@ object PlaylistItem: Visual(), MultiplatformItem {
 
 /** Monthly playlists read "October 2026" instead of their raw "202610" name */
 @Composable
-private fun Playlist.displayName(): String =
+fun Playlist.displayName(): String =
     if( isMonthly ) monthlyPlaylistTitle( name ) ?: cleanName() else cleanName()

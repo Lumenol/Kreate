@@ -38,6 +38,11 @@ import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.vertical
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextOverflow
+import it.fast4x.rimusic.utils.color
 
 // Shown when "Navigation bar position" is set to "left" or "right"
 class VerticalNavigationBar(
@@ -107,12 +112,28 @@ class VerticalNavigationBar(
                                           .padding( vertical = 8.dp )
             val result: @Composable () -> Unit = {
                 if( isLandscape )
+                    // Standard navigation rail: icon always visible, short label under
+                    // it, light background on the selected tab (the portrait rail hides
+                    // unselected icons and pads labels, which broke them letter by letter)
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = contentModifier
+                        verticalArrangement = Arrangement.spacedBy( 4.dp ),
+                        modifier = Modifier.padding( vertical = 4.dp )
+                                           .width( 72.dp )
+                                           .clip( RoundedCornerShape( 16.dp ) )
+                                           .background(
+                                               if( tabIndex == index ) colorPalette().background2 else Color.Transparent
+                                           )
+                                           .clickable( onClick = { onTabChanged( index ) } )
+                                           .padding( vertical = 8.dp )
                     ) {
-                        button.Draw()
-                        textContent()
+                        Button( iconId, textColor, 0.dp, 24.dp ).Draw()
+                        BasicText(
+                            text = text,
+                            style = typography().xxs.semiBold.color( textColor ),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 else
                     Row(
@@ -183,7 +204,7 @@ class VerticalNavigationBar(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier
-                .width(Dimensions.navigationRailWidth)
+                .width( if( isLandscape ) 80.dp else Dimensions.navigationRailWidth )
                 .verticalScroll( rememberScrollState() )
         ) {
             val boxPadding: Dp =

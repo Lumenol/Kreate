@@ -9,7 +9,6 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableIntState
 import androidx.compose.runtime.mutableIntStateOf
@@ -17,19 +16,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import androidx.navigation.NavGraph.Companion.findStartDestination
 import app.kreate.android.R
 import app.kreate.android.drawable.AppIcon
-import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.NavRoutes
-import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.Button
-import it.fast4x.rimusic.utils.semiBold
 import me.knighthat.utils.Toaster
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.semiBold
+import androidx.compose.ui.graphics.Color
 
 private fun appIconClickAction(
     navController: NavController,
@@ -77,32 +82,44 @@ private fun AppLogo(
     Image(
         bitmap = AppIcon.Round.imageBitmap( LocalContext.current ),
         contentDescription = "App's icon",
-        modifier = modifier.size( 36.dp )
+        modifier = modifier.size( 32.dp )
     )
 }
 
+private val DEBUG_RED = Color( 0xFFF87171 )
+
+/**
+ * Debug mode must stay obvious, so it's spelled out, but as one compact
+ * status pill instead of red text over two lines. Tap to open settings.
+ */
 @Composable
-private fun AppLogoText( navController: NavController ) {
-    Button(
-        iconId = R.drawable.app_logo_text,
-        color = AppBar.contentColor(),
-        padding = 0.dp,
-        size = 36.dp,
-        forceWidth = 100.dp,
-        modifier = Modifier.clickable {
-            if ( NavRoutes.home.isHere( navController ) ) return@clickable
+private fun DebugBadge( navController: NavController ) {
+    // The palette's red (#BF4040) is too dark to read on a dark header
+    val red = DEBUG_RED
 
-            // In short, navigates to [NavRoutes.home] then previous stacks
-            // effectively make it the start again
-            navController.navigate( NavRoutes.home.name ) {
-                popUpTo( navController.graph.findStartDestination().id ) {
-                    inclusive = true
-                }
+    Row(
+        horizontalArrangement = Arrangement.spacedBy( 4.dp ),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clip( CircleShape )
+                           .background( red.copy( alpha = .18f ) )
+                           .clickable {
+                               Toaster.s( R.string.info_debug_mode_is_enabled )
 
-                launchSingleTop = true
-            }
-        }
-    ).Draw()
+                               NavRoutes.settings.navigateHere( navController )
+                           }
+                           .padding( horizontal = 8.dp, vertical = 4.dp )
+    ) {
+        Icon(
+            painter = painterResource( R.drawable.bug ),
+            contentDescription = null,
+            tint = red,
+            modifier = Modifier.size( 14.dp )
+        )
+        BasicText(
+            text = stringResource( R.string.debug_badge ),
+            style = typography().xxs.semiBold.color( red )
+        )
+    }
 }
 
 // START
@@ -112,11 +129,15 @@ fun AppTitle(
     context: Context
 ) {
     Row(
-        horizontalArrangement = Arrangement.spacedBy( 5.dp ),
+        horizontalArrangement = Arrangement.spacedBy( 8.dp ),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        // The big "Music" wordmark took a lot of room on every screen: keep the icon,
+        // and turn the two-line "debug mode enabled" text into a compact badge
         AppLogo( navController, context )
-        AppLogoText( navController )
+
+        if (Preference.debugLog())
+            DebugBadge( navController )
 
         if(Preference.parentalControl())
             Button(
@@ -125,23 +146,6 @@ fun AppTitle(
                 padding = 0.dp,
                 size = 20.dp
             ).Draw()
-
-        if (Preference.debugLog())
-            BasicText(
-                text = stringResource(R.string.info_debug_mode_enabled),
-                style = TextStyle(
-                    fontSize = typography().xxs.semiBold.fontSize,
-                    fontWeight = typography().xxs.semiBold.fontWeight,
-                    fontFamily = typography().xxs.semiBold.fontFamily,
-                    color = colorPalette().red
-                ),
-                modifier = Modifier
-                    .clickable {
-                        Toaster.s( R.string.info_debug_mode_is_enabled )
-
-                        NavRoutes.settings.navigateHere( navController )
-                    }
-            )
     }
 // END
 }

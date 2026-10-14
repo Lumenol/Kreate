@@ -18,6 +18,20 @@ import androidx.compose.ui.unit.dp
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.ui.components.tab.toolbar.Button
 import it.fast4x.rimusic.ui.components.tab.toolbar.EllipsisMenuComponent
+import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.draw.clip
+import androidx.compose.foundation.text.BasicText
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.semiBold
 
 object TabToolBar {
 
@@ -96,6 +110,65 @@ object TabToolBar {
                 ellipsisMenu.ToolBarButton()
         }
     }
+
+    /**
+     * Toolbar of the redesigned Library: [leading] content (main actions, count)
+     * then a "⋮" menu listing every other action with its name, instead of a
+     * row of 5 to 10 unlabeled icons. Buttons that can't be menu items stay icons.
+     */
+    @Composable
+    fun Compact(
+        buttons: List<Button>,
+        modifier: Modifier = Modifier,
+        leading: @Composable RowScope.() -> Unit = {}
+    ) {
+        val menuItems = buttons.filterIsInstance<MenuIcon>()
+        val ellipsisMenu = EllipsisMenuComponent.init { menuItems }
+
+        Row(
+            horizontalArrangement = Arrangement.spacedBy( 8.dp ),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = modifier.fillMaxWidth()
+                               .padding( start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp )
+        ) {
+            leading()
+            Spacer( Modifier.weight( 1f ) )
+            buttons.filterNot { it is MenuIcon }.forEach { it.ToolBarButton() }
+            if( menuItems.isNotEmpty() )
+                ellipsisMenu.ToolBarButton()
+        }
+    }
+
+    /** Pill button for the main actions of [Compact] ("Play all", "Shuffle") */
+    @Composable
+    fun PillButton(
+        text: String,
+        iconId: Int,
+        filled: Boolean,
+        onClick: () -> Unit
+    ) =
+        Row(
+            horizontalArrangement = Arrangement.spacedBy( 6.dp ),
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.height( 36.dp )
+                               .clip( CircleShape )
+                               .background( if( filled ) colorPalette().text else colorPalette().background2 )
+                               .clickable( onClick = onClick )
+                               .padding( horizontal = 14.dp )
+        ) {
+            val content = if( filled ) colorPalette().background0 else colorPalette().text
+            androidx.compose.material3.Icon(
+                painter = painterResource( iconId ),
+                contentDescription = null,
+                tint = content,
+                modifier = Modifier.size( 16.dp )
+            )
+            BasicText(
+                text = text,
+                style = typography().xs.semiBold.color( content ),
+                maxLines = 1
+            )
+        }
 
     @Composable
     fun Buttons(

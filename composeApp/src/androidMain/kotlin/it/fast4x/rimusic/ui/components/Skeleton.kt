@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -32,6 +33,7 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PlayerPosition
 import it.fast4x.rimusic.enums.UiType
+import app.kreate.android.themed.common.component.DetailTopBar
 import it.fast4x.rimusic.ui.components.navigation.header.AppHeader
 import it.fast4x.rimusic.ui.components.navigation.nav.AbstractNavigationBar
 import it.fast4x.rimusic.ui.components.navigation.nav.HorizontalNavigationBar
@@ -47,6 +49,10 @@ fun Skeleton(
     onTabChanged: (Int) -> Unit = {},
     miniPlayer: @Composable (() -> Unit)? = null,
     navBarContent: @Composable (@Composable (Int, String, Int) -> Unit) -> Unit,
+    /** Album, artist and playlist pages: a bar with only "back" and these actions */
+    detailActions: (@Composable RowScope.() -> Unit)? = null,
+    /** Next to "back" on those pages, e.g. the search field */
+    detailTitle: (@Composable () -> Unit)? = null,
     content: @Composable AnimatedVisibilityScope.(Int) -> Unit
 ) {
     val navigationBar: AbstractNavigationBar =
@@ -63,7 +69,9 @@ fun Skeleton(
             verticalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
         ) {
-            if( UiType.RiMusic.isCurrent() )
+            if( detailActions != null || detailTitle != null )
+                DetailTopBar( navController, detailActions ?: {}, detailTitle ?: {} )
+            else if( UiType.RiMusic.isCurrent() )
                 AppHeader( navController ).Draw()
 
             if ( NavigationBarPosition.Top.isCurrent() )

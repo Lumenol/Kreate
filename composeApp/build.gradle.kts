@@ -218,9 +218,10 @@ android {
         release {
             isDefault = true
 
-            // Package optimization
-            isMinifyEnabled = true
-            isShrinkResources = true
+            // Package optimization; `-PnoMinify` skips it for quicker local test builds
+            val optimize = !project.hasProperty( "noMinify" )
+            isMinifyEnabled = optimize
+            isShrinkResources = optimize
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

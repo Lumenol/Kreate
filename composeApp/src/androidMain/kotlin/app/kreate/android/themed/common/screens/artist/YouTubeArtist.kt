@@ -1,6 +1,16 @@
 package app.kreate.android.themed.common.screens.artist
 
-import android.content.Intent
+import androidx.compose.runtime.getValue
+import app.kreate.android.themed.common.component.DetailMenu
+import app.kreate.android.themed.common.component.DetailSkeleton
+import app.kreate.android.themed.common.component.shareUrl
+import it.fast4x.rimusic.ui.components.ButtonsRow
+import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.annotation.OptIn
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
@@ -17,19 +27,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -41,7 +47,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -65,19 +70,15 @@ import app.kreate.android.utils.ItemUtils
 import app.kreate.android.utils.innertube.toMediaItem
 import app.kreate.android.utils.innertube.toSong
 import app.kreate.android.utils.renderDescription
-import app.kreate.android.utils.scrollingText
 import app.kreate.android.utils.shallowCompare
 import app.kreate.android.viewmodel.YoutubeArtistViewModel
 import app.kreate.database.models.Song
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.typography
-import it.fast4x.rimusic.ui.components.Skeleton
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
 import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
-import it.fast4x.rimusic.ui.components.themed.AutoResizeText
 import it.fast4x.rimusic.ui.components.themed.Enqueue
-import it.fast4x.rimusic.ui.components.themed.FontSizeRange
 import it.fast4x.rimusic.ui.components.themed.PlayNext
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.LocalAppearance
@@ -118,7 +119,7 @@ private fun LazyListScope.renderSections(
 
     item( "${section.title}Header" ) {
         Row(
-            verticalAlignment = Alignment.Bottom,
+            verticalAlignment = Alignment.CenterVertically,
             modifier = sectionTextModifier.fillMaxWidth()
         ) {
             Text(
@@ -129,11 +130,12 @@ private fun LazyListScope.renderSections(
 
             // TODO: Add support for playlists
             if( section.browseId != null && section.contents.fastAll { it is InnertubeSong || it is InnertubeAlbum} )
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
-                    contentDescription = null,
-                    tint = colorPalette().textSecondary,
-                    modifier = Modifier.clickable {
+                BasicText(
+                    text = stringResource( R.string.word_see_all ),
+                    style = typography().xs.semiBold.copy( colorPalette().textSecondary ),
+                    modifier = Modifier.clip( CircleShape )
+                                       .border( 1.dp, colorPalette().textDisabled, CircleShape )
+                                       .clickable {
                         val path = "${section.browseId}?params=${section.params}"
 
                         val route: NavRoutes = if( section.contents.fastAll { it is InnertubeSong } )
@@ -145,6 +147,7 @@ private fun LazyListScope.renderSections(
 
                         route.navigateHere( navController, path )
                     }
+                                       .padding( horizontal = 10.dp, vertical = 6.dp )
                 )
         }
     }
@@ -158,6 +161,8 @@ private fun LazyListScope.renderSections(
       */
     section.contents
            .fastMapNotNull { it as? InnertubeSong }
+           // YouTube lists the same song from its single, album and compilations
+           .distinctBy { it.name.trim().lowercase() }
            .also { songs ->
                itemsIndexed(
                    items = songs,
@@ -313,6 +318,18 @@ fun YouTubeArtist(
         }
     }
 
+    val share = remember {
+        object: MenuIcon {
+            override val iconId: Int = R.drawable.share_social
+            override val menuIconTitle: String
+                @Composable
+                get() = stringResource( R.string.share )
+
+            override fun onShortClick() {
+                artistPage?.shareUrl( Constants.YOUTUBE_MUSIC_URL )?.also( context::shareUrl )
+            }
+        }
+    }
     downloadAllDialog.Render()
     deleteAllDownloadsDialog.Render()
     //</editor-fold>
@@ -326,16 +343,14 @@ fun YouTubeArtist(
             },
             modifier = modifier.fillMaxSize()
         ) {
-            Skeleton(
+            DetailSkeleton(
                 navController = navController,
-                tabIndex = tabIndex,
-                onTabChanged = onTabChanged,
                 miniPlayer = miniPlayer,
-                navBarContent = { item ->
-                    item(0, stringResource(R.string.songs), R.drawable.musical_notes)
-                    item(1, stringResource(R.string.library), R.drawable.library)
+                actions = {
+                    DetailMenu( listOf(share, playNext, enqueue, downloadAllDialog, deleteAllDownloadsDialog) )
                 }
-            ) { currentTabIndex ->
+            ) {
+                val currentTabIndex = tabIndex
                 saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
                     LazyColumn(
                         state = viewModel.listState,
@@ -352,7 +367,7 @@ fun YouTubeArtist(
                                         contentScale = ContentScale.FillWidth,
                                         modifier = Modifier
                                             .aspectRatio(4f / 3)      // Limit height
-                                                           .fillMaxWidth()
+                                            .fillMaxWidth()
                                             .align(Alignment.Center)
                                             .fadingEdge(
                                                 top = WindowInsets.systemBars
@@ -362,79 +377,77 @@ fun YouTubeArtist(
                                             )
                                     )
 
-                                artistPage?.shareUrl( Constants.YOUTUBE_MUSIC_URL )?.also { shareUrl ->
-                                    Icon(
-                                        painter = painterResource( R.drawable.share_social ),
-                                        // TODO: Make a separate string for this (i.e. Share to...)
-                                        contentDescription = stringResource( R.string.listen_on_youtube_music ),
-                                        tint = colorPalette.text.copy( .5f ),
-                                        modifier = Modifier
-                                            .padding(all = 5.dp)
-                                            .size(40.dp)
-                                            .align(Alignment.TopEnd)
-                                            .clickable {
-                                                val sendIntent = Intent().apply {
-                                                    action = Intent.ACTION_SEND
-                                                    type = "text/plain"
-                                                    putExtra(Intent.EXTRA_TEXT, shareUrl)
-                                                }
-
-                                                context.startActivity(
-                                                    Intent.createChooser(sendIntent, null)
-                                                )
-                                            }
+                                // Full name on up to 2 lines, no scrolling text
+                                Column(
+                                    modifier = Modifier.align( Alignment.BottomStart )
+                                                       .padding( horizontal = 20.dp )
+                                ) {
+                                    BasicText(
+                                        // Use local artist name (custom name), otherwise, use online name
+                                        text = (dbArtist?.cleanName() ?: artistPage?.name).orEmpty(),
+                                        style = typography.l.semiBold.copy(
+                                            color = colorPalette.text,
+                                            fontSize = 34.sp,
+                                            lineHeight = 38.sp
+                                        ),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
                                     )
+                                    artistPage?.shortNumMonthlyAudience?.also { monthlyAudience ->
+                                        BasicText(
+                                            text = monthlyAudience,
+                                            style = typography.xs.medium.copy( colorPalette.textSecondary ),
+                                            maxLines = 1
+                                        )
+                                    }
                                 }
-
-                                AutoResizeText(
-                                    // Use local artist name (custom name), otherwise, use online name
-                                    text = (dbArtist?.cleanName() ?: artistPage?.name).orEmpty(),
-                                    style = typography.l.semiBold,
-                                    fontSizeRange = FontSizeRange( 32.sp, 38.sp ),
-                                    fontWeight = typography.l.semiBold.fontWeight,
-                                    fontFamily = typography.l.semiBold.fontFamily,
-                                    color = typography.l.semiBold.color,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .align(Alignment.BottomCenter)
-                                        .padding(horizontal = 30.dp)
-                                        .scrollingText()
-                                )
-                            }
-                        }
-
-                        artistPage?.shortNumMonthlyAudience?.also { monthlyAudience ->
-                            item( "monthlyListeners" ) {
-                                BasicText(
-                                    text = monthlyAudience,
-                                    style = typography().xs.medium,
-                                    maxLines = 1
-                                )
                             }
                         }
 
                         item( "action_buttons") {
                             Row(
-                                horizontalArrangement = Arrangement.Center,
+                                horizontalArrangement = Arrangement.spacedBy( 10.dp ),
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.fillMaxWidth()
+                                                   .padding( horizontal = 20.dp )
+                                                   .padding( top = 12.dp )
                             ) {
                                 followButton.ToolBarButton()
-
-                                Spacer( Modifier.width( 5.dp ) )
-
-                                TabToolBar.Buttons(
-                                    shuffler,
-                                    playNext,
-                                    enqueue,
-                                    radio,
-                                    downloadAllDialog,
-                                    deleteAllDownloadsDialog,
-                                    modifier = Modifier.fillMaxWidth( .8f )
+                                TabToolBar.PillButton(
+                                    text = stringResource( R.string.word_radio ),
+                                    iconId = radio.iconId,
+                                    filled = false,
+                                    onClick = radio::onShortClick
                                 )
+                                Spacer( Modifier.weight( 1f ) )
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.size( 52.dp )
+                                                       .clip( CircleShape )
+                                                       .background( colorPalette.text )
+                                                       .clickable( onClick = shuffler::onShortClick )
+                                ) {
+                                    Icon(
+                                        painter = painterResource( R.drawable.play ),
+                                        contentDescription = stringResource( R.string.shuffle ),
+                                        tint = colorPalette.background0,
+                                        modifier = Modifier.size( 24.dp )
+                                    )
+                                }
                             }
+                        }
+
+                        // Used to be a bottom bar of its own ("Songs" / "Library")
+                        item( "tabs" ) {
+                            ButtonsRow(
+                                chips = listOf(
+                                    0 to stringResource( R.string.artist_tab_popular ),
+                                    1 to stringResource( R.string.artist_tab_in_library )
+                                ),
+                                currentValue = tabIndex,
+                                onValueUpdate = onTabChanged,
+                                modifier = Modifier.fillMaxWidth().padding( top = 12.dp )
+                            )
                         }
 
                         if( artistPage == null && viewModel.isRefreshing ) {

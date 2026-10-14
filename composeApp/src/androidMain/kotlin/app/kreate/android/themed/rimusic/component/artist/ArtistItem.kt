@@ -72,9 +72,9 @@ object ArtistItem: Visual(), MultiplatformItem {
             style = values.titleTextStyle,
             color = values.titleColor,
             maxLines = 1,
-            overflow = TextOverflow.Clip,
+            overflow = TextOverflow.Ellipsis,
             textAlign = textAlign,
-            modifier = modifier.scrollingText()
+            modifier = modifier
         )
 
     @Composable

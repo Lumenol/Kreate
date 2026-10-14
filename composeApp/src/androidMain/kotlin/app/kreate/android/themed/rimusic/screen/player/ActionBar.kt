@@ -22,6 +22,9 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.layout.RowScope
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
@@ -422,8 +425,34 @@ fun BoxScope.ActionBar(
                 }
             }
 
+            val showTabs by Preferences.PLAYER_ACTION_TABS
             val actionsSpaceEvenly by Preferences.PLAYER_ACTION_BUTTONS_SPACED_EVENLY
-            Row(
+            if( showTabs )
+                PlayerTabs(
+                    isShowingLyrics = isShowingLyrics,
+                    onUpNext = { showQueue = true },
+                    onLyrics = {
+                        if( isShowingVisualizer )
+                            isShowingVisualizer = false
+                        isShowingLyrics = !isShowingLyrics
+                    },
+                    onRelated = {
+                        menuState.display {
+                            RelatedSheet( mediaItem, menuState::hide )
+                        }
+                    },
+                    onMenu = {
+                        menuState.display {
+                            PlayerMenu(
+                                navController = navController,
+                                onDismiss = menuState::hide,
+                                mediaItem = mediaItem,
+                                onClosePlayer = onDismiss
+                            )
+                        }
+                    }
+                )
+            else Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = if (actionsSpaceEvenly) Arrangement.SpaceEvenly else Arrangement.SpaceBetween,
                 modifier = Modifier
@@ -706,5 +735,53 @@ fun BoxScope.ActionBar(
                 }
             }
         }
+    }
+}
+
+/** "Up next · Lyrics · Related" tabs of the redesigned player, plus its ⋮ menu */
+@Composable
+private fun PlayerTabs(
+    isShowingLyrics: Boolean,
+    onUpNext: () -> Unit,
+    onLyrics: () -> Unit,
+    onRelated: () -> Unit,
+    onMenu: () -> Unit
+) {
+    @Composable
+    fun RowScope.Tab( @StringRes label: Int, selected: Boolean, onClick: () -> Unit ) =
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.weight( 1f )
+                               .height( 48.dp )
+                               .clip( RoundedCornerShape(12.dp) )
+                               .clickable( onClick = onClick )
+        ) {
+            BasicText(
+                text = stringResource( label ),
+                maxLines = 1,
+                style = typography().s.semiBold.copy( color = colorPalette().text )
+            )
+            // Underline instead of a dimmed color: grey text is unreadable on light covers
+            Box(
+                Modifier.padding( top = 4.dp )
+                        .size( width = 20.dp, height = 2.dp )
+                        .background( if( selected ) colorPalette().text else Color.Transparent, CircleShape )
+            )
+        }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.padding( horizontal = 8.dp ).fillMaxWidth()
+    ) {
+        Tab( R.string.player_tab_up_next, false, onUpNext )
+        Tab( R.string.player_tab_lyrics, isShowingLyrics, onLyrics )
+        Tab( R.string.player_tab_related, false, onRelated )
+        IconButton(
+            icon = R.drawable.ellipsis_vertical,
+            color = colorPalette().text,
+            onClick = onMenu,
+            modifier = Modifier.padding( horizontal = 12.dp ).size( 24.dp )
+        )
     }
 }

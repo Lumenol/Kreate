@@ -1,22 +1,22 @@
 package app.kreate.android.themed.common.screens.album
 
-import android.content.Intent
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import app.kreate.android.themed.common.component.DetailHeader
+import app.kreate.android.themed.common.component.DetailMenu
+import app.kreate.android.themed.common.component.DetailSkeleton
+import app.kreate.android.themed.common.component.HeaderLink
+import app.kreate.android.themed.common.component.LabeledAction
+import app.kreate.android.themed.common.component.shareUrl
+import it.fast4x.rimusic.utils.forcePlayFromBeginning
+import it.fast4x.rimusic.enums.NavRoutes
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
@@ -26,27 +26,21 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastAll
 import androidx.compose.ui.util.fastForEach
 import androidx.compose.ui.util.fastJoinToString
@@ -69,7 +63,6 @@ import app.kreate.android.themed.rimusic.component.song.SongItem
 import app.kreate.android.utils.innertube.CURRENT_LOCALE
 import app.kreate.android.utils.innertube.toMediaItem
 import app.kreate.android.utils.renderDescription
-import app.kreate.android.utils.scrollingText
 import app.kreate.android.utils.shallowCompare
 import app.kreate.database.models.Album
 import app.kreate.database.models.Song
@@ -80,12 +73,8 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.LocalMenuState
-import it.fast4x.rimusic.ui.components.Skeleton
 import it.fast4x.rimusic.ui.components.SwipeablePlaylistItem
-import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
-import it.fast4x.rimusic.ui.components.themed.AutoResizeText
 import it.fast4x.rimusic.ui.components.themed.Enqueue
-import it.fast4x.rimusic.ui.components.themed.FontSizeRange
 import it.fast4x.rimusic.ui.components.themed.PlayNext
 import it.fast4x.rimusic.ui.components.themed.PlaylistsMenu
 import it.fast4x.rimusic.ui.styling.Dimensions
@@ -96,10 +85,7 @@ import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.center
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.enqueue
-import it.fast4x.rimusic.utils.fadingEdge
 import it.fast4x.rimusic.utils.forcePlayAtIndex
-import it.fast4x.rimusic.utils.isLandscape
-import it.fast4x.rimusic.utils.medium
 import it.fast4x.rimusic.utils.semiBold
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -206,139 +192,144 @@ fun YouTubeAlbum(
     params: String?,
     miniPlayer: @Composable () -> Unit = {}
 ) {
-    Skeleton(
+    //<editor-fold desc="Essentials">
+    val player: StatefulPlayer = koinInject()
+    val hapticFeedback = LocalHapticFeedback.current
+    val (colorPalette, typography) = LocalAppearance.current
+    val context = LocalContext.current
+    val menuState = LocalMenuState.current
+    val lazyListState = rememberLazyListState()
+    val menu = LocalBottomMenu.current
+    //</editor-fold>
+
+    var albumPage: InnertubeAlbum? by remember { mutableStateOf( null ) }
+    val dbAlbum: Album? by remember {
+        Database.albumTable
+                .findById( browseId )
+    }.collectAsState( null, Dispatchers.IO )
+    val items by remember {
+        Database.songAlbumMapTable
+                .allSongsOf( browseId )
+    }.collectAsState( emptyList(), Dispatchers.IO )
+    var isRefreshing by remember { mutableStateOf( false ) }
+    val sectionTextModifier = remember {
+        Modifier.padding( 16.dp, 24.dp, 16.dp, 8.dp )
+    }
+
+    //<editor-fold desc="Buttons">
+    val itemSelector = remember {
+        ItemSelector( menuState ) { addAll( items ) }
+    }
+
+    fun getSongs() = itemSelector.ifEmpty { items }
+    fun getMediaItems() = getSongs().map( Song::asMediaItem )
+
+    val bookmark = remember { Bookmark(browseId) }
+    val deleteAllDownloadsDialog = remember {
+        DeleteAllDownloadedDialog(::getSongs)
+    }
+    val downloadALlDialog = remember {
+        DownloadAllDialog( context, ::getSongs )
+    }
+    val shuffle = SongShuffler {
+        getMediaItems().map( MediaItem::asSong )
+    }
+    val radio = Radio( ::getSongs )
+    val locator = Locator( lazyListState, ::getSongs )
+    val playNext = PlayNext {
+        getMediaItems().let {
+            player.addNext( it, context )
+
+            // Turn of selector clears the selected list
+            itemSelector.isActive = false
+        }
+    }
+    val enqueue = Enqueue {
+        getMediaItems().let {
+            player.enqueue( it, context )
+
+            // Turn of selector clears the selected list
+            itemSelector.isActive = false
+        }
+    }
+    val addToPlaylist = PlaylistsMenu.init(
+        navController,
+        { getMediaItems() },
+        { throwable, preview ->
+            Logger.e( throwable, "YouTubeAlbum" ) {
+                "Failed to add songs to playlist ${preview.playlist.name} on HomeSongs"
+            }
+            throwable.printStackTrace()
+        },
+        {
+            // Turn of selector clears the selected list
+            itemSelector.isActive = false
+        }
+    )
+    //<editor-fold defaultstate="collapsed" desc="Album modifiers">
+    val changeTitle = AlbumModifier(
+        iconId = R.drawable.title_edit,
+        messageId = R.string.update_title,
+        getDefaultValue = { dbAlbum?.cleanTitle() ?: "" },
+    ) {
+        updateTitle( browseId, "$MODIFIED_PREFIX$it" )
+    }
+    val changeAuthors = AlbumModifier(
+        iconId = R.drawable.artists_edit,
+        messageId = R.string.update_authors,
+        getDefaultValue = { dbAlbum?.cleanAuthorsText() ?: "" },
+    ) {
+        updateAuthors( browseId, "$MODIFIED_PREFIX$it" )
+    }
+    val changeCover = AlbumModifier(
+        iconId = R.drawable.cover_edit,
+        messageId = R.string.update_cover,
+        getDefaultValue = { dbAlbum?.cleanThumbnailUrl() ?: "" },
+    ) {
+        updateCover( browseId, "$MODIFIED_PREFIX$it" )
+    }
+    //</editor-fold>
+
+    downloadALlDialog.Render()
+    deleteAllDownloadsDialog.Render()
+    changeTitle.Render()
+    changeAuthors.Render()
+    changeCover.Render()
+    //</editor-fold>
+
+    fun onRefresh() = CoroutineScope( Dispatchers.IO ).launch {
+        Innertube.browseAlbum( browseId, CURRENT_LOCALE, params )
+                 .onSuccess {
+                     albumPage = it
+                     updateAlbumInDatabase( dbAlbum, it )
+                 }
+                 .onFailure { err ->
+                     Logger.e( "", err, "YouTubeAlbum" )
+                     Toaster.e( R.string.error_failed_to_load_album )
+                 }
+
+        isRefreshing = false
+    }
+    LaunchedEffect( Unit ) { onRefresh() }
+
+    val currentMediaItem by player.currentMediaItemState.collectAsState()
+    val songItemValues = remember( colorPalette, typography ) {
+        SongItem.Values.from( colorPalette, typography )
+    }
+
+    val thumbnailPainter = ImageFactory.rememberAsyncImagePainter( dbAlbum?.cleanThumbnailUrl() )
+    DetailSkeleton(
         navController = navController,
         miniPlayer = miniPlayer,
-        navBarContent = { item ->
-            item(0, stringResource(R.string.songs), R.drawable.musical_notes)
+        actions = {
+            DetailMenu(
+                listOf(
+                    playNext, enqueue, addToPlaylist, deleteAllDownloadsDialog, locator,
+                    itemSelector, changeTitle, changeAuthors, changeCover
+                )
+            )
         }
     ) {
-        //<editor-fold desc="Essentials">
-        val player: StatefulPlayer = koinInject()
-        val hapticFeedback = LocalHapticFeedback.current
-        val (colorPalette, typography) = LocalAppearance.current
-        val context = LocalContext.current
-        val menuState = LocalMenuState.current
-        val lazyListState = rememberLazyListState()
-        val menu = LocalBottomMenu.current
-        //</editor-fold>
-
-        var albumPage: InnertubeAlbum? by remember { mutableStateOf( null ) }
-        val dbAlbum: Album? by remember {
-            Database.albumTable
-                    .findById( browseId )
-        }.collectAsState( null, Dispatchers.IO )
-        val items by remember {
-            Database.songAlbumMapTable
-                    .allSongsOf( browseId )
-        }.collectAsState( emptyList(), Dispatchers.IO )
-        var isRefreshing by remember { mutableStateOf( false ) }
-        val sectionTextModifier = remember {
-            Modifier.padding( 16.dp, 24.dp, 16.dp, 8.dp )
-        }
-
-        //<editor-fold desc="Buttons">
-        val itemSelector = remember {
-            ItemSelector( menuState ) { addAll( items ) }
-        }
-
-        fun getSongs() = itemSelector.ifEmpty { items }
-        fun getMediaItems() = getSongs().map( Song::asMediaItem )
-
-        val bookmark = remember { Bookmark(browseId) }
-        val deleteAllDownloadsDialog = remember {
-            DeleteAllDownloadedDialog(::getSongs)
-        }
-        val downloadALlDialog = remember {
-            DownloadAllDialog( context, ::getSongs )
-        }
-        val shuffle = SongShuffler {
-            getMediaItems().map( MediaItem::asSong )
-        }
-        val radio = Radio( ::getSongs )
-        val locator = Locator( lazyListState, ::getSongs )
-        val playNext = PlayNext {
-            getMediaItems().let {
-                player.addNext( it, context )
-
-                // Turn of selector clears the selected list
-                itemSelector.isActive = false
-            }
-        }
-        val enqueue = Enqueue {
-            getMediaItems().let {
-                player.enqueue( it, context )
-
-                // Turn of selector clears the selected list
-                itemSelector.isActive = false
-            }
-        }
-        val addToPlaylist = PlaylistsMenu.init(
-            navController,
-            { getMediaItems() },
-            { throwable, preview ->
-                Logger.e( throwable, "YouTubeAlbum" ) {
-                    "Failed to add songs to playlist ${preview.playlist.name} on HomeSongs"
-                }
-                throwable.printStackTrace()
-            },
-            {
-                // Turn of selector clears the selected list
-                itemSelector.isActive = false
-            }
-        )
-        //<editor-fold defaultstate="collapsed" desc="Album modifiers">
-        val changeTitle = AlbumModifier(
-            iconId = R.drawable.title_edit,
-            messageId = R.string.update_title,
-            getDefaultValue = { dbAlbum?.cleanTitle() ?: "" },
-        ) {
-            updateTitle( browseId, "$MODIFIED_PREFIX$it" )
-        }
-        val changeAuthors = AlbumModifier(
-            iconId = R.drawable.artists_edit,
-            messageId = R.string.update_authors,
-            getDefaultValue = { dbAlbum?.cleanAuthorsText() ?: "" },
-        ) {
-            updateAuthors( browseId, "$MODIFIED_PREFIX$it" )
-        }
-        val changeCover = AlbumModifier(
-            iconId = R.drawable.cover_edit,
-            messageId = R.string.update_cover,
-            getDefaultValue = { dbAlbum?.cleanThumbnailUrl() ?: "" },
-        ) {
-            updateCover( browseId, "$MODIFIED_PREFIX$it" )
-        }
-        //</editor-fold>
-
-        downloadALlDialog.Render()
-        deleteAllDownloadsDialog.Render()
-        changeTitle.Render()
-        changeAuthors.Render()
-        changeCover.Render()
-        //</editor-fold>
-
-        fun onRefresh() = CoroutineScope( Dispatchers.IO ).launch {
-            Innertube.browseAlbum( browseId, CURRENT_LOCALE, params )
-                     .onSuccess {
-                         albumPage = it
-                         updateAlbumInDatabase( dbAlbum, it )
-                     }
-                     .onFailure { err ->
-                         Logger.e( "", err, "YouTubeAlbum" )
-                         Toaster.e( R.string.error_failed_to_load_album )
-                     }
-
-            isRefreshing = false
-        }
-        LaunchedEffect( Unit ) { onRefresh() }
-
-        val currentMediaItem by player.currentMediaItemState.collectAsState()
-        val songItemValues = remember( colorPalette, typography ) {
-            SongItem.Values.from( colorPalette, typography )
-        }
-
-        val thumbnailPainter = ImageFactory.rememberAsyncImagePainter( dbAlbum?.cleanThumbnailUrl() )
         DynamicOrientationLayout( thumbnailPainter ) {
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
@@ -356,120 +347,51 @@ fun YouTubeAlbum(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     item( "header" ) {
-                        Box( Modifier.fillMaxWidth() ) {
-                            if (!isLandscape)
-                                Image(
-                                    painter = thumbnailPainter,
-                                    contentDescription = null,
-                                    contentScale = ContentScale.FillWidth,
-                                    modifier = Modifier.aspectRatio( 4f / 3 )      // Limit height
-                                                       .fillMaxWidth()
-                                                       .align( Alignment.Center )
-                                                       .fadingEdge(
-                                                           top = WindowInsets.systemBars
-                                                               .asPaddingValues()
-                                                               .calculateTopPadding() + Dimensions.fadeSpacingTop,
-                                                           bottom = Dimensions.fadeSpacingBottom
-                                                       )
-                                )
-
-                            Icon(
-                                painter = painterResource( R.drawable.share_social ),
-                                // TODO: Make a separate string for this (i.e. Share to...)
-                                contentDescription = stringResource( R.string.listen_on_youtube_music ),
-                                tint = colorPalette().text.copy( .5f ),
-                                modifier = Modifier.padding( all = 5.dp )
-                                                   .size( 40.dp )
-                                                   .align( Alignment.TopEnd )
-                                                   .clickable {
-                                                       albumPage?.shareUrl( Constants.YOUTUBE_MUSIC_URL )?.also { url ->
-                                                           val sendIntent = Intent().apply {
-                                                               action = Intent.ACTION_SEND
-                                                               type = "text/plain"
-                                                               putExtra(Intent.EXTRA_TEXT, url)
-                                                           }
-
-                                                           context.startActivity(
-                                                               Intent.createChooser( sendIntent, null )
-                                                           )
-                                                       }
-                                                   }
-                            )
-
-                            AutoResizeText(
-                                text = dbAlbum?.cleanTitle().orEmpty(),
-                                style = typography().l.semiBold,
-                                fontSizeRange = FontSizeRange( 32.sp, 38.sp ),
-                                fontWeight = typography().l.semiBold.fontWeight,
-                                fontFamily = typography().l.semiBold.fontFamily,
-                                color = typography().l.semiBold.color,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                textAlign = TextAlign.Center,
-                                modifier = Modifier.align( Alignment.BottomCenter )
-                                                   .padding( horizontal = 30.dp )
-                                                   .scrollingText()
-                            )
+                        val links = remember( albumPage, dbAlbum ) {
+                            albumPage?.artists
+                                     ?.filter { it.text.isNotBlank() }
+                                     ?.map { artist ->
+                                         HeaderLink(
+                                             text = artist.text,
+                                             onClick = artist.navigationEndpoint?.browseEndpoint?.let { endpoint ->
+                                                 {
+                                                     NavRoutes.YT_ARTIST.navigateHere(
+                                                         navController,
+                                                         "${endpoint.browseId}?params=${endpoint.params}"
+                                                     )
+                                                 }
+                                             }
+                                         )
+                                     }
+                                ?: dbAlbum?.cleanAuthorsText()?.let { listOf( HeaderLink(it, null) ) }
+                                ?: emptyList()
                         }
-                    }
-
-                    item( "artists" ) {
-                        val text = remember( albumPage ) {
-                            val artistsText = albumPage?.artists?.fastJoinToString( " • " ) { it.text }.orEmpty()
-                            val yearText = if( albumPage?.year.isNullOrBlank() ) "" else " • ${albumPage?.year}"
-
-                            "$artistsText%s".format(yearText)
+                        val details = remember( albumPage ) {
+                            listOfNotNull(
+                                albumPage?.year,
+                                albumPage?.subtitle?.runs?.fastJoinToString( "" ) { it.text }
+                            ).filter( String::isNotBlank ).joinToString( " · " )
                         }
-                        BasicText(
-                            text = text,
-                            style = typography().xs.medium.copy( colorPalette().textSecondary ),
-                            maxLines = 1
-                        )
-                    }
 
-                    item( "subtitle" ) {
-                        BasicText(
-                            text = albumPage?.subtitle?.runs?.fastJoinToString( "" ) { it.text }.orEmpty(),
-                            style = typography().xs.medium.copy( colorPalette().textSecondary ),
-                            maxLines = 1
-                        )
-                    }
-
-                    item( "action_buttons" ) {
-                        Row(
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
+                        DetailHeader(
+                            cover = thumbnailPainter,
+                            title = dbAlbum?.cleanTitle().orEmpty(),
+                            links = links,
+                            details = details,
+                            onPlay = {
+                                player.stopRadio()
+                                player.forcePlayFromBeginning( getMediaItems() )
+                            },
+                            onShuffle = shuffle::onShortClick
                         ) {
-                            // Place this button alone so we can space it further from other buttons
-                            bookmark.ToolBarButton()
-
-                            Spacer( Modifier.width(15.dp) )
-
-                            TabToolBar.Buttons(
-                                downloadALlDialog,
-                                deleteAllDownloadsDialog,
-                                shuffle,
-                                radio,
-                                locator,
-                                itemSelector,
-                                changeTitle,
-                                changeAuthors,
-                                changeCover,
-                                playNext,
-                                enqueue,
-                                addToPlaylist,
-                                modifier = Modifier.fillMaxWidth( .8f )
-                            )
+                            bookmark.ObserveState()
+                            LabeledAction( bookmark, stringResource( R.string.word_save ) )
+                            LabeledAction( downloadALlDialog, stringResource( R.string.download ) )
+                            LabeledAction( radio, stringResource( R.string.word_radio ) )
+                            LabeledAction( painterResource( R.drawable.share_social ), stringResource( R.string.share ) ) {
+                                albumPage?.shareUrl( Constants.YOUTUBE_MUSIC_URL )?.also( context::shareUrl )
+                            }
                         }
-                    }
-
-                    stickyHeader( "songs" ) {
-                        Text(
-                            text = stringResource( R.string.songs ),
-                            style = typography().m.semiBold,
-                            modifier = sectionTextModifier.fillMaxWidth()
-                        )
                     }
 
                     if( items.isEmpty() )

@@ -374,7 +374,9 @@ fun ControlsEssential(
     val playPauseRoundness by shouldBePlayingTransition.animateDp(
         transitionSpec = { tween(durationMillis = 100, easing = LinearEasing) },
         label = "playPauseRoundness",
-        targetValueByState = { if (it) 32.dp else 16.dp }
+        // The default button stays a circle (like most players); other styles
+        // keep morphing between rounded square (paused) and circle (playing)
+        targetValueByState = { if (it || playerPlayButtonType == PlayerPlayButtonType.Default) 32.dp else 16.dp }
     )
 
     var queueLoopType by Preferences.QUEUE_LOOP_TYPE

@@ -1082,23 +1082,6 @@ fun MediaItemMenu(
                         .height(8.dp)
                 )
 
-                if ( !isLocal && isSongExist ) {
-                    MenuEntry(
-                        icon = R.drawable.title_edit,
-                        text = stringResource(R.string.update_title),
-                        onClick = {
-                            showDialogChangeSongTitle = true
-                        }
-                    )
-                    MenuEntry(
-                        icon = R.drawable.title_edit,
-                        text = stringResource(R.string.update_authors),
-                        onClick = {
-                            showDialogChangeSongArtist = true
-                        }
-                    )
-                }
-
                 if (!isLocal) onStartRadio?.let { onStartRadio ->
                     MenuEntry(
                         icon = R.drawable.radio,
@@ -1523,6 +1506,24 @@ fun MediaItemMenu(
                         onClick = {
                             onDismiss()
                             onRemoveFromPlaylist()
+                        }
+                    )
+                }
+
+                // Rarely used: after the everyday actions instead of first
+                if ( !isLocal && isSongExist ) {
+                    MenuEntry(
+                        icon = R.drawable.title_edit,
+                        text = stringResource(R.string.update_title),
+                        onClick = {
+                            showDialogChangeSongTitle = true
+                        }
+                    )
+                    MenuEntry(
+                        icon = R.drawable.title_edit,
+                        text = stringResource(R.string.update_authors),
+                        onClick = {
+                            showDialogChangeSongArtist = true
                         }
                     )
                 }

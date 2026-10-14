@@ -11,30 +11,20 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
-import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.ExperimentalTextApi
-import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
 import androidx.navigation.NavController
@@ -50,15 +40,11 @@ import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
-import it.fast4x.rimusic.ui.components.themed.Header
 import it.fast4x.rimusic.ui.components.themed.InHistoryMediaItemMenu
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.LocalAppearance
 import it.fast4x.rimusic.ui.styling.px
-import it.fast4x.rimusic.utils.align
-import it.fast4x.rimusic.utils.medium
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.koin.compose.koinInject
 
@@ -83,7 +69,8 @@ fun LocalSongSearch(
     val (colorPalette, typography) = LocalAppearance.current
     val hapticFeedback = LocalHapticFeedback.current
 
-    val items by remember {
+    // Keyed on the text: without it the list kept the text of the first frame
+    val items by remember( textFieldValue.text ) {
         Database.songTable
                 .findAllTitleArtistContains( textFieldValue.text )
                 .distinctUntilChanged()
@@ -101,9 +88,6 @@ fun LocalSongSearch(
 
     var thumbnailRoundness by Preferences.THUMBNAIL_BORDER_RADIUS
 
-    val focusRequester = remember {
-        FocusRequester()
-    }
 
     //val navigationBarPosition by rememberPreference(navigationBarPositionKey, NavigationBarPosition.Bottom)
     //val contentWidth = context.preferences.getFloat(contentWidthKey,0.8f)
@@ -127,123 +111,10 @@ fun LocalSongSearch(
         LazyColumn(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current
-                .only(WindowInsetsSides.Vertical + WindowInsetsSides.End).asPaddingValues(),
+                .only(WindowInsetsSides.Bottom + WindowInsetsSides.End).asPaddingValues(),
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            item(
-                key = "header",
-                contentType = 0
-            ) {
-                /*
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                ) {
-                    HeaderWithIcon(
-                        title = "${stringResource(R.string.search)} ${stringResource(R.string.library)}",
-                        iconId = R.drawable.library,
-                        enabled = true,
-                        showIcon = true,
-                        modifier = Modifier
-                            .padding(bottom = 8.dp),
-                        onClick = {}
-                    )
-
-                }
-                 */
-                Header(
-                    titleContent = {
-                        BasicTextField(
-                            value = textFieldValue,
-                            onValueChange = onTextFieldValueChanged,
-                            textStyle = typography().l.medium.align(TextAlign.Start),
-                            singleLine = true,
-                            maxLines = 1,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
-                            cursorBrush = SolidColor(colorPalette().text),
-                            decorationBox = decorationBox,
-                            modifier = Modifier
-                                .background(
-                                    colorPalette().background1,
-                                    shape = thumbnailRoundness.shape
-                                )
-                                .padding(all = 4.dp)
-                                .focusRequester(focusRequester)
-                                .fillMaxWidth()
-                        )
-                    },
-                    actionsContent = {
-                        /*
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier
-                                .padding(horizontal = 40.dp)
-                                .fillMaxWidth()
-                        ) {
-                            IconButton(
-                                onClick = onAction1,
-                                icon = R.drawable.globe,
-                                color = colorPalette().favoritesIcon,
-                                modifier = Modifier
-                                    .size(24.dp)
-                            )
-                            IconButton(
-                                onClick = onAction2,
-                                icon = R.drawable.library,
-                                color = colorPalette().favoritesIcon,
-                                modifier = Modifier
-                                    .size(24.dp)
-                            )
-                            IconButton(
-                                onClick = onAction3,
-                                icon = R.drawable.link,
-                                color = colorPalette().favoritesIcon,
-                                modifier = Modifier
-                                    .size(24.dp)
-                            )
-                            /*
-                            IconButton(
-                                onClick = onAction4,
-                                icon = R.drawable.chevron_back,
-                                color = colorPalette().favoritesIcon,
-                                modifier = Modifier
-                                    .size(24.dp)
-                            )
-                             */
-                        }
-                        /*
-                        if (textFieldValue.text.isNotEmpty()) {
-                            SecondaryTextButton(
-                                text = stringResource(R.string.clear),
-                                onClick = { onTextFieldValueChanged(TextFieldValue()) }
-                            )
-                        }
-                         */
-
-                         */
-                    },
-                    /*
-                    modifier = Modifier
-                        .drawBehind {
-
-                            val strokeWidth = 1 * density
-                            val y = size.height - strokeWidth / 2
-
-                            drawLine(
-                                color = colorPalette().textDisabled,
-                                start = Offset(x = 0f, y = y/2),
-                                end = Offset(x = size.maxDimension, y = y/2),
-                                strokeWidth = 2.dp.toPx()
-                            )
-                        }
-                     */
-                )
-            }
-
             items(
                 items = items,
                 key = Song::id,
@@ -271,9 +142,5 @@ fun LocalSongSearch(
         }
 
         FloatingActionsContainerWithScrollToTop(lazyListState = lazyListState)
-    }
-    LaunchedEffect(Unit) {
-        delay(300)
-        focusRequester.requestFocus()
     }
 }
