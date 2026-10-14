@@ -60,8 +60,9 @@ class Bookmark(
         albumTable.toggleBookmark( albumId )
     }
 
+    /** Keeps the icon in sync with the database; [ToolBarButton] calls it too */
     @Composable
-    override fun ToolBarButton() {
+    fun ObserveState() {
         LaunchedEffect( Unit ) {
             var isInit by mutableStateOf( true )
 
@@ -80,7 +81,11 @@ class Bookmark(
                             downloadOnBookmark()
                     }
         }
+    }
 
+    @Composable
+    override fun ToolBarButton() {
+        ObserveState()
         super<MenuIcon>.ToolBarButton()
     }
 }

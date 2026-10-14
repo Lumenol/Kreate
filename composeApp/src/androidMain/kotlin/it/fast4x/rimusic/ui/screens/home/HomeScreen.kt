@@ -17,6 +17,7 @@ import it.fast4x.compose.persist.PersistMapCleanup
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.models.toUiMood
 import it.fast4x.rimusic.ui.components.Skeleton
+import app.kreate.android.themed.common.component.MainTabs
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.getValue
@@ -76,13 +77,7 @@ fun HomeScreen(
         tabIndex,
         onTabChanged,
         miniPlayer,
-        navBarContent = { Item ->
-            if ( Preferences.QUICK_PICKS_PAGE.value ) {
-                Item(0, stringResource(R.string.home), R.drawable.home)
-                Item(DISCOVER_TAB, stringResource(R.string.discover), R.drawable.globe)
-            }
-            Item(libraryTab, stringResource(R.string.library), R.drawable.library)
-        }
+        navBarContent = { MainTabs.Items( it, libraryTab ) }
     ) { currentTabIndex ->
         saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
             if( currentTabIndex in LIBRARY_TABS )
@@ -132,8 +127,8 @@ fun HomeScreen(
     }
 }
 
-private const val DISCOVER_TAB = 6
-private val LIBRARY_TABS = 1..4
+private const val DISCOVER_TAB = MainTabs.DISCOVER
+private val LIBRARY_TABS = MainTabs.LIBRARY
 
 /** Songs, artists, albums and playlists as chips on top of the Library tab */
 @Composable

@@ -807,6 +807,12 @@
     <string name="player_tab_lyrics">Lyrics</string>
     <string name="player_tab_related">Related</string>
     <string name="player_related_empty">No related songs found</string>
+    <string name="word_play">Play</string>
+    <string name="word_save">Save</string>
+    <string name="word_radio">Radio</string>
+    <string name="artist_tab_popular">Popular</string>
+    <string name="artist_tab_in_library">In your library</string>
+    <string name="word_see_all">See all</string>
     <string name="info_explicit_song">This song may not be suitable for all ages</string>
     <string name="info_added_by_smart_recommendations">Added by smart recommendations</string>
     <string name="info_delete_cache">Delete cache</string>

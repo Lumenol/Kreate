@@ -44,7 +44,7 @@ class AppHeader(
         ) {
             Button(
                 R.drawable.chevron_back,
-                colorPalette().favoritesIcon,
+                colorPalette().text,
                 0.dp,
                 24.dp
             ).Draw()

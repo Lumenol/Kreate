@@ -810,6 +810,12 @@ Volume BAS : titre précédent</string>
     <string name="player_tab_lyrics">Paroles</string>
     <string name="player_tab_related">Similaires</string>
     <string name="player_related_empty">Aucun titre similaire trouvé</string>
+    <string name="word_play">Lire</string>
+    <string name="word_save">Enregistrer</string>
+    <string name="word_radio">Radio</string>
+    <string name="artist_tab_popular">Populaires</string>
+    <string name="artist_tab_in_library">Dans ta bibliothèque</string>
+    <string name="word_see_all">Tout voir</string>
     <string name="info_explicit_song">Ce titre n\'est peut-être pas adapté à tous les âges </string>
     <string name="info_added_by_smart_recommendations">Ajouté par les recommandations intelligentes</string>
     <string name="info_delete_cache">Supprimer le cache</string>
