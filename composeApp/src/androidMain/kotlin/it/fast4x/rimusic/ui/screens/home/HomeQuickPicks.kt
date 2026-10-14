@@ -471,6 +471,134 @@ fun HomeQuickPicks(
 
                 WelcomeMessage()
 
+                // The account's own YouTube home (filters, listen again, quick picks, mixes)
+                // comes first; generic discovery sections follow
+                homePageInit?.let { home ->
+
+                    if( home.chips.isNotEmpty() )
+                        ButtonsRow(
+                            chips = home.chips.map { it to it.title },
+                            currentValue = selectedHomeChip,
+                            // Tapping the selected chip again goes back to the unfiltered home
+                            onValueUpdate = { selectedHomeChip = it.takeIf { chip -> chip != selectedHomeChip } },
+                            modifier = Modifier.padding( vertical = 8.dp )
+                        )
+
+                    val page = if( selectedHomeChip == null ) home else filteredHomePage
+                    if( page == null )
+                        repeat( 2 ) {
+                            ItemUtils.PlaceholderRowItem {
+                                AlbumItem.VerticalPlaceholder()
+                            }
+                        }
+
+                    page?.sections?.forEach { section ->
+                        // A leading unparsable item must not hide a section that has
+                        // valid ones after it, so drop nulls before deciding.
+                        val items = section.items.fastFilterNotNull()
+                        if (items.isEmpty()) return@forEach
+
+                        // Sections whose header carries a "More" button open the full
+                        // listing (e.g. "Mixed for you" -> FEmusic_mixed_for_you), which
+                        // the mood route already knows how to browse and render.
+                        val more = section.endpoint?.takeIf { it.browseId.isNotBlank() }
+
+                        BasicText(
+                            text = section.title,
+                            style = typography().l.semiBold.color(colorPalette().text),
+                            modifier = Modifier.let { base ->
+                                                   if( more == null ) base
+                                                   else base.clickable {
+                                                       onMoodClick(
+                                                           Innertube.Mood.Item(
+                                                               title = section.title,
+                                                               stripeColor = 0L,
+                                                               endpoint = NavigationEndpoint.Endpoint.Browse(
+                                                                   browseId = more.browseId,
+                                                                   params = more.params
+                                                               )
+                                                           )
+                                                       )
+                                                   }
+                                               }
+                                               .padding(horizontal = 16.dp)
+                                               .padding(vertical = 4.dp)
+                        )
+
+                        val currentMediaItem by player.currentMediaItemState.collectAsState()
+                        val songs = items.filterIsInstance<Innertube.SongItem>()
+                        if( songs.size == items.size ) {
+                            // Song-only sections ("Quick picks"...) as a grid, like the official app
+                            val distinctSongs = songs.fastDistinctBy( Innertube.SongItem::key )
+                            val rows = distinctSongs.size.coerceAtMost( 4 )
+                            val songItemValues = remember( colorPalette, typography ) {
+                                SongItem.Values.from( colorPalette, typography )
+                            }
+
+                            LazyHorizontalGrid(
+                                rows = GridCells.Fixed( rows ),
+                                contentPadding = endPaddingValues,
+                                modifier = Modifier.fillMaxWidth()
+                                                   .height( Dimensions.itemsVerticalPadding * rows * 9 )
+                            ) {
+                                items(
+                                    items = distinctSongs,
+                                    key = Innertube.SongItem::key
+                                ) { song ->
+                                    SongItem.Render(
+                                        innertubeSong = song,
+                                        hapticFeedback = hapticFeedback,
+                                        isPlaying = song.key == currentMediaItem?.mediaId,
+                                        values = songItemValues,
+                                        modifier = Modifier.width( itemInHorizontalGridWidth ),
+                                        onLongClick = {
+                                            bottomMenu.show( MenuPage.Song( song.asMediaItem ), true )
+                                        },
+                                        onClick = { player.forcePlay( song.asMediaItem ) }
+                                    )
+                                }
+                            }
+                        } else
+                            ItemUtils.LazyRowItem(
+                                navController = navController,
+                                innertubeItems = items,
+                                currentlyPlaying = currentMediaItem?.mediaId
+                            )
+                    }
+                    // Non-null, so the fallback below only applies when there's no home at all
+                    Unit
+                } ?: if (!isYouTubeLoggedIn()) BasicText(
+                    text = stringResource(R.string.log_in_to_ytm),
+                    style = typography().xs.center,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .padding(vertical = 32.dp)
+                        .fillMaxWidth()
+                        .clickable {
+                            NavRoutes.settings.navigateHere( navController )
+                        }
+                ) else {
+                    repeat(3) {
+                        SongItem.Placeholder()
+                    }
+
+                    repeat( 2 ) {
+                        Text(
+                            text = "",
+                            style = typography.l.semiBold,
+                            modifier = Modifier.padding( 16.dp, 24.dp, 16.dp, 8.dp )
+                                               .fillMaxWidth( .45f )
+                                               .shimmerEffect()
+                        )
+
+                        ItemUtils.PlaceholderRowItem {
+                            AlbumItem.VerticalPlaceholder()
+                        }
+                    }
+                }
+
+
                 if (showTips) {
                     Title2Actions(
                         title = stringResource(R.string.tips),
@@ -1017,130 +1145,6 @@ fun HomeQuickPicks(
 
                 }
 
-                homePageInit?.let { home ->
-
-                    if( home.chips.isNotEmpty() )
-                        ButtonsRow(
-                            chips = home.chips.map { it to it.title },
-                            currentValue = selectedHomeChip,
-                            // Tapping the selected chip again goes back to the unfiltered home
-                            onValueUpdate = { selectedHomeChip = it.takeIf { chip -> chip != selectedHomeChip } },
-                            modifier = Modifier.padding( vertical = 8.dp )
-                        )
-
-                    val page = if( selectedHomeChip == null ) home else filteredHomePage
-                    if( page == null )
-                        repeat( 2 ) {
-                            ItemUtils.PlaceholderRowItem {
-                                AlbumItem.VerticalPlaceholder()
-                            }
-                        }
-
-                    page?.sections?.forEach { section ->
-                        // A leading unparsable item must not hide a section that has
-                        // valid ones after it, so drop nulls before deciding.
-                        val items = section.items.fastFilterNotNull()
-                        if (items.isEmpty()) return@forEach
-
-                        // Sections whose header carries a "More" button open the full
-                        // listing (e.g. "Mixed for you" -> FEmusic_mixed_for_you), which
-                        // the mood route already knows how to browse and render.
-                        val more = section.endpoint?.takeIf { it.browseId.isNotBlank() }
-
-                        BasicText(
-                            text = section.title,
-                            style = typography().l.semiBold.color(colorPalette().text),
-                            modifier = Modifier.let { base ->
-                                                   if( more == null ) base
-                                                   else base.clickable {
-                                                       onMoodClick(
-                                                           Innertube.Mood.Item(
-                                                               title = section.title,
-                                                               stripeColor = 0L,
-                                                               endpoint = NavigationEndpoint.Endpoint.Browse(
-                                                                   browseId = more.browseId,
-                                                                   params = more.params
-                                                               )
-                                                           )
-                                                       )
-                                                   }
-                                               }
-                                               .padding(horizontal = 16.dp)
-                                               .padding(vertical = 4.dp)
-                        )
-
-                        val currentMediaItem by player.currentMediaItemState.collectAsState()
-                        val songs = items.filterIsInstance<Innertube.SongItem>()
-                        if( songs.size == items.size ) {
-                            // Song-only sections ("Quick picks"...) as a grid, like the official app
-                            val distinctSongs = songs.fastDistinctBy( Innertube.SongItem::key )
-                            val rows = distinctSongs.size.coerceAtMost( 4 )
-                            val songItemValues = remember( colorPalette, typography ) {
-                                SongItem.Values.from( colorPalette, typography )
-                            }
-
-                            LazyHorizontalGrid(
-                                rows = GridCells.Fixed( rows ),
-                                contentPadding = endPaddingValues,
-                                modifier = Modifier.fillMaxWidth()
-                                                   .height( Dimensions.itemsVerticalPadding * rows * 9 )
-                            ) {
-                                items(
-                                    items = distinctSongs,
-                                    key = Innertube.SongItem::key
-                                ) { song ->
-                                    SongItem.Render(
-                                        innertubeSong = song,
-                                        hapticFeedback = hapticFeedback,
-                                        isPlaying = song.key == currentMediaItem?.mediaId,
-                                        values = songItemValues,
-                                        modifier = Modifier.width( itemInHorizontalGridWidth ),
-                                        onLongClick = {
-                                            bottomMenu.show( MenuPage.Song( song.asMediaItem ), true )
-                                        },
-                                        onClick = { player.forcePlay( song.asMediaItem ) }
-                                    )
-                                }
-                            }
-                        } else
-                            ItemUtils.LazyRowItem(
-                                navController = navController,
-                                innertubeItems = items,
-                                currentlyPlaying = currentMediaItem?.mediaId
-                            )
-                    }
-                    // Non-null, so the fallback below only applies when there's no home at all
-                    Unit
-                } ?: if (!isYouTubeLoggedIn()) BasicText(
-                    text = stringResource(R.string.log_in_to_ytm),
-                    style = typography().xs.center,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier
-                        .padding(vertical = 32.dp)
-                        .fillMaxWidth()
-                        .clickable {
-                            NavRoutes.settings.navigateHere( navController )
-                        }
-                ) else {
-                    repeat(3) {
-                        SongItem.Placeholder()
-                    }
-
-                    repeat( 2 ) {
-                        Text(
-                            text = "",
-                            style = typography.l.semiBold,
-                            modifier = Modifier.padding( 16.dp, 24.dp, 16.dp, 8.dp )
-                                               .fillMaxWidth( .45f )
-                                               .shimmerEffect()
-                        )
-
-                        ItemUtils.PlaceholderRowItem {
-                            AlbumItem.VerticalPlaceholder()
-                        }
-                    }
-                }
 
                 Spacer(modifier = Modifier.height(Dimensions.bottomSpacer))
 
