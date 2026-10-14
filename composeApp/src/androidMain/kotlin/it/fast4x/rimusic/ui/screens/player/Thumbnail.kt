@@ -22,7 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -359,11 +359,9 @@ fun Thumbnail(
                     )
                 }
 
-                var errorCounter by remember { mutableIntStateOf(0) }
-
-                if (error != null) {
-                    errorCounter = errorCounter.plus(1)
-                    if (errorCounter < 3) {
+                // Report each error once; writing state here during composition looped forever
+                LaunchedEffect( error ) {
+                    if (error != null) {
                         Logger.e( error?.cause?.cause ) { "Playback error" }
                         Toaster.e(
                             if (currentWindow.mediaItem.isLocal)
@@ -381,8 +379,7 @@ fun Thumbnail(
                                 else -> unknownplaybackerror
                             }
                         )
-                    //    player.seekToNext()
-                    } else errorCounter = 0
+                    }
                 }
             }
             /*
