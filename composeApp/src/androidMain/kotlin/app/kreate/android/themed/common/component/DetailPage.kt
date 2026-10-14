@@ -149,26 +149,33 @@ data class HeaderLink( val text: String, val onClick: (() -> Unit)? )
  */
 @Composable
 fun DetailHeader(
-    cover: Painter,
+    cover: Painter?,
     title: String,
     links: List<HeaderLink>,
     details: String,
     onPlay: () -> Unit,
     onShuffle: () -> Unit,
+    /** Instead of [cover], e.g. the 4-cover mosaic of a playlist */
+    coverContent: (@Composable (Modifier) -> Unit)? = null,
     actions: @Composable RowScope.() -> Unit
 ) = Column(
     horizontalAlignment = Alignment.CenterHorizontally,
     modifier = Modifier.fillMaxWidth().padding( horizontal = 20.dp )
 ) {
-    if( !isLandscape )
+    val coverModifier = Modifier.padding( top = 4.dp, bottom = 18.dp )
+                                .size( 208.dp )
+                                .clip( RoundedCornerShape(10.dp) )
+                                .background( colorPalette().background1 )
+    if( isLandscape ) {
+        // The cover sits on the side in landscape
+    } else if( coverContent != null )
+        coverContent( coverModifier )
+    else if( cover != null )
         Image(
             painter = cover,
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier.padding( top = 4.dp, bottom = 18.dp )
-                               .size( 208.dp )
-                               .clip( RoundedCornerShape(10.dp) )
-                               .background( colorPalette().background1 )
+            modifier = coverModifier
         )
 
     BasicText(
@@ -252,9 +259,9 @@ private fun RowScope.WidePill( text: String, @DrawableRes iconId: Int, filled: B
         )
     }
 
-/** Round icon with its name underneath, instead of an unlabeled toolbar icon */
+/** Round icon with its name underneath, instead of an unlabeled toolbar icon; [selected] = switched on */
 @Composable
-fun LabeledAction( icon: Painter, label: String, onClick: () -> Unit ) =
+fun LabeledAction( icon: Painter, label: String, selected: Boolean = false, onClick: () -> Unit ) =
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = Modifier.width( 76.dp )
@@ -266,12 +273,12 @@ fun LabeledAction( icon: Painter, label: String, onClick: () -> Unit ) =
             contentAlignment = Alignment.Center,
             modifier = Modifier.size( 44.dp )
                                .clip( CircleShape )
-                               .background( colorPalette().background2 )
+                               .background( if( selected ) colorPalette().text else colorPalette().background2 )
         ) {
             Icon(
                 painter = icon,
                 contentDescription = null,
-                tint = colorPalette().text,
+                tint = if( selected ) colorPalette().background0 else colorPalette().text,
                 modifier = Modifier.size( 20.dp )
             )
         }
@@ -286,7 +293,7 @@ fun LabeledAction( icon: Painter, label: String, onClick: () -> Unit ) =
 
 @Composable
 fun LabeledAction( button: it.fast4x.rimusic.ui.components.tab.toolbar.Icon, label: String ) =
-    LabeledAction( button.icon, label, button::onShortClick )
+    LabeledAction( button.icon, label, onClick = button::onShortClick )
 
 /** Opens Android's share sheet with [url] */
 fun android.content.Context.shareUrl( url: String ) =

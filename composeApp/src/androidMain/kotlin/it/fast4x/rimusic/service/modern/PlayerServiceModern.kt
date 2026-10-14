@@ -643,7 +643,7 @@ class PlayerServiceModern:
                 }
                 wallpaper_cleared = true
             } catch (e: IOException) {
-                Toaster.e("Failed to revert wallpaper")
+                Toaster.e( R.string.error_revert_wallpaper )
             }
         }
     }

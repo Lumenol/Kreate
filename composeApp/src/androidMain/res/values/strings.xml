@@ -817,6 +817,11 @@
     <string name="search_recent">Recent searches</string>
     <string name="word_artist">Artist</string>
     <string name="search_fill">Fill in the search field</string>
+    <string name="word_suggestions">Suggestions</string>
+    <string name="error_clipboard">Could not use the clipboard, try again</string>
+    <string name="info_parental_control_enabled">Parental control is enabled</string>
+    <string name="error_revert_wallpaper">Could not restore the wallpaper</string>
+    <string name="no_new_releases_for_favorite_artists">There are no new releases for your favorite artists</string>
     <string name="info_explicit_song">This song may not be suitable for all ages</string>
     <string name="info_added_by_smart_recommendations">Added by smart recommendations</string>
     <string name="info_delete_cache">Delete cache</string>

@@ -820,6 +820,11 @@ Volume BAS : titre précédent</string>
     <string name="search_recent">Recherches récentes</string>
     <string name="word_artist">Artiste</string>
     <string name="search_fill">Mettre dans le champ de recherche</string>
+    <string name="word_suggestions">Suggestions</string>
+    <string name="error_clipboard">Impossible d\'utiliser le presse-papiers, réessayez</string>
+    <string name="info_parental_control_enabled">Le contrôle parental est activé</string>
+    <string name="error_revert_wallpaper">Impossible de rétablir le fond d\'écran</string>
+    <string name="no_new_releases_for_favorite_artists">Pas de nouveautés pour vos artistes favoris</string>
     <string name="info_explicit_song">Ce titre n\'est peut-être pas adapté à tous les âges </string>
     <string name="info_added_by_smart_recommendations">Ajouté par les recommandations intelligentes</string>
     <string name="info_delete_cache">Supprimer le cache</string>

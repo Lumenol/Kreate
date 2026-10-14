@@ -951,7 +951,7 @@ MainActivity :
                                     if ( !song.explicit && !Preferences.PARENTAL_CONTROL.value )
                                         player.forcePlay(song.asMediaItem)
                                     else
-                                        Toaster.w( "Parental control is enabled" )
+                                        Toaster.w( R.string.info_parental_control_enabled )
                                 }
                             }
                         }

@@ -21,7 +21,7 @@ fun textCopyToClipboard(textCopied:String, context: Context) {
         clipboardManager.setPrimaryClip(ClipData.newPlainText("", textCopied))
     }.onFailure {
         Logger.e( "", it, "CopyToClipboard" )
-        Toaster.e( "Failed to copy text to clipboard, try again" )
+        Toaster.e( R.string.error_clipboard )
     }
     // Only show a toast for Android 12 and lower.
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2)
@@ -33,10 +33,11 @@ fun textCopyFromClipboard(context: Context): String {
     var textCopied by remember { mutableStateOf("") }
     val clipboardManager = context.getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
     runCatching {
-        textCopied = clipboardManager.primaryClip?.getItemAt(0)?.coerceToText(context).toString()
+        // An empty clipboard used to come out as the text "null"
+        textCopied = clipboardManager.primaryClip?.getItemAt(0)?.coerceToText(context)?.toString().orEmpty()
     }.onFailure {
         Logger.e( "", it, "CopyToClipboard" )
-        Toaster.e( "Failed to copy text to clipboard, try again" )
+        Toaster.e( R.string.error_clipboard )
     }
     // Only show a toast for Android 12 and lower.
     if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2)
