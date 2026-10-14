@@ -270,8 +270,11 @@ sealed class Preferences<T>(
         val PLAYER_TYPE by lazy {
             Enum( preferences, Key.PLAYER_TYPE, "playerType", PlayerType.Essential )
         }
+        // Player defaults follow the redesign: a plain progress bar with elapsed / total
+        // time, a real play button, the ⋮ menu (sleep timer, radio, equalizer) shown,
+        // no duplicate repeat button nor extra remaining/queue time counters
         val PLAYER_TIMELINE_TYPE by lazy {
-            Enum( preferences, Key.PLAYER_TIMELINE_TYPE, "playerTimelineType", PlayerTimelineType.FakeAudioBar )
+            Enum( preferences, Key.PLAYER_TIMELINE_TYPE, "playerTimelineType", PlayerTimelineType.Default )
         }
         val PLAYER_PORTRAIT_THUMBNAIL_SIZE by lazy {
             Enum( preferences, Key.PLAYER_PORTRAIT_THUMBNAIL_SIZE, "playerThumbnailSize", PlayerThumbnailSize.Biggest )
@@ -283,7 +286,7 @@ sealed class Preferences<T>(
             Enum( preferences, Key.PLAYER_TIMELINE_SIZE, "playerTimelineSize", PlayerTimelineSize.Biggest )
         }
         val PLAYER_PLAY_BUTTON_TYPE by lazy {
-            Enum( preferences, Key.PLAYER_PLAY_BUTTON_TYPE, "playerPlayButtonType", PlayerPlayButtonType.Disabled )
+            Enum( preferences, Key.PLAYER_PLAY_BUTTON_TYPE, "playerPlayButtonType", PlayerPlayButtonType.Default )
         }
         val PLAYER_BACKGROUND by lazy {
             Enum( preferences, Key.PLAYER_BACKGROUND, "playerBackgroundColors", PlayerBackgroundColors.BlurredCoverColor )
@@ -340,7 +343,7 @@ sealed class Preferences<T>(
             Boolean( preferences, Key.PLAYER_ACTION_DOWNLOAD, "showButtonPlayerDownload", true )
         }
         val PLAYER_ACTION_LOOP by lazy {
-            Boolean( preferences, Key.PLAYER_ACTION_LOOP, "showButtonPlayerLoop", true )
+            Boolean( preferences, Key.PLAYER_ACTION_LOOP, "showButtonPlayerLoop", false )
         }
         val PLAYER_ACTION_SHOW_LYRICS by lazy {
             Boolean( preferences, Key.PLAYER_ACTION_SHOW_LYRICS, "showButtonPlayerLyrics", true )
@@ -355,7 +358,7 @@ sealed class Preferences<T>(
             Boolean( preferences, Key.PLAYER_ACTION_SLEEP_TIMER, "showButtonPlayerSleepTimer", false )
         }
         val PLAYER_ACTION_SHOW_MENU by lazy {
-            Boolean( preferences, Key.PLAYER_ACTION_SHOW_MENU, "showButtonPlayerMenu", false )
+            Boolean( preferences, Key.PLAYER_ACTION_SHOW_MENU, "showButtonPlayerMenu", true )
         }
         val PLAYER_ACTION_START_RADIO by lazy {
             Boolean( preferences, Key.PLAYER_ACTION_START_RADIO, "showButtonPlayerStartRadio", false )
@@ -388,7 +391,7 @@ sealed class Preferences<T>(
             Boolean( preferences, Key.PLAYER_IS_ACTIONS_BAR_EXPANDED, "swipeUpQueue", true )
         }
         val PLAYER_SHOW_TOTAL_QUEUE_TIME by lazy {
-            Boolean( preferences, Key.PLAYER_SHOW_TOTAL_QUEUE_TIME, "showTotalTimeQueue", true )
+            Boolean( preferences, Key.PLAYER_SHOW_TOTAL_QUEUE_TIME, "showTotalTimeQueue", false )
         }
         val PLAYER_IS_QUEUE_DURATION_EXPANDED by lazy {
             Boolean( preferences, Key.PLAYER_IS_QUEUE_DURATION_EXPANDED, "queueDurationExpanded", true )
@@ -403,10 +406,10 @@ sealed class Preferences<T>(
             Boolean( preferences, Key.PLAYER_SHOW_NEXT_IN_QUEUE_THUMBNAIL, "showalbumcover", true )
         }
         val PLAYER_SHOW_SONGS_REMAINING_TIME by lazy {
-            Boolean( preferences, Key.PLAYER_SHOW_SONGS_REMAINING_TIME, "showRemainingSongTime", true )
+            Boolean( preferences, Key.PLAYER_SHOW_SONGS_REMAINING_TIME, "showRemainingSongTime", false )
         }
         val PLAYER_SHOW_SEEK_BUTTONS by lazy {
-            Boolean(preferences, Key.PLAYER_SHOW_SEEK_BUTTONS, "", true)
+            Boolean(preferences, Key.PLAYER_SHOW_SEEK_BUTTONS, "", false)
         }
         val PLAYER_SHOW_TOP_ACTIONS_BAR by lazy {
             Boolean( preferences, Key.PLAYER_SHOW_TOP_ACTIONS_BAR, "showTopActionsBar", true )
