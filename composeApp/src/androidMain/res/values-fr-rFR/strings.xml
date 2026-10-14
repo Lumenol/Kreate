@@ -696,6 +696,8 @@ Volume BAS : titre précédent</string>
     <string name="add_rimusic_to_ytm_favorites">Aimer (Liker) les titres aimés (Likés) de kreate sur YouTube</string>
     <string name="songs_liked_yt_failed">Impossible d\'aimer le titre sur YouTube</string>
     <string name="songs_unliked_yt_failed">Impossible de ne pas aimer le titre sur YouTube</string>
+    <string name="songs_disliked_yt">Le titre est marqué « Je n\'aime pas » sur YouTube</string>
+    <string name="songs_disliked_yt_failed">Impossible de marquer le titre « Je n\'aime pas » sur YouTube</string>
     <string name="adding_yt_to_pl_failed">Une erreur s\'est produite pour les 50 titres suivants. Ajout des titres à la playlist un par un</string>
     <string name="songs_add_yt_success">Ajout du titre à la playlist YouTube</string>
     <string name="songs_add_yt_failed">Impossible d\'ajouter le titre à la playlist YouTube</string>

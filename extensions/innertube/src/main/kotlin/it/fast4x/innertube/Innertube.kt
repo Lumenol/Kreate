@@ -89,6 +89,7 @@ object Innertube {
     internal const val unsubscribe = "/youtubei/v1/subscription/unsubscribe"
     internal const val like = "/youtubei/v1/like/like"
     internal const val removelike = "/youtubei/v1/like/removelike"
+    internal const val dislike = "/youtubei/v1/like/dislike"
 
     internal const val musicResponsiveListItemRendererMask = "musicResponsiveListItemRenderer(flexColumns,fixedColumns,thumbnail,navigationEndpoint,badges)"
     internal const val musicTwoRowItemRendererMask = "musicTwoRowItemRenderer(thumbnailRenderer,title,subtitle,navigationEndpoint)"
@@ -603,6 +604,18 @@ object Innertube {
     suspend fun likeVideoOrSong(
         videoId: String,
     ) = client.post(like) {
+        setLogin(setLogin = true)
+        setBody(
+            LikeBody(
+                context = DefaultWeb,
+                target = LikeBody.Target.VideoTarget(videoId = videoId)
+            )
+        )
+    }
+
+    suspend fun dislikeVideoOrSong(
+        videoId: String,
+    ) = client.post(dislike) {
         setLogin(setLogin = true)
         setBody(
             LikeBody(
