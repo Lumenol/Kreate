@@ -65,7 +65,7 @@ private const val METHOD_IOS = 2
  * This is created to reduce load to Room
  */
 private val justInserted = AtomicReference("")
-private val cachedStreamUrl = ConcurrentHashMap<String, YTPlayerUtils.PlaybackData>()
+private val cachedStreamUrl = ConcurrentHashMap<String, CachedStream>()
 private val logger = Logger.withTag("dataspec")
 private val jsonParser =
     Json {
@@ -301,42 +301,40 @@ private fun getPlayableUrl( songId: String ): YTPlayerUtils.PlaybackData = runBl
     if( !CipherDeobfuscator.isInitialized() )
         CipherDeobfuscator.initialize( get(Context::class.java) )
 
-    val cache: YTPlayerUtils.PlaybackData
-    if( cachedStreamUrl.contains(songId) ) {
-        cache = cachedStreamUrl[songId]!!
-        // Handle expired url with 30secs offset
-        val remainingSeconds = cache.streamExpiresInSeconds.seconds - 30.seconds
-        if( remainingSeconds.inWholeMilliseconds <= System.currentTimeMillis() ) {
-            logger.d { "Cached stream url of $songId expired" }
-
-            cachedStreamUrl.remove( songId )
-            return@runBlocking getPlayableUrl( songId )
-        } else
+    cachedStreamUrl[songId]?.let { cached ->
+        if( System.currentTimeMillis() < cached.expiresAtMillis ) {
             logger.d { "Stream url of $songId is cached" }
-    } else {
-        if( YouTube.visitorData == null )
-            YouTube.visitorData()
-                   .onFailure { err ->
-                       logger.e( "", err )
-                   }
-                   .onSuccess {
-                       YouTube.visitorData = it
-                       logger.d { "Fetched visitorData: $it" }
-                   }
+            return@runBlocking cached.data
+        }
 
-        val connManager = get<Context>(Context::class.java).getSystemService<ConnectivityManager>()!!
-        val audioQuality by Preferences.AUDIO_QUALITY
-
-        cache = YTPlayerUtils.playerResponseForPlayback(
-            videoId = songId,
-            playlistId = null,
-            audioQuality = audioQuality,
-            connectivityManager = connManager
-        ).getOrThrow()
-        cachedStreamUrl[songId] = cache
+        logger.d { "Cached stream url of $songId expired" }
+        cachedStreamUrl.remove( songId )
     }
 
-    cache
+    if( YouTube.visitorData == null )
+        YouTube.visitorData()
+               .onFailure { err ->
+                   logger.e( "", err )
+               }
+               .onSuccess {
+                   YouTube.visitorData = it
+                   logger.d { "Fetched visitorData: $it" }
+               }
+
+    val connManager = get<Context>(Context::class.java).getSystemService<ConnectivityManager>()!!
+    val audioQuality by Preferences.AUDIO_QUALITY
+
+    val data = YTPlayerUtils.playerResponseForPlayback(
+        videoId = songId,
+        playlistId = null,
+        audioQuality = audioQuality,
+        connectivityManager = connManager
+    ).getOrThrow()
+    // Handle expired url with 30secs offset
+    val validFor = data.streamExpiresInSeconds.seconds - 30.seconds
+    cachedStreamUrl[songId] = CachedStream( data, System.currentTimeMillis() + validFor.inWholeMilliseconds )
+
+    data
 }
 //</editor-fold>
 
@@ -363,6 +361,11 @@ fun Scope.resolveInnertubeMedia( dataSpec: DataSpec ): DataSpec {
  */
 fun clearCachedStreamUrlOf( songId: String ): Boolean =
     cachedStreamUrl.remove( songId ) != null
+
+private data class CachedStream(
+    val data: YTPlayerUtils.PlaybackData,
+    val expiresAtMillis: Long
+)
 
 private data class StreamCache(
     val cpn: String,
