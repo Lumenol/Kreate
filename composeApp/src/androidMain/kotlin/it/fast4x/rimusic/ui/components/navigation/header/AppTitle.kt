@@ -20,7 +20,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import app.kreate.android.R
 import app.kreate.android.drawable.AppIcon
-import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.ui.components.themed.Button
 import me.knighthat.utils.Toaster
@@ -35,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.semiBold
+import androidx.compose.ui.graphics.Color
 
 private fun appIconClickAction(
     navController: NavController,
@@ -86,19 +86,22 @@ private fun AppLogo(
     )
 }
 
+private val DEBUG_RED = Color( 0xFFF87171 )
+
 /**
  * Debug mode must stay obvious, so it's spelled out, but as one compact
  * status pill instead of red text over two lines. Tap to open settings.
  */
 @Composable
 private fun DebugBadge( navController: NavController ) {
-    val red = colorPalette().red
+    // The palette's red (#BF4040) is too dark to read on a dark header
+    val red = DEBUG_RED
 
     Row(
         horizontalArrangement = Arrangement.spacedBy( 4.dp ),
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.clip( CircleShape )
-                           .background( red.copy( alpha = .15f ) )
+                           .background( red.copy( alpha = .18f ) )
                            .clickable {
                                Toaster.s( R.string.info_debug_mode_is_enabled )
 
