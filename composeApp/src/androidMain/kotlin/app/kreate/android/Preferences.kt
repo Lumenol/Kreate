@@ -840,7 +840,9 @@ sealed class Preferences<T>(
             Enum( preferences, Key.MAIN_THEME, "UiType", UiType.RiMusic )
         }
         val COLOR_PALETTE by lazy {
-            Enum( preferences, Key.COLOR_PALETTE, "colorPaletteName", ColorPaletteName.Dynamic )
+            // Neutral by default: tinting the whole app with the cover's color changed its
+            // look with every song; the full-screen player keeps its cover-colored background
+            Enum( preferences, Key.COLOR_PALETTE, "colorPaletteName", ColorPaletteName.Default )
         }
         val THEME_MODE by lazy {
             Enum( preferences, Key.THEME_MODE, "colorPaletteMode", ColorPaletteMode.Dark )
