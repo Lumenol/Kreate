@@ -35,7 +35,7 @@ object PlayerConfigStore {
 
     private val logger = Logger.withTag(TAG)
     private val REMOTE_URL by lazy {
-        val encoded = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL01ldHJvbGlzdEdyb3VwL01ldHJvbGlzdC9tYWluL2FwcC9zcmMvbWFpbi9hc3NldHMvcGxheWVyX2NvbmZpZ3MuanNvbg=="
+        val encoded = "aHR0cHM6Ly9yYXcuZ2l0aHVidXNlcmNvbnRlbnQuY29tL01ldHJvbGlzdEdyb3VwL2ZhcmFkYXkvbWFzdGVyL3JlZ2lzdHJ5L3BsYXllcl9jb25maWdzLmpzb24="
         String(Base64.decode(encoded, Base64.DEFAULT), StandardCharsets.UTF_8)
     }
 
