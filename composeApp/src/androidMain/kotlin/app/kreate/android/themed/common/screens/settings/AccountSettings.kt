@@ -200,6 +200,13 @@ fun AccountSettings(
                             preference = Preferences.YOUTUBE_ALBUMS_SYNC,
                             title = syncAlbumsTitle
                         )
+
+                    if( search appearsIn R.string.setting_entry_youtube_report_playback )
+                        SettingComponents.BooleanEntry(
+                            preference = Preferences.YOUTUBE_REPORT_PLAYBACK,
+                            title = stringResource( R.string.setting_entry_youtube_report_playback ),
+                            subtitle = stringResource( R.string.setting_description_youtube_report_playback )
+                        )
                 }
 
                 CustomModalBottomSheet(

@@ -624,6 +624,9 @@ sealed class Preferences<T>(
         val YOUTUBE_ALBUMS_SYNC by lazy {
             Boolean(preferences, Key.YOUTUBE_ALBUMS_SYNC, "", false)
         }
+        val YOUTUBE_REPORT_PLAYBACK by lazy {
+            Boolean(preferences, Key.YOUTUBE_REPORT_PLAYBACK, "", false)
+        }
         val YOUTUBE_VISITOR_DATA by lazy {
             String( encryptedPreferences, Key.YOUTUBE_VISITOR_DATA, "ytVisitorData", Constants.CHROME_WINDOWS_VISITOR_DATA )
         }
@@ -1860,6 +1863,7 @@ sealed class Preferences<T>(
         const val YOUTUBE_PLAYLISTS_SYNC = "YouTubePlaylistsSync"
         const val YOUTUBE_ARTISTS_SYNC = "YouTubeArtistsSync"
         const val YOUTUBE_ALBUMS_SYNC = "YouTubeAlbumsSync"
+        const val YOUTUBE_REPORT_PLAYBACK = "YouTubeReportPlayback"
         const val YOUTUBE_VISITOR_DATA = "YouTubeVisitorData"
         const val YOUTUBE_SYNC_ID = "YouTubeSyncId"
         const val YOUTUBE_COOKIES = "YouTubeCookies"
