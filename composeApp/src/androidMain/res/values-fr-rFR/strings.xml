@@ -255,8 +255,8 @@
     <string name="sort_name">Nom</string>
     <string name="sort_songs_number">Numéro du titre</string>
     <string name="sort_relative_listening_time">Temps d\'écoute relatif</string>
-    <string name="follow">Suivre</string>
-    <string name="following">Suit</string>
+    <string name="follow">S\'abonner</string>
+    <string name="following">Abonné</string>
     <string name="sleeptimer_stop">arrêter</string>
     <string name="player_keep_minimized">Garder minimisé</string>
     <string name="when_click_on_a_song_player_start_minimized">Lorsque vous cliquez sur un titre, le lecteur démarre minimisé</string>

@@ -4,7 +4,9 @@ import android.content.Context
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.border
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
@@ -14,7 +16,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.kreate.android.R
@@ -23,11 +24,12 @@ import it.fast4x.innertube.YtMusic
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
-import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
 import it.fast4x.rimusic.ui.components.tab.toolbar.Button
 import it.fast4x.rimusic.ui.components.tab.toolbar.Descriptive
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
+import it.fast4x.rimusic.utils.conditional
 import it.fast4x.rimusic.utils.isNetworkConnected
+import it.fast4x.rimusic.utils.semiBold
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -75,29 +77,24 @@ class FollowButton private constructor(
             Database.artistTable
                     .isFollowing( artist.id )
         }.collectAsState( false, Dispatchers.IO )
+        // Neutral like the rest of the page: outlined when not subscribed,
+        // grey once subscribed (the accent color clashed with the palette)
         val colorPalette = colorPalette()
-
-        val buttonProps: Triple<Int, Color, Color> = remember( isFollowed ) {
-            val text = if( isFollowed ) R.string.following else R.string.follow
-            val background = if( isFollowed ) colorPalette.accent else colorPalette.background2
-            val foreground = if( isFollowed ) colorPalette.onAccent else colorPalette.text
-
-            Triple(text, background, foreground)
-        }
+        val shape = RoundedCornerShape(50)
 
         Box(
-            modifier = Modifier.requiredSize(
-                                   width = 100.dp,
-                                   height = TabToolBar.TOOLBAR_ICON_SIZE
-                               )
-                               .clip( RoundedCornerShape(50) )
-                               .background( buttonProps.second )
-                               .clickable( onClick = ::onShortClick ),
+            modifier = Modifier.height( 36.dp )
+                               .clip( shape )
+                               .conditional( isFollowed ) { background( colorPalette.background2 ) }
+                               .conditional( !isFollowed ) { border( 1.dp, colorPalette.textDisabled, shape ) }
+                               .clickable( onClick = ::onShortClick )
+                               .padding( horizontal = 16.dp ),
             contentAlignment = Alignment.Center
         ) {
             BasicText(
-                text = stringResource( buttonProps.first ),
-                style = typography().s.copy( color = buttonProps.third ),
+                text = stringResource( if( isFollowed ) R.string.following else R.string.follow ),
+                style = typography().xs.semiBold.copy( color = colorPalette.text ),
+                maxLines = 1
             )
         }
     }
