@@ -483,6 +483,7 @@
     <string name="info_sleep_timer_delayed_at_end_of_song">Délai de mise en veille reporté à la fin du titre</string>
     <string name="lyricsbackground">Arrière-plan des paroles</string>
     <string name="info_debug_mode_enabled">Mode debug activé</string>
+    <string name="debug_badge">Debug</string>
     <string name="info_debug_mode_is_enabled">Le mode débogage est activé, n\'oubliez pas de le désactiver dans les paramètres</string>
     <string name="tapqueue">Appuyer pour ouvrir la file d\'attente</string>
     <string name="header_view_top_of">Voir le top %s de …</string>

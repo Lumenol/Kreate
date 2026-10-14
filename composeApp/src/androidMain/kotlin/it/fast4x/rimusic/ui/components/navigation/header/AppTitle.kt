@@ -24,6 +24,17 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.ui.components.themed.Button
 import me.knighthat.utils.Toaster
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.Icon
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.semiBold
 
 private fun appIconClickAction(
     navController: NavController,
@@ -75,6 +86,39 @@ private fun AppLogo(
     )
 }
 
+/**
+ * Debug mode must stay obvious, so it's spelled out, but as one compact
+ * status pill instead of red text over two lines. Tap to open settings.
+ */
+@Composable
+private fun DebugBadge( navController: NavController ) {
+    val red = colorPalette().red
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy( 4.dp ),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.clip( CircleShape )
+                           .background( red.copy( alpha = .15f ) )
+                           .clickable {
+                               Toaster.s( R.string.info_debug_mode_is_enabled )
+
+                               NavRoutes.settings.navigateHere( navController )
+                           }
+                           .padding( horizontal = 8.dp, vertical = 4.dp )
+    ) {
+        Icon(
+            painter = painterResource( R.drawable.bug ),
+            contentDescription = null,
+            tint = red,
+            modifier = Modifier.size( 14.dp )
+        )
+        BasicText(
+            text = stringResource( R.string.debug_badge ),
+            style = typography().xxs.semiBold.color( red )
+        )
+    }
+}
+
 // START
 @Composable
 fun AppTitle(
@@ -85,22 +129,12 @@ fun AppTitle(
         horizontalArrangement = Arrangement.spacedBy( 8.dp ),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // The big "Music" wordmark and the red "debug mode enabled" text took a lot of
-        // room on every screen: keep the icon, and flag debug mode with a small bug
+        // The big "Music" wordmark took a lot of room on every screen: keep the icon,
+        // and turn the two-line "debug mode enabled" text into a compact badge
         AppLogo( navController, context )
 
         if (Preference.debugLog())
-            Button(
-                iconId = R.drawable.bug,
-                color = colorPalette().red,
-                padding = 0.dp,
-                size = 18.dp,
-                modifier = Modifier.clickable {
-                    Toaster.s( R.string.info_debug_mode_is_enabled )
-
-                    NavRoutes.settings.navigateHere( navController )
-                }
-            ).Draw()
+            DebugBadge( navController )
 
         if(Preference.parentalControl())
             Button(
