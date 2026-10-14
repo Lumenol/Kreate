@@ -18,6 +18,7 @@ import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
 import app.kreate.android.Preferences
 import app.kreate.android.R
+import app.kreate.android.utils.ConnectivityUtils
 import app.kreate.database.models.PersistentQueue
 import app.kreate.di.clearCachedStreamUrlOf
 import co.touchlab.kermit.Logger
@@ -45,6 +46,11 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Duration.Companion.seconds
 
 private const val MAX_RECOVERY_ATTEMPTS = 2
+private val RECOVERABLE_ERROR_CODES = setOf(
+    PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
+    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
+    PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT
+)
 
 @OptIn(ExperimentalAtomicApi::class)
 @UnstableApi
@@ -161,14 +167,14 @@ class ExoPlayerListener(
         }
 
     /**
-     * A stream url rejected mid-song (expired, 403...) is fixable by fetching a new one,
-     * so drop the cached url and resume from where playback stopped.
+     * A stream url rejected mid-song (expired, 403...) or a network hiccup is fixable by
+     * fetching a new url, so drop the cached one and resume from where playback stopped.
      *
      * @return `true` if recovery was started and the error should not be handled further
      */
     @MainThread
     private fun tryRecover( error: PlaybackException ): Boolean {
-        if( error.errorCode != PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS
+        if( error.errorCode !in RECOVERABLE_ERROR_CODES
             || recoveryAttempts >= MAX_RECOVERY_ATTEMPTS
         ) return false
         val mediaId = player.currentMediaItem?.mediaId ?: return false
@@ -243,6 +249,17 @@ class ExoPlayerListener(
         logger.e( error ) {
             "${error.errorCodeName} on ${item?.mediaId} (${item?.mediaMetadata?.title}) " +
                     "at ${player.currentPosition}/${player.duration}ms, root cause: $rootCause"
+        }
+
+        val isNetworkError = rootCause is NoInternetException
+                || error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED
+                || error.errorCode == PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_TIMEOUT
+        if( isNetworkError && !ConnectivityUtils.isAvailable.value ) {
+            // [PlayerServiceModern] resumes playback once the network is back
+            logger.i { "network lost, waiting for it to resume ${item?.mediaId}" }
+            waitingForNetwork.value = true
+            printErrorMessage( context.getString( R.string.no_connection ) )
+            return
         }
 
         if( tryRecover( error ) ) return
