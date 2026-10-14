@@ -160,6 +160,8 @@ import java.util.Locale
 import java.util.Objects
 import kotlin.math.sqrt
 import kotlin.system.exitProcess
+import it.fast4x.rimusic.utils.isLandscape
+import it.fast4x.rimusic.enums.NavigationBarPosition
 
 
 @UnstableApi
@@ -316,6 +318,8 @@ MainActivity :
             window.addFlags( WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON )
 
         setContent {
+            val landscape = isLandscape
+            LaunchedEffect( landscape ) { NavigationBarPosition.isLandscape.value = landscape }
             val colorPaletteMode by Preferences.THEME_MODE
             val isPicthBlack = colorPaletteMode == ColorPaletteMode.PitchBlack
 
