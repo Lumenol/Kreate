@@ -27,6 +27,9 @@
     <string name="enqueue">Mettre en file d\'attente</string>
     <string name="shuffle">Aléatoire</string>
     <string name="play_all">Tout lire</string>
+    <string name="share">Partager</string>
+    <string name="quick_play_next">À la suite</string>
+    <string name="quick_add_to_playlist">Playlist</string>
     <string name="from_wikipedia_cca">De Wikipédia sous licence Creative Commons CC-BY-SA 3.0</string>
     <string name="library">Bibliothèque</string>
     <string name="dialog_title_delete_playlist">Voulez-vous vraiment supprimer cette playlist ?</string>

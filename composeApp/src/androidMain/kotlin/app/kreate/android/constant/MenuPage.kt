@@ -55,7 +55,8 @@ sealed interface MenuPage {
             listOf(
                 // Common actions first, rare ones (editing, export) after,
                 // the destructive delete last so it isn't hit by mistake
-                SongPlayNextButton(), SongEnqueueButton(), AddSongToPlaylistButton(),
+                // Play next and add to playlist are quick actions on top of the menu
+                SongEnqueueButton(),
                 SongRadioButton(), GoToArtistButton(), GoToAlbumButton(),
                 ViewSongDetailsButton(),
                 SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton(),
@@ -67,7 +68,8 @@ sealed interface MenuPage {
 
         override suspend fun getButtons(): List<MenuButton<*>> =
             listOf(
-                SongPlayNextButton(), SongEnqueueButton(), AddSongToPlaylistButton(),
+                // Play next and add to playlist are quick actions on top of the menu
+                SongEnqueueButton(),
                 SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton()
             )
     }
@@ -79,7 +81,8 @@ sealed interface MenuPage {
 
         override suspend fun getButtons(): List<MenuButton<*>> =
             listOf(
-                SongPlayNextButton(), SongEnqueueButton(), AddSongToPlaylistButton(),
+                // Play next and add to playlist are quick actions on top of the menu
+                SongEnqueueButton(),
                 SongRadioButton(), GoToArtistButton(), GoToAlbumButton(),
                 ViewSongDetailsButton(),
                 SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton(),
@@ -95,7 +98,8 @@ sealed interface MenuPage {
 
         override suspend fun getButtons(): List<MenuButton<*>> =
             listOf(
-                SongPlayNextButton(), SongEnqueueButton(), AddSongToPlaylistButton(),
+                // Play next and add to playlist are quick actions on top of the menu
+                SongEnqueueButton(),
                 SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton(),
                 RemoveSongFromPlaylist(playlist)
             )
