@@ -70,10 +70,7 @@ data class HomePage(
             }
 
             private fun fromMusicResponsiveListItemRenderer( renderer: MusicResponsiveListItemRenderer ): Innertube.SongItem? =
-                Innertube.SongItem.from( renderer )?.let { song ->
-                    // from() prefixes explicit titles with "e:", but the item already shows an E badge
-                    song.copy( info = song.info?.copy( name = song.info.name?.removePrefix( "e:" ) ) )
-                }?.copy(
+                Innertube.SongItem.from( renderer )?.copy(
                     // Second column is "Artist • 39M plays": keep only the linked artists
                     authors = renderer.flexColumns
                                       .getOrNull( 1 )
