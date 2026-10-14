@@ -128,7 +128,9 @@ object ItemUtils {
                 coverHeight = maxOf( coverHeight, cover )
                 textPx = maxOf( textPx, titlePx + subtitleLines * subtitleLinePx )
             }
-            with( density ) { coverHeight + textPx.toDp() } + 12.dp
+            // Cover's bottom padding + title's vertical padding (AlbumItem.VERTICAL_SPACING
+            // each) plus a little room for font metrics: 12 dp clipped the subtitle
+            with( density ) { coverHeight + textPx.toDp() } + ( AlbumItem.VERTICAL_SPACING * 3 ).dp + 12.dp
         }
 
         LazyRow(
