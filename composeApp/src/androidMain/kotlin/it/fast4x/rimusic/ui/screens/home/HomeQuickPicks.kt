@@ -82,6 +82,7 @@ import it.fast4x.compose.persist.persist
 import it.fast4x.compose.persist.persistList
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.YtMusic
+import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.innertube.models.bodies.NextBody
 import it.fast4x.innertube.requests.HomePage
 import it.fast4x.innertube.requests.chartsPageComplete
@@ -175,7 +176,9 @@ fun HomeQuickPicks(
     var discoverPageInit by persist<Innertube.DiscoverPage>("home/discoveryAlbums")
     var discoverPagePreference by rememberPreference(quickPicsDiscoverPageKey, discoverPageInit)
 
-    var homePageResult by persist<Result<HomePage?>>("home/homePage")
+    // Distinct tags: persist is a keyed cache, so sharing one tag made the Result
+    // and the page overwrite each other in the same slot (see relatedPage above).
+    var homePageResult by persist<Result<HomePage?>>("home/homePageResult")
     var homePageInit by persist<HomePage?>("home/homePage")
     var homePagePreference by rememberPreference(quickPicsHomePageKey, homePageInit)
 
@@ -289,7 +292,11 @@ fun HomeQuickPicks(
         relatedPageResult = null
         relatedInit = null
         trending = null
-        refreshScope.launch(Dispatchers.IO) {
+        // Stay on the main thread: loadData() writes the `loadedData` preference,
+        // whose setter is @MainThread — off the main thread it refuses the write and
+        // toasts an error. The actual fetching already runs in loadData()'s own
+        // Dispatchers.IO coroutine, so nothing blocks here.
+        refreshScope.launch {
             refreshing = true
             loadData()
             delay(500)
@@ -997,21 +1004,43 @@ fun HomeQuickPicks(
 
                 homePageInit?.let { page ->
 
-                    page.sections.forEach {
-                        if (it.items.isEmpty() || it.items.firstOrNull()?.key == null) return@forEach
-                        println("homePage() in HomeYouTubeMusic sections: ${it.title} ${it.items.size}")
-                        println("homePage() in HomeYouTubeMusic sections items: ${it.items}")
+                    page.sections.forEach { section ->
+                        // A leading unparsable item must not hide a section that has
+                        // valid ones after it, so drop nulls before deciding.
+                        val items = section.items.fastFilterNotNull()
+                        if (items.isEmpty()) return@forEach
+
+                        // Sections whose header carries a "More" button open the full
+                        // listing (e.g. "Mixed for you" -> FEmusic_mixed_for_you), which
+                        // the mood route already knows how to browse and render.
+                        val more = section.endpoint?.takeIf { it.browseId.isNotBlank() }
 
                         BasicText(
-                            text = it.title,
+                            text = section.title,
                             style = typography().l.semiBold.color(colorPalette().text),
-                            modifier = Modifier.padding(horizontal = 16.dp).padding(vertical = 4.dp)
+                            modifier = Modifier.let { base ->
+                                                   if( more == null ) base
+                                                   else base.clickable {
+                                                       onMoodClick(
+                                                           Innertube.Mood.Item(
+                                                               title = section.title,
+                                                               stripeColor = 0L,
+                                                               endpoint = NavigationEndpoint.Endpoint.Browse(
+                                                                   browseId = more.browseId,
+                                                                   params = more.params
+                                                               )
+                                                           )
+                                                       )
+                                                   }
+                                               }
+                                               .padding(horizontal = 16.dp)
+                                               .padding(vertical = 4.dp)
                         )
 
                         val currentMediaItem by player.currentMediaItemState.collectAsState()
                         ItemUtils.LazyRowItem(
                             navController = navController,
-                            innertubeItems = it.items.fastFilterNotNull(),
+                            innertubeItems = items,
                             currentlyPlaying = currentMediaItem?.mediaId
                         )
                     }

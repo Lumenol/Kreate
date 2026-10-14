@@ -29,10 +29,19 @@ data class HomePage(
                     label = renderer.header?.musicCarouselShelfBasicHeaderRenderer?.strapline?.runs?.firstOrNull()?.text,
                     thumbnail = renderer.header?.musicCarouselShelfBasicHeaderRenderer?.thumbnail?.musicThumbnailRenderer?.getThumbnailUrl(),
 
-                    endpoint = BrowseEndpoint(
-                        browseId = renderer.header?.musicCarouselShelfBasicHeaderRenderer?.moreContentButton?.buttonRenderer?.navigationEndpoint?.browseEndpoint?.browseId
-                            ?: "",
-                    ),
+                    endpoint = renderer.header
+                                       ?.musicCarouselShelfBasicHeaderRenderer
+                                       ?.moreContentButton
+                                       ?.buttonRenderer
+                                       ?.navigationEndpoint
+                                       ?.browseEndpoint
+                                       ?.let { endpoint ->
+                                           // Keep the params too: they're what the "More"
+                                           // button carries alongside the browse id.
+                                           endpoint.browseId?.let { id ->
+                                               BrowseEndpoint( browseId = id, params = endpoint.params )
+                                           }
+                                       },
                     items = renderer.contents
                         .map {
                             fromMusicTwoRowItemRenderer(

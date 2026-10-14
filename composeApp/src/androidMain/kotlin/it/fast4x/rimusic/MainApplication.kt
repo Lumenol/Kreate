@@ -25,6 +25,7 @@ import coil3.memory.MemoryCache
 import coil3.network.ktor3.KtorNetworkFetcherFactory
 import coil3.request.crossfade
 import com.metrolist.innertube.YouTube
+import it.fast4x.innertube.Innertube as OldInnertube
 import io.ktor.client.HttpClient
 import it.fast4x.rimusic.utils.AppLifecycleTracker
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +54,13 @@ class MainApplication : Application(), SingletonImageLoader.Factory {
         YouTube.cookie = Preferences.YOUTUBE_COOKIES.value
         YouTube.visitorData = Preferences.YOUTUBE_VISITOR_DATA.value
         YouTube.dataSyncId = Preferences.YOUTUBE_SYNC_ID.value
+
+        // This module backs the YT Music home page and never received the
+        // credentials, so its requests went out anonymous and YouTube answered
+        // with the generic home instead of the user's own shelves.
+        OldInnertube.cookie = Preferences.YOUTUBE_COOKIES.value.ifBlank { null }
+        OldInnertube.visitorData = Preferences.YOUTUBE_VISITOR_DATA.value
+        OldInnertube.dataSyncId = Preferences.YOUTUBE_SYNC_ID.value.ifBlank { null }
 
         // Register network callback
         getSystemService<ConnectivityManager>()?.run {
