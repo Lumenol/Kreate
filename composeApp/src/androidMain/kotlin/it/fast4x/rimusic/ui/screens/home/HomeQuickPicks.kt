@@ -145,6 +145,8 @@ import kotlin.time.Duration.Companion.seconds
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalCoroutinesApi::class)
@@ -399,6 +401,10 @@ fun HomeQuickPicks(
                 if (isLandscape && maxWidth * 0.475f >= 320.dp) 0.475f else 0.9f
             val itemWidth = maxWidth * moodItemWidthFactor
 
+            // Where the filters sit in the scrolling column: once scrolled past, a copy
+            // stays pinned on top so they're always one tap away
+            var chipsTop by remember { mutableStateOf<Float?>( null ) }
+
             Column(
                 modifier = Modifier
                     .background(colorPalette().background0)
@@ -489,12 +495,11 @@ fun HomeQuickPicks(
                 if (content.personal) homePageInit?.let { home ->
 
                     if( home.chips.isNotEmpty() )
-                        ButtonsRow(
-                            chips = home.chips.map { it to it.title },
-                            currentValue = selectedHomeChip,
-                            // Tapping the selected chip again goes back to the unfiltered home
-                            onValueUpdate = { selectedHomeChip = it.takeIf { chip -> chip != selectedHomeChip } },
-                            modifier = Modifier.padding( vertical = 8.dp )
+                        HomeChips(
+                            chips = home.chips,
+                            selected = selectedHomeChip,
+                            onSelect = { selectedHomeChip = it },
+                            modifier = Modifier.onGloballyPositioned { chipsTop = it.positionInParent().y }
                         )
 
                     val page = if( selectedHomeChip == null ) home else filteredHomePage
@@ -1220,6 +1225,18 @@ fun HomeQuickPicks(
 
             }
 
+            val pinnedChips = homePageInit?.chips.orEmpty()
+            val top = chipsTop
+            if( content.personal && pinnedChips.isNotEmpty() && top != null && scrollState.value > top )
+                HomeChips(
+                    chips = pinnedChips,
+                    selected = selectedHomeChip,
+                    onSelect = { selectedHomeChip = it },
+                    modifier = Modifier.align( Alignment.TopStart )
+                                       .fillMaxWidth()
+                                       .background( colorPalette().background0 )
+                )
+
 
             val showFloatingIcon by Preferences.SHOW_FLOATING_ICON
             if (UiType.ViMusic.isCurrent() && showFloatingIcon)
@@ -1245,3 +1262,19 @@ enum class HomeContent( val personal: Boolean, val discovery: Boolean ) {
     Home( personal = true, discovery = false ),
     Discover( personal = false, discovery = true )
 }
+
+/** YouTube's home filters, with "All" first to go back to the unfiltered home */
+@Composable
+private fun HomeChips(
+    chips: List<HomePage.Chip>,
+    selected: HomePage.Chip?,
+    onSelect: (HomePage.Chip?) -> Unit,
+    modifier: Modifier = Modifier
+) =
+    ButtonsRow(
+        chips = listOf<Pair<HomePage.Chip?, String>>( null to stringResource( R.string.all ) ) +
+                chips.map { it to it.title },
+        currentValue = selected,
+        onValueUpdate = onSelect,
+        modifier = modifier.padding( vertical = 8.dp )
+    )
