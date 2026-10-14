@@ -482,8 +482,11 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
 
         player.removeListener( this )
 
-        loudnessEnhancer.release()      // Must release after listener is removed to prevent race condition
-        bassBoost.release()
+        // Effects are created on the first audio session, which may never have happened
+        if( ::loudnessEnhancer.isInitialized )
+            loudnessEnhancer.release()      // Must release after listener is removed to prevent race condition
+        if( ::bassBoost.isInitialized )
+            bassBoost.release()
         reverb?.release()
         reverb = null
         clearAuxEffectInfo()
@@ -491,7 +494,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         player.release()
 
         val preferences: SharedPreferences by inject(PrefType.DEFAULT)
-        preferences.registerOnSharedPreferenceChangeListener( this )
+        preferences.unregisterOnSharedPreferenceChangeListener( this )
     }
 
     /*
