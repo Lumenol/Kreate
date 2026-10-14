@@ -30,8 +30,8 @@ internal data class MusicMultiSelectMenuRendererImpl(
         internal data class ItemRendererImpl(
             override val title: RunsImpl,
             override val formItemEntityKey: String,
-            override val selectedAccessibility: AccessibilityImpl,
-            override val deselectedAccessibility: AccessibilityImpl
+            override val selectedAccessibility: AccessibilityImpl? = null,
+            override val deselectedAccessibility: AccessibilityImpl? = null
         ) : MusicMultiSelectMenuRenderer.Option.ItemRenderer
 
         @Serializable

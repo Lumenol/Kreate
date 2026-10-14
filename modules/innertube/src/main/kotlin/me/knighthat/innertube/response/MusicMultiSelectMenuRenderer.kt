@@ -24,8 +24,8 @@ interface MusicMultiSelectMenuRenderer {
 
             val title: Runs
             val formItemEntityKey: String
-            val selectedAccessibility: Accessibility
-            val deselectedAccessibility: Accessibility
+            val selectedAccessibility: Accessibility?
+            val deselectedAccessibility: Accessibility?
         }
 
         interface DividerRenderer {
