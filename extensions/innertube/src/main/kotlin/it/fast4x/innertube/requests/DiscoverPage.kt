@@ -9,6 +9,7 @@ import it.fast4x.innertube.models.MusicTwoRowItemRenderer
 import it.fast4x.innertube.models.bodies.BrowseBodyWithLocale
 import it.fast4x.innertube.models.oddElements
 import it.fast4x.innertube.models.splitBySeparator
+import it.fast4x.innertube.utils.asYear
 
 suspend fun Innertube.discoverPage() = runCatching {
     val response = client.post(browse) {
@@ -72,7 +73,6 @@ fun MusicTwoRowItemRenderer.toNewReleaseAlbumPage() = Innertube.AlbumItem(
             endpoint = it.navigationEndpoint?.browseEndpoint
         )
     },
-    // Subtitle is "Album • Artist", sometimes followed by the year
-    year = subtitle?.runs?.lastOrNull()?.text?.takeIf { it.length == 4 && it.all( Char::isDigit ) },
+    year = subtitle?.runs?.lastOrNull()?.text.asYear(),
     thumbnail = thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.firstOrNull()
 )

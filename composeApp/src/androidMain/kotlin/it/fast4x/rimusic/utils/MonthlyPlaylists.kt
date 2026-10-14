@@ -55,6 +55,28 @@ fun CheckMonthlyPlaylist() {
     }
 }
 
+private val MONTH_TITLES = intArrayOf(
+    R.string.month_january_s, R.string.month_february_s, R.string.month_march_s,
+    R.string.month_april_s, R.string.month_may_s, R.string.month_june_s,
+    R.string.month_july_s, R.string.month_august_s, R.string.month_september_s,
+    R.string.month_october_s, R.string.month_november_s, R.string.month_december_s
+)
+
+/**
+ * Monthly playlists are named year then month without padding
+ * ("20268" is August 2026, "202610" October 2026, see [CheckMonthlyPlaylist]).
+ *
+ * @return the localized "Month Year" title, `null` if [name] isn't one
+ */
+@Composable
+fun monthlyPlaylistTitle( name: String ): String? {
+    val digits = name.filter( Char::isDigit )
+    if( digits.length !in 5..6 ) return null
+
+    val month = digits.drop( 4 ).toIntOrNull()?.takeIf { it in 1..12 } ?: return null
+    return stringResource( MONTH_TITLES[month - 1] ).format( digits.take( 4 ) )
+}
+
 @Composable
 fun getTitleMonthlyPlaylist(playlist: String): String {
 

@@ -8,6 +8,7 @@ import it.fast4x.innertube.models.MusicTwoRowItemRenderer
 import it.fast4x.innertube.models.oddElements
 import it.fast4x.innertube.utils.from
 import kotlinx.serialization.Serializable
+import it.fast4x.innertube.utils.asYear
 
 @Serializable
 data class HomePage(
@@ -69,7 +70,10 @@ data class HomePage(
             }
 
             private fun fromMusicResponsiveListItemRenderer( renderer: MusicResponsiveListItemRenderer ): Innertube.SongItem? =
-                Innertube.SongItem.from( renderer )?.copy(
+                Innertube.SongItem.from( renderer )?.let { song ->
+                    // from() prefixes explicit titles with "e:", but the item already shows an E badge
+                    song.copy( info = song.info?.copy( name = song.info.name?.removePrefix( "e:" ) ) )
+                }?.copy(
                     // Second column is "Artist • 39M plays": keep only the linked artists
                     authors = renderer.flexColumns
                                       .getOrNull( 1 )
@@ -123,7 +127,7 @@ data class HomePage(
                                     endpoint = it.navigationEndpoint?.browseEndpoint
                                 )
                             },
-                            year = renderer.subtitle?.runs?.lastOrNull()?.text,
+                            year = renderer.subtitle?.runs?.lastOrNull()?.text.asYear(),
                             thumbnail = renderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.lastOrNull(),
 //                            explicit = renderer.subtitleBadges?.find {
 //                                it.musicInlineBadgeRenderer?.icon?.iconType == "MUSIC_EXPLICIT_BADGE"

@@ -68,6 +68,7 @@
     <string name="neither_save_new_searched_query">Ne pas enregistrer de nouvelles recherches ainsi que l’historique</string>
     <string name="clear_search_history">Effacer l’historique de recherche</string>
     <string name="history_is_empty">L’historique est vide</string>
+    <string name="no_albums_yet">Aucun album pour l\'instant. Ajoutez un album aux favoris pour le retrouver ici.</string>
     <string name="service_lifetime">OPTIMISATIONS SUPPLÉMENTAIRES</string>
     <string name="battery_optimizations_applied">Si des optimisations de la batterie sont appliquées, la notification de lecture peut soudainement disparaître en cas de pause.</string>
     <string name="is_android12">Depuis Android 12, la désactivation des optimisations de la batterie est nécessaire pour que l’option \"Service protégé\" prenne effet.</string>

@@ -5,6 +5,7 @@ import it.fast4x.innertube.models.MusicResponsiveListItemRenderer
 import it.fast4x.innertube.models.MusicTwoRowItemRenderer
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.innertube.models.oddElements
+import it.fast4x.innertube.utils.asYear
 
 data class ArtistItemsPage(
     val title: String,
@@ -57,7 +58,7 @@ data class ArtistItemsPage(
                         renderer.navigationEndpoint?.browseEndpoint
                     ),
                     authors = null,
-                    year = renderer.subtitle?.runs?.lastOrNull()?.text,
+                    year = renderer.subtitle?.runs?.lastOrNull()?.text.asYear(),
                     thumbnail = renderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.lastOrNull(),
 //                    explicit = renderer.subtitleBadges?.find {
 //                        it.musicInlineBadgeRenderer?.icon?.iconType == "MUSIC_EXPLICIT_BADGE"

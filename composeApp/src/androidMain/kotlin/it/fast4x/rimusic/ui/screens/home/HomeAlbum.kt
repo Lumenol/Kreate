@@ -92,6 +92,9 @@ import kotlinx.coroutines.runBlocking
 import me.knighthat.component.tab.SongShuffler
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import it.fast4x.rimusic.utils.center
+import it.fast4x.rimusic.utils.secondary
 
 @OptIn(ExperimentalMaterial3Api::class)
 @ExperimentalTextApi
@@ -295,6 +298,16 @@ fun HomeAlbums(
                     contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer ),
                     verticalArrangement = Arrangement.spacedBy(AlbumItem.ROW_SPACING.dp )
                 ) {
+                    if( itemsOnDisplay.isEmpty() )
+                        item( key = "empty", span = { GridItemSpan( maxLineSpan ) } ) {
+                            BasicText(
+                                text = stringResource( R.string.no_albums_yet ),
+                                style = typography.s.secondary.center,
+                                modifier = Modifier.fillMaxWidth()
+                                                   .padding( horizontal = 32.dp, vertical = 48.dp )
+                            )
+                        }
+
                     items(
                         items = itemsOnDisplay,
                         key = Album::id
