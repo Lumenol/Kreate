@@ -3,8 +3,10 @@ package it.fast4x.innertube.requests
 import it.fast4x.innertube.Innertube
 import it.fast4x.innertube.models.BrowseEndpoint
 import it.fast4x.innertube.models.MusicCarouselShelfRenderer
+import it.fast4x.innertube.models.MusicResponsiveListItemRenderer
 import it.fast4x.innertube.models.MusicTwoRowItemRenderer
 import it.fast4x.innertube.models.oddElements
+import it.fast4x.innertube.utils.from
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -55,14 +57,29 @@ data class HomePage(
                                        },
                     items = renderer.contents
                         .map {
-                            fromMusicTwoRowItemRenderer(
-                                it.musicTwoRowItemRenderer,
-                                renderer.header?.musicCarouselShelfBasicHeaderRenderer?.title?.runs?.firstOrNull()?.text
-                            )
+                            // Song grids such as "Quick picks" use list items, not cards
+                            it.musicResponsiveListItemRenderer?.let( ::fromMusicResponsiveListItemRenderer )
+                                ?: fromMusicTwoRowItemRenderer(
+                                    it.musicTwoRowItemRenderer,
+                                    renderer.header?.musicCarouselShelfBasicHeaderRenderer?.title?.runs?.firstOrNull()?.text
+                                )
                         } //.filter { it?.title?.isNotEmpty() == true }
 
                 )
             }
+
+            private fun fromMusicResponsiveListItemRenderer( renderer: MusicResponsiveListItemRenderer ): Innertube.SongItem? =
+                Innertube.SongItem.from( renderer )?.copy(
+                    // Second column is "Artist • 39M plays": keep only the linked artists
+                    authors = renderer.flexColumns
+                                      .getOrNull( 1 )
+                                      ?.musicResponsiveListItemFlexColumnRenderer
+                                      ?.text
+                                      ?.runs
+                                      ?.mapNotNull { run ->
+                                          run.navigationEndpoint?.browseEndpoint?.let { Innertube.Info( run.text, it ) }
+                                      }
+                )
 
             private fun fromMusicTwoRowItemRenderer(renderer: MusicTwoRowItemRenderer?, sectionTitle: String? = null): Innertube.Item? {
                 println("getHomePage() fromMusicTwoRowItemRenderer for section $sectionTitle: ${renderer?.title?.runs?.firstOrNull()?.text}")

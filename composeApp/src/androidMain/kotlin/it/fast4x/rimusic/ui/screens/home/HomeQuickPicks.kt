@@ -1070,11 +1070,44 @@ fun HomeQuickPicks(
                         )
 
                         val currentMediaItem by player.currentMediaItemState.collectAsState()
-                        ItemUtils.LazyRowItem(
-                            navController = navController,
-                            innertubeItems = items,
-                            currentlyPlaying = currentMediaItem?.mediaId
-                        )
+                        val songs = items.filterIsInstance<Innertube.SongItem>()
+                        if( songs.size == items.size ) {
+                            // Song-only sections ("Quick picks"...) as a grid, like the official app
+                            val distinctSongs = songs.fastDistinctBy( Innertube.SongItem::key )
+                            val rows = distinctSongs.size.coerceAtMost( 4 )
+                            val songItemValues = remember( colorPalette, typography ) {
+                                SongItem.Values.from( colorPalette, typography )
+                            }
+
+                            LazyHorizontalGrid(
+                                rows = GridCells.Fixed( rows ),
+                                contentPadding = endPaddingValues,
+                                modifier = Modifier.fillMaxWidth()
+                                                   .height( Dimensions.itemsVerticalPadding * rows * 9 )
+                            ) {
+                                items(
+                                    items = distinctSongs,
+                                    key = Innertube.SongItem::key
+                                ) { song ->
+                                    SongItem.Render(
+                                        innertubeSong = song,
+                                        hapticFeedback = hapticFeedback,
+                                        isPlaying = song.key == currentMediaItem?.mediaId,
+                                        values = songItemValues,
+                                        modifier = Modifier.width( itemInHorizontalGridWidth ),
+                                        onLongClick = {
+                                            bottomMenu.show( MenuPage.Song( song.asMediaItem ), true )
+                                        },
+                                        onClick = { player.forcePlay( song.asMediaItem ) }
+                                    )
+                                }
+                            }
+                        } else
+                            ItemUtils.LazyRowItem(
+                                navController = navController,
+                                innertubeItems = items,
+                                currentlyPlaying = currentMediaItem?.mediaId
+                            )
                     }
                     // Non-null, so the fallback below only applies when there's no home at all
                     Unit
