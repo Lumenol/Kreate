@@ -211,6 +211,15 @@ MainActivity :
 
         UpdatePlugins.execute( this )
 
+        // Dynamic used to be the default palette, so it's stored for most users even
+        // though they never picked it: switch them once to the new neutral default.
+        // Choosing Dynamic again in settings afterwards is kept.
+        if( !Preferences.NEUTRAL_PALETTE_MIGRATED.value ) {
+            if( Preferences.COLOR_PALETTE.value == ColorPaletteName.Dynamic )
+                Preferences.COLOR_PALETTE.value = ColorPaletteName.Default
+            Preferences.NEUTRAL_PALETTE_MIGRATED.value = true
+        }
+
         MonetCompat.enablePaletteCompat()
 
         enableEdgeToEdge(

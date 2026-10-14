@@ -847,6 +847,10 @@ sealed class Preferences<T>(
             // look with every song; the full-screen player keeps its cover-colored background
             Enum( preferences, Key.COLOR_PALETTE, "colorPaletteName", ColorPaletteName.Default )
         }
+        /** Whether the one-time switch from Dynamic to the neutral palette already ran */
+        val NEUTRAL_PALETTE_MIGRATED by lazy {
+            Boolean( preferences, Key.NEUTRAL_PALETTE_MIGRATED, "", false )
+        }
         val THEME_MODE by lazy {
             Enum( preferences, Key.THEME_MODE, "colorPaletteMode", ColorPaletteMode.Dark )
         }
@@ -1934,6 +1938,7 @@ sealed class Preferences<T>(
         const val MENU_STYLE = "MenuStyle"
         const val MAIN_THEME = "MainTheme"
         const val COLOR_PALETTE = "ColorPalette"
+        const val NEUTRAL_PALETTE_MIGRATED = "NeutralPaletteMigrated"
         const val THEME_MODE = "ThemeMode"
         const val STARTUP_SCREEN = "StartupScreen"
         const val FONT = "Font"
