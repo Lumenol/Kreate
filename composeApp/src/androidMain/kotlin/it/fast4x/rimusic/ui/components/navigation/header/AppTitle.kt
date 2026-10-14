@@ -24,9 +24,6 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.ui.components.themed.Button
 import me.knighthat.utils.Toaster
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.shape.CircleShape
 
 private fun appIconClickAction(
     navController: NavController,
@@ -89,22 +86,21 @@ fun AppTitle(
         verticalAlignment = Alignment.CenterVertically
     ) {
         // The big "Music" wordmark and the red "debug mode enabled" text took a lot of
-        // room on every screen: keep the icon, and flag debug mode with a dot on it
-        Box {
-            AppLogo( navController, context )
+        // room on every screen: keep the icon, and flag debug mode with a small bug
+        AppLogo( navController, context )
 
-            if (Preference.debugLog())
-                Box(
-                    Modifier.align( Alignment.TopEnd )
-                            .size( 10.dp )
-                            .background( colorPalette().red, CircleShape )
-                            .clickable {
-                                Toaster.s( R.string.info_debug_mode_is_enabled )
+        if (Preference.debugLog())
+            Button(
+                iconId = R.drawable.bug,
+                color = colorPalette().red,
+                padding = 0.dp,
+                size = 18.dp,
+                modifier = Modifier.clickable {
+                    Toaster.s( R.string.info_debug_mode_is_enabled )
 
-                                NavRoutes.settings.navigateHere( navController )
-                            }
-                )
-        }
+                    NavRoutes.settings.navigateHere( navController )
+                }
+            ).Draw()
 
         if(Preference.parentalControl())
             Button(
