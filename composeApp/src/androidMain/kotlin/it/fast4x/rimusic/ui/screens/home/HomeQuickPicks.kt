@@ -159,7 +159,8 @@ fun HomeQuickPicks(
     navController: NavController,
     onSearchClick: () -> Unit,
     onMoodClick: (mood: Innertube.Mood.Item) -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
+    content: HomeContent = HomeContent.All
 ) {
     val hapticFeedback = LocalHapticFeedback.current
     val player: StatefulPlayer = koinInject()
@@ -480,11 +481,12 @@ fun HomeQuickPicks(
                         onClick = onSearchClick
                     )
 
-                WelcomeMessage()
+                if (content.personal)
+                    WelcomeMessage()
 
                 // The account's own YouTube home (filters, listen again, quick picks, mixes)
                 // comes first; generic discovery sections follow
-                homePageInit?.let { home ->
+                if (content.personal) homePageInit?.let { home ->
 
                     if( home.chips.isNotEmpty() )
                         ButtonsRow(
@@ -611,7 +613,7 @@ fun HomeQuickPicks(
                 }
 
 
-                if (showTips) {
+                if (content.personal && showTips) {
                     Title2Actions(
                         title = stringResource(R.string.tips),
                         onClick1 = {
@@ -741,7 +743,7 @@ fun HomeQuickPicks(
                     PlaylistItem.Values.from( colorPalette, typography )
                 }
 
-                discoverPageInit?.let { page ->
+                if (content.discovery) discoverPageInit?.let { page ->
                     val artists by remember {
                         Database.artistTable
                                 .sortFollowingByName()
@@ -801,7 +803,7 @@ fun HomeQuickPicks(
                     }
                 }
 
-                if (showRelatedAlbums)
+                if (content.personal && showRelatedAlbums)
                     relatedInit?.albums?.let { albums ->
                         BasicText(
                             text = stringResource(R.string.related_albums),
@@ -822,7 +824,7 @@ fun HomeQuickPicks(
                         }
                     }
 
-                if (showSimilarArtists)
+                if (content.personal && showSimilarArtists)
                     relatedInit?.artists?.let { artists ->
                         BasicText(
                             text = stringResource(R.string.similar_artists),
@@ -847,7 +849,7 @@ fun HomeQuickPicks(
                         }
                     }
 
-                if (showPlaylistMightLike)
+                if (content.personal && showPlaylistMightLike)
                     relatedInit?.playlists?.let { playlists ->
                         BasicText(
                             text = stringResource(R.string.playlists_you_might_like),
@@ -876,7 +878,7 @@ fun HomeQuickPicks(
 
 
 
-                if (showMoodsAndGenres)
+                if (content.discovery && showMoodsAndGenres)
                     discoverPageInit?.let { page ->
 
                         if (page.moods.isNotEmpty()) {
@@ -923,7 +925,7 @@ fun HomeQuickPicks(
                             }
                 }.collectAsState( emptyList(), Dispatchers.IO )
 
-                if (showMonthlyPlaylistInQuickPicks)
+                if (content.personal && showMonthlyPlaylistInQuickPicks)
                     monthlyPlaylists.let { playlists ->
                         if (playlists.isNotEmpty()) {
                             BasicText(
@@ -953,7 +955,7 @@ fun HomeQuickPicks(
                         }
                     }
 
-                if( Preferences.QUICK_PICKS_SHOW_CHARTS.value ) {
+                if( content.discovery && Preferences.QUICK_PICKS_SHOW_CHARTS.value ) {
                     var charts by remember {
                         // Use [referentialEqualityPolicy] to limit update to when it changes
                         // object, not the state of contents
@@ -1233,4 +1235,13 @@ fun HomeQuickPicks(
     }
 }
 
-
+/**
+ * Which part of the home a [HomeQuickPicks] shows: the account's own content
+ * (Home tab) or the generic discovery sections (Discover tab). Both share the
+ * same loaded data, so switching tab doesn't load anything again.
+ */
+enum class HomeContent( val personal: Boolean, val discovery: Boolean ) {
+    All( personal = true, discovery = true ),
+    Home( personal = true, discovery = false ),
+    Discover( personal = false, discovery = true )
+}
