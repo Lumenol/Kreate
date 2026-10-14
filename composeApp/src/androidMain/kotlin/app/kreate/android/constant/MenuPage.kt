@@ -53,11 +53,13 @@ sealed interface MenuPage {
 
         override suspend fun getButtons(): List<MenuButton<*>> =
             listOf(
+                // Common actions first, rare ones (editing, export) after,
+                // the destructive delete last so it isn't hit by mistake
+                SongPlayNextButton(), SongEnqueueButton(), AddSongToPlaylistButton(),
+                SongRadioButton(), GoToArtistButton(), GoToAlbumButton(),
+                ViewSongDetailsButton(),
                 SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton(),
-                SongRadioButton(), SongPlayNextButton(), SongEnqueueButton(),
-                AddSongToPlaylistButton(), DeleteSongButton(), ResetSongButton(),
-                ExportCacheButton(), GoToAlbumButton(), GoToArtistButton(),
-                ViewSongDetailsButton()
+                ResetSongButton(), ExportCacheButton(), DeleteSongButton()
             )
     }
 
@@ -65,8 +67,8 @@ sealed interface MenuPage {
 
         override suspend fun getButtons(): List<MenuButton<*>> =
             listOf(
-                SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton(),
-                SongPlayNextButton(), SongEnqueueButton(), AddSongToPlaylistButton()
+                SongPlayNextButton(), SongEnqueueButton(), AddSongToPlaylistButton(),
+                SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton()
             )
     }
 
@@ -77,11 +79,12 @@ sealed interface MenuPage {
 
         override suspend fun getButtons(): List<MenuButton<*>> =
             listOf(
+                SongPlayNextButton(), SongEnqueueButton(), AddSongToPlaylistButton(),
+                SongRadioButton(), GoToArtistButton(), GoToAlbumButton(),
+                ViewSongDetailsButton(),
                 SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton(),
-                SongRadioButton(), SongPlayNextButton(), SongEnqueueButton(),
-                AddSongToPlaylistButton(), DeleteSongButton(), ResetSongButton(),
-                ExportCacheButton(), GoToAlbumButton(), GoToArtistButton(),
-                ViewSongDetailsButton(), RemoveSongFromPlaylist(playlist)
+                ResetSongButton(), ExportCacheButton(),
+                RemoveSongFromPlaylist(playlist), DeleteSongButton()
             )
     }
 
@@ -92,8 +95,8 @@ sealed interface MenuPage {
 
         override suspend fun getButtons(): List<MenuButton<*>> =
             listOf(
-                SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton(),
                 SongPlayNextButton(), SongEnqueueButton(), AddSongToPlaylistButton(),
+                SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton(),
                 RemoveSongFromPlaylist(playlist)
             )
     }
