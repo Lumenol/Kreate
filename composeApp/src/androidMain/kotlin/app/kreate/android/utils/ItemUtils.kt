@@ -48,6 +48,11 @@ import kotlin.math.max
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.foundation.layout.height
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.foundation.layout.padding
 
 
 object ItemUtils {
@@ -87,11 +92,27 @@ object ItemUtils {
             PlaylistItem.Values.from( appearance )
         }
 
+        // Every card gets the same height (cover + two title lines + one subtitle
+        // line, measured with the real text styles), so a row never changes height
+        // while scrolling past cards with shorter titles or no subtitle
+        val textMeasurer = rememberTextMeasurer()
+        val density = LocalDensity.current
+        val cardHeight = remember( appearance, density ) {
+            val titleHeight = textMeasurer.measure( "A\nA", albumItemValues.titleTextStyle ).size.height
+            val subtitleHeight = textMeasurer.measure( "A", albumItemValues.artistsTextStyle ).size.height
+            val coverHeight = maxOf(
+                AlbumItem.thumbnailSize().height,
+                PlaylistItem.thumbnailSize().height,
+                ArtistItem.thumbnailSize().height
+            )
+            with( density ) { coverHeight + ( titleHeight + subtitleHeight ).toDp() } + 24.dp
+        }
+
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(COLUMN_SPACING.dp ),
             // Same 16 dp start margin as the section headers
             contentPadding = PaddingValues( horizontal = 16.dp ),
-            modifier = modifier
+            modifier = modifier.height( cardHeight )
         ) {
             items(
                 items = innertubeItems,
@@ -130,27 +151,43 @@ object ItemUtils {
                         }
                     )
 
-                    is Innertube.VideoItem -> {
-                        println("Innertube homePage VideoItem: ${childItem.info?.name}")
-                        SongItem.Render(
-                            innertubeVideo = childItem,
-                            hapticFeedback = hapticFeedback,
-                            isPlaying = currentlyPlaying == childItem.key,
-                            values = songItemValues,
-                            thumbnailSizeDp = SongItem.thumbnailSize(),
-                            onClick = {
-                                player.stopRadio()
-                                if ( isVideoEnabled() )
-                                    player.playVideo( childItem.asMediaItem )
-                                else
-                                    player.forcePlay( childItem.asMediaItem )
-                            },
-                            onLongClick = {
-                                val page = MenuPage.Song(childItem.asMediaItem)
-                                menu.show( page, true )
-                            }
-                        )
-                    }
+                    is Innertube.VideoItem -> AlbumItem.VerticalStructure(
+                        widthDp = AlbumItem.thumbnailSize().width,
+                        thumbnail = {
+                            // Videos come as 16:9: crop them square like the other cards
+                            AlbumItem.Thumbnail(
+                                url = childItem.thumbnail?.url,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.padding( bottom = AlbumItem.VERTICAL_SPACING.dp )
+                            )
+                        },
+                        firstLine = {
+                            AlbumItem.Title(
+                                title = childItem.info?.name.orEmpty(),
+                                values = albumItemValues,
+                                textAlign = TextAlign.Start,
+                                maxLines = 2
+                            )
+                        },
+                        secondLine = {
+                            AlbumItem.Artists(
+                                artistsText = childItem.authors?.joinToString( ", " ) { it.name.orEmpty() }.orEmpty(),
+                                values = albumItemValues,
+                                textAlign = TextAlign.Start
+                            )
+                        },
+                        onClick = {
+                            player.stopRadio()
+                            if ( isVideoEnabled() )
+                                player.playVideo( childItem.asMediaItem )
+                            else
+                                player.forcePlay( childItem.asMediaItem )
+                        },
+                        onLongClick = {
+                            hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
+                            menu.show( MenuPage.Song( childItem.asMediaItem ), true )
+                        }
+                    )
 
                     is Innertube.AlbumItem -> AlbumItem.Vertical(
                         innertubeAlbum = childItem,
