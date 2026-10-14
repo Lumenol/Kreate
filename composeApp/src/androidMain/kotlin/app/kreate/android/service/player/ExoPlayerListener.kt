@@ -19,6 +19,7 @@ import androidx.media3.session.MediaSession
 import app.kreate.android.Preferences
 import app.kreate.android.R
 import app.kreate.database.models.PersistentQueue
+import co.touchlab.kermit.Logger
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.enums.NotificationButtons
 import it.fast4x.rimusic.enums.QueueLoopType
@@ -58,6 +59,7 @@ class ExoPlayerListener(
     private var volumeNormalizationJob: Job = Job()
     private var errorTimestamp = 0L
     private var lastErrorMessage = ""
+    private val logger = Logger.withTag( "Playback" )
 
     var loudnessEnhancer: LoudnessEnhancer? = null
         private set
@@ -179,6 +181,8 @@ class ExoPlayerListener(
     }
 
     override fun onMediaItemTransition( mediaItem: MediaItem?, reason: Int ) {
+        logger.i { "transition to ${mediaItem?.mediaId} (${mediaItem?.mediaMetadata?.title}), reason=$reason" }
+
         if ( player.playerError != null ) player.prepare()
 
         loadFromRadio(reason)
@@ -201,8 +205,17 @@ class ExoPlayerListener(
         }
     }
 
+    override fun onPlaybackStateChanged( playbackState: Int ) {
+        logger.d { "state=$playbackState at ${player.currentPosition}/${player.duration}ms, item=${player.currentMediaItem?.mediaId}" }
+    }
+
     override fun onPlayerError( error: PlaybackException ) {
         val rootCause = traverseErrorStack( error )
+        val item = player.currentMediaItem
+        logger.e( error ) {
+            "${error.errorCodeName} on ${item?.mediaId} (${item?.mediaMetadata?.title}) " +
+                    "at ${player.currentPosition}/${player.duration}ms, root cause: $rootCause"
+        }
 
         when( rootCause ) {
             is PlayableFormatNotFoundException -> context.getString( R.string.error_couldn_t_find_a_playable_audio_format )
