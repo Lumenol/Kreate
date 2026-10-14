@@ -68,6 +68,8 @@ import me.knighthat.utils.Toaster
 import org.koin.compose.koinInject
 import java.net.UnknownHostException
 import java.nio.channels.UnresolvedAddressException
+import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.seconds
 
 @ExperimentalAnimationApi
 @UnstableApi
@@ -135,7 +137,6 @@ fun Thumbnail(
 
             override fun onPlayerError(playbackException: PlaybackException) {
                 error = playbackException
-                player.stopRadio()
                 //context.stopService(context.intent<PlayerService>())
                 //context.stopService(context.intent<MyDownloadService>())
             }
@@ -362,6 +363,12 @@ fun Thumbnail(
                 // Report each error once; writing state here during composition looped forever
                 LaunchedEffect( error ) {
                     if (error != null) {
+                        // The player service may recover from it (new stream url, network back),
+                        // which clears the error and cancels this effect: only report what stays.
+                        delay( 2.seconds )
+                        if (player.playerError == null) return@LaunchedEffect
+
+                        player.stopRadio()
                         Logger.e( error?.cause?.cause ) { "Playback error" }
                         Toaster.e(
                             if (currentWindow.mediaItem.isLocal)
