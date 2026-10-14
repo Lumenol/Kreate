@@ -816,6 +816,10 @@ Volume BAS : titre précédent</string>
     <string name="artist_tab_popular">Populaires</string>
     <string name="artist_tab_in_library">Dans ta bibliothèque</string>
     <string name="word_see_all">Tout voir</string>
+    <string name="word_search">Rechercher</string>
+    <string name="search_recent">Recherches récentes</string>
+    <string name="word_artist">Artiste</string>
+    <string name="search_fill">Mettre dans le champ de recherche</string>
     <string name="info_explicit_song">Ce titre n\'est peut-être pas adapté à tous les âges </string>
     <string name="info_added_by_smart_recommendations">Ajouté par les recommandations intelligentes</string>
     <string name="info_delete_cache">Supprimer le cache</string>

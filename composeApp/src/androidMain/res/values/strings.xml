@@ -813,6 +813,10 @@
     <string name="artist_tab_popular">Popular</string>
     <string name="artist_tab_in_library">In your library</string>
     <string name="word_see_all">See all</string>
+    <string name="word_search">Search</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="word_artist">Artist</string>
+    <string name="search_fill">Fill in the search field</string>
     <string name="info_explicit_song">This song may not be suitable for all ages</string>
     <string name="info_added_by_smart_recommendations">Added by smart recommendations</string>
     <string name="info_delete_cache">Delete cache</string>

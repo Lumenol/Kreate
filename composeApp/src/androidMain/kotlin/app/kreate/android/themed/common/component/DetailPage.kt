@@ -79,7 +79,8 @@ object MainTabs {
 fun DetailSkeleton(
     navController: NavController,
     miniPlayer: @Composable () -> Unit,
-    actions: @Composable RowScope.() -> Unit,
+    actions: @Composable RowScope.() -> Unit = {},
+    title: (@Composable () -> Unit)? = null,
     content: @Composable AnimatedVisibilityScope.(Int) -> Unit
 ) {
     // Read once: the scaffold animates its content when the index changes, and
@@ -97,15 +98,20 @@ fun DetailSkeleton(
         miniPlayer = miniPlayer,
         navBarContent = { MainTabs.Items( it, libraryTab ) },
         detailActions = actions,
+        detailTitle = title,
         content = content
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DetailTopBar( navController: NavController, actions: @Composable RowScope.() -> Unit ) =
+fun DetailTopBar(
+    navController: NavController,
+    actions: @Composable RowScope.() -> Unit,
+    title: @Composable () -> Unit = {}
+) =
     TopAppBar(
-        title = {},
+        title = title,
         navigationIcon = {
             if( navController.previousBackStackEntry != null )
                 IconButton( onClick = navController::navigateUp ) {

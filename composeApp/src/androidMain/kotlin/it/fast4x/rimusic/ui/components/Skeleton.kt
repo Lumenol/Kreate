@@ -51,6 +51,8 @@ fun Skeleton(
     navBarContent: @Composable (@Composable (Int, String, Int) -> Unit) -> Unit,
     /** Album, artist and playlist pages: a bar with only "back" and these actions */
     detailActions: (@Composable RowScope.() -> Unit)? = null,
+    /** Next to "back" on those pages, e.g. the search field */
+    detailTitle: (@Composable () -> Unit)? = null,
     content: @Composable AnimatedVisibilityScope.(Int) -> Unit
 ) {
     val navigationBar: AbstractNavigationBar =
@@ -67,8 +69,8 @@ fun Skeleton(
             verticalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier.fillMaxWidth()
         ) {
-            if( detailActions != null )
-                DetailTopBar( navController, detailActions )
+            if( detailActions != null || detailTitle != null )
+                DetailTopBar( navController, detailActions ?: {}, detailTitle ?: {} )
             else if( UiType.RiMusic.isCurrent() )
                 AppHeader( navController ).Draw()
 
