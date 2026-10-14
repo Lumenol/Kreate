@@ -85,6 +85,7 @@ import it.fast4x.innertube.YtMusic
 import it.fast4x.innertube.models.NavigationEndpoint
 import it.fast4x.innertube.models.bodies.NextBody
 import it.fast4x.innertube.requests.HomePage
+import it.fast4x.rimusic.ui.components.ButtonsRow
 import it.fast4x.innertube.requests.chartsPageComplete
 import it.fast4x.innertube.requests.discoverPage
 import it.fast4x.innertube.requests.relatedPage
@@ -126,6 +127,7 @@ import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.shimmerEffect
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -181,6 +183,19 @@ fun HomeQuickPicks(
     var homePageResult by persist<Result<HomePage?>>("home/homePageResult")
     var homePageInit by persist<HomePage?>("home/homePage")
     var homePagePreference by rememberPreference(quickPicsHomePageKey, homePageInit)
+    // Home filtered by a chip (mood, activity...), `null` while loading or unfiltered
+    var selectedHomeChip by remember { mutableStateOf<HomePage.Chip?>( null ) }
+    var filteredHomePage by remember { mutableStateOf<HomePage?>( null ) }
+    LaunchedEffect( selectedHomeChip ) {
+        filteredHomePage = null
+        val chip = selectedHomeChip ?: return@LaunchedEffect
+
+        filteredHomePage = withContext( Dispatchers.IO ) {
+            YtMusic.getHomePage( params = chip.params )
+        }.onFailure {
+            Logger.e( "", it, "HomeQuickPicks" )
+        }.getOrNull()
+    }
 
     var chartsPageResult by persist<Result<Innertube.ChartsPage?>>("home/chartsPage")
     var chartsPageInit by persist<Innertube.ChartsPage>("home/chartsPage")
@@ -1002,9 +1017,26 @@ fun HomeQuickPicks(
 
                 }
 
-                homePageInit?.let { page ->
+                homePageInit?.let { home ->
 
-                    page.sections.forEach { section ->
+                    if( home.chips.isNotEmpty() )
+                        ButtonsRow(
+                            chips = home.chips.map { it to it.title },
+                            currentValue = selectedHomeChip,
+                            // Tapping the selected chip again goes back to the unfiltered home
+                            onValueUpdate = { selectedHomeChip = it.takeIf { chip -> chip != selectedHomeChip } },
+                            modifier = Modifier.padding( vertical = 8.dp )
+                        )
+
+                    val page = if( selectedHomeChip == null ) home else filteredHomePage
+                    if( page == null )
+                        repeat( 2 ) {
+                            ItemUtils.PlaceholderRowItem {
+                                AlbumItem.VerticalPlaceholder()
+                            }
+                        }
+
+                    page?.sections?.forEach { section ->
                         // A leading unparsable item must not hide a section that has
                         // valid ones after it, so drop nulls before deciding.
                         val items = section.items.fastFilterNotNull()
@@ -1044,6 +1076,8 @@ fun HomeQuickPicks(
                             currentlyPlaying = currentMediaItem?.mediaId
                         )
                     }
+                    // Non-null, so the fallback below only applies when there's no home at all
+                    Unit
                 } ?: if (!isYouTubeLoggedIn()) BasicText(
                     text = stringResource(R.string.log_in_to_ytm),
                     style = typography().xs.center,

@@ -10,7 +10,18 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class HomePage(
     val sections: List<Section>,
+    val chips: List<Chip> = emptyList(),
 ) {
+    /**
+     * Home filter (mood, activity, podcasts...): browsing the home
+     * with its [params] returns the filtered sections.
+     */
+    @Serializable
+    data class Chip(
+        val title: String,
+        val params: String,
+    )
+
     @Serializable
     data class Section(
         val title: String,

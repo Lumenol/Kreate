@@ -126,9 +126,22 @@ object YtMusic {
         println("YtMusic removelikeVideoOrSong error: ${it.stackTraceToString()}")
     }
 
-    suspend fun getHomePage(setLogin: Boolean = false): Result<HomePage> = runCatching {
+    /**
+     * @param params of a [HomePage.Chip] to get the home filtered by it
+     */
+    suspend fun getHomePage(setLogin: Boolean = false, params: String? = null): Result<HomePage> = runCatching {
 
-        var response = Innertube.browse(browseId = "FEmusic_home", setLogin = setLogin).body<BrowseResponse>()
+        var response = Innertube.browse(browseId = "FEmusic_home", params = params, setLogin = setLogin).body<BrowseResponse>()
+
+        val chips = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
+            ?.tabRenderer?.content?.sectionListRenderer?.header?.chipCloudRenderer?.chips
+            ?.mapNotNull { chip ->
+                val renderer = chip.chipCloudChipRenderer
+                val title = renderer.text?.runs?.firstOrNull()?.text ?: return@mapNotNull null
+                val chipParams = renderer.navigationEndpoint?.browseEndpoint?.params ?: return@mapNotNull null
+                HomePage.Chip( title, chipParams )
+            }
+            .orEmpty()
 
         println("homePage() response sections: ${response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
             ?.tabRenderer?.content?.sectionListRenderer?.contents}" )
@@ -156,7 +169,7 @@ object YtMusic {
                 }.orEmpty()
 
         }
-        HomePage( sections = sections )
+        HomePage( sections = sections, chips = chips )
     }
 
     suspend fun getHistory(setLogin: Boolean = false): Result<HistoryPage> = runCatching {
