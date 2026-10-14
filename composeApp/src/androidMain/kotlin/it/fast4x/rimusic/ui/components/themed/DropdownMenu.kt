@@ -61,9 +61,10 @@ class DropdownMenu(
             @Composable
             fun colors(): MenuItemColors {
                 return MenuItemColors(
-                    leadingIconColor =  colorPalette().favoritesIcon,
-                    trailingIconColor =  colorPalette().favoritesIcon,
-                    textColor = colorPalette().textSecondary,
+                    // Neutral like the other menus (icons were red, text grey)
+                    leadingIconColor =  colorPalette().text,
+                    trailingIconColor =  colorPalette().text,
+                    textColor = colorPalette().text,
                     disabledTextColor = colorPalette().text,
                     disabledLeadingIconColor = colorPalette().text,
                     disabledTrailingIconColor = colorPalette().text,

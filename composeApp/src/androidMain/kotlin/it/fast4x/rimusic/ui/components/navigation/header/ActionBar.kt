@@ -40,7 +40,8 @@ private fun HamburgerMenu(
 
     val menu = DropdownMenu(
         expanded = expanded,
-        modifier = Modifier.background( colorPalette().background0.copy(0.90f) ),
+        // Opaque: the see-through menu let the chips behind show through its text
+        containerColor = colorPalette().background1,
         onDismissRequest = onDismissRequest
     )
     // History button

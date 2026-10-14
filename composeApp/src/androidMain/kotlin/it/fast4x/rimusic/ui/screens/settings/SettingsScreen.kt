@@ -1,5 +1,10 @@
 package it.fast4x.rimusic.ui.screens.settings
 
+import app.kreate.android.themed.common.component.DetailSkeleton
+import it.fast4x.rimusic.ui.components.ButtonsRow
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import it.fast4x.rimusic.utils.color
 import android.content.Context
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -41,7 +46,6 @@ import app.kreate.android.themed.common.screens.settings.UiSettings
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.typography
-import it.fast4x.rimusic.ui.components.Skeleton
 import it.fast4x.rimusic.ui.components.themed.StringListDialog
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
@@ -68,38 +72,50 @@ fun SettingsScreen(
         PaddingValues( 6.dp, topPadding, 6.dp )
     }
 
-    Skeleton(
-        navController,
-        tabIndex,
-        onTabChanged,
-        miniPlayer,
-        navBarContent = { item ->
-            item(0, stringResource(R.string.tab_general), R.drawable.app_icon_monochrome)
-            item(1, stringResource(R.string.ui_tab), R.drawable.ui)
-            item(2, stringResource(R.string.player_appearance), R.drawable.color_palette)
-            if( isYouTubeLoggedIn() )
-                item(3, stringResource(R.string.home), R.drawable.ytmusic)
-            else
-                item(3, stringResource(R.string.quick_picks), R.drawable.sparkles)
-            item(4, stringResource(R.string.tab_data), R.drawable.server)
-            item(5, stringResource(R.string.tab_accounts), R.drawable.person)
-            item(6, stringResource(R.string.tab_miscellaneous), R.drawable.equalizer)
-            item(7, stringResource( R.string.tab_network ), R.drawable.swap_vertical_outline)
-            item(8, stringResource(R.string.about), R.drawable.information)
-
+    // Nine tabs did not fit in a bottom bar (names cut, some off screen):
+    // they become chips under the title, the main tabs stay at the bottom
+    DetailSkeleton(
+        navController = navController,
+        miniPlayer = miniPlayer,
+        title = {
+            BasicText(
+                text = stringResource( R.string.settings ),
+                style = typography().l.semiBold.color( colorPalette().text )
+            )
         }
-    ) { currentTabIndex ->
-        saveableStateHolder.SaveableStateProvider(currentTabIndex) {
-            when (currentTabIndex) {
-                0 -> GeneralSettings( paddingValues )
-                1 -> UiSettings( paddingValues )
-                2 -> AppearanceSettings( paddingValues )
-                3 -> QuickPicksSettings( paddingValues )
-                4 -> DataSettings( paddingValues )
-                5 -> AccountSettings( paddingValues )
-                6 -> OtherSettings( paddingValues )
-                7 -> NetworkSettings( paddingValues )
-                8 -> About( navController, paddingValues )
+    ) {
+        Column( Modifier.fillMaxSize() ) {
+            ButtonsRow(
+                chips = listOf(
+                    0 to stringResource( R.string.tab_general ),
+                    1 to stringResource( R.string.ui_tab ),
+                    2 to stringResource( R.string.player_appearance ),
+                    3 to stringResource( if( isYouTubeLoggedIn() ) R.string.home else R.string.quick_picks ),
+                    4 to stringResource( R.string.tab_data ),
+                    5 to stringResource( R.string.tab_accounts ),
+                    6 to stringResource( R.string.tab_miscellaneous ),
+                    7 to stringResource( R.string.tab_network ),
+                    8 to stringResource( R.string.about )
+                ),
+                currentValue = tabIndex,
+                onValueUpdate = onTabChanged,
+                modifier = Modifier.padding( bottom = 4.dp )
+            )
+
+            Box( Modifier.weight( 1f ) ) {
+                saveableStateHolder.SaveableStateProvider(tabIndex) {
+                    when (tabIndex) {
+                        0 -> GeneralSettings( paddingValues )
+                        1 -> UiSettings( paddingValues )
+                        2 -> AppearanceSettings( paddingValues )
+                        3 -> QuickPicksSettings( paddingValues )
+                        4 -> DataSettings( paddingValues )
+                        5 -> AccountSettings( paddingValues )
+                        6 -> OtherSettings( paddingValues )
+                        7 -> NetworkSettings( paddingValues )
+                        8 -> About( navController, paddingValues )
+                    }
+                }
             }
         }
     }
