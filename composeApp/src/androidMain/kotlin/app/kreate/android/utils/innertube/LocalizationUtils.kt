@@ -16,11 +16,11 @@ val CURRENT_LOCALE: Localization
 // hl
 val HOST_LANGUAGE: String
     get() = when ( Preferences.APP_LANGUAGE.value ) {
+        // Match on the language code ("fr"): looking it up as an enum name
+        // ("FRENCH") always failed, so YouTube texts came back in English
         Language.SYSTEM ->
-            try {
-                enumValueOf<Language>(Locale.getDefault().language).code
-            } catch (_: IllegalArgumentException) {
-                "en"
+            Locale.getDefault().language.let { code ->
+                Language.entries.firstOrNull { it.code == code }?.code ?: "en"
             }
 
         else -> Preferences.APP_LANGUAGE.value.code
