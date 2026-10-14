@@ -199,6 +199,8 @@ class PlayerServiceModern:
                 if (isAvailable && waitingForNetwork.value) {
                     waitingForNetwork.value = false
                     withContext( Dispatchers.Main ) {
+                        // Playback stopped on a network error, so the player is idle
+                        player.prepare()
                         player.play()
                     }
                 }
