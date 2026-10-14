@@ -53,6 +53,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.Constraints
 
 
 object ItemUtils {
@@ -92,20 +93,42 @@ object ItemUtils {
             PlaylistItem.Values.from( appearance )
         }
 
-        // Every card gets the same height (cover + two title lines + one subtitle
-        // line, measured with the real text styles), so a row never changes height
-        // while scrolling past cards with shorter titles or no subtitle
+        // One height for the whole row, computed from ALL its items (not just the
+        // visible ones) so it never changes while scrolling: the tallest cover plus
+        // the tallest text block (title up to two lines, then the subtitle lines
+        // that item really has), so short rows don't keep empty space either
         val textMeasurer = rememberTextMeasurer()
         val density = LocalDensity.current
-        val cardHeight = remember( appearance, density ) {
-            val titleHeight = textMeasurer.measure( "A\nA", albumItemValues.titleTextStyle ).size.height
-            val subtitleHeight = textMeasurer.measure( "A", albumItemValues.artistsTextStyle ).size.height
-            val coverHeight = maxOf(
-                AlbumItem.thumbnailSize().height,
-                PlaylistItem.thumbnailSize().height,
-                ArtistItem.thumbnailSize().height
-            )
-            with( density ) { coverHeight + ( titleHeight + subtitleHeight ).toDp() } + 24.dp
+        val cardHeight = remember( innertubeItems, appearance, density ) {
+            val cardWidthPx = with( density ) { AlbumItem.thumbnailSize().width.roundToPx() }
+            val subtitleLinePx = textMeasurer.measure( "A", albumItemValues.artistsTextStyle ).size.height
+
+            var coverHeight = 0.dp
+            var textPx = 0
+            innertubeItems.forEach { item ->
+                val subtitleLines = when( item ) {
+                    is Innertube.SongItem -> if( item.authors.isNullOrEmpty() ) 0 else 1
+                    is Innertube.VideoItem -> if( item.authors.isNullOrEmpty() ) 0 else 1
+                    is Innertube.AlbumItem -> ( if( item.authors.isNullOrEmpty() ) 0 else 1 ) + ( if( item.year == null ) 0 else 1 )
+                    is Innertube.PlaylistItem -> if( item.channel == null && item.songCount == null ) 0 else 1
+                    is Innertube.ArtistItem -> if( item.subscribersCountText.isNullOrBlank() ) 0 else 1
+                }
+                val cover = when( item ) {
+                    is Innertube.PlaylistItem -> PlaylistItem.thumbnailSize().height
+                    is Innertube.ArtistItem -> ArtistItem.thumbnailSize().height
+                    else -> AlbumItem.thumbnailSize().height
+                }
+                val titlePx = textMeasurer.measure(
+                    text = item.title.orEmpty(),
+                    style = albumItemValues.titleTextStyle,
+                    maxLines = 2,
+                    constraints = Constraints( maxWidth = cardWidthPx )
+                ).size.height
+
+                coverHeight = maxOf( coverHeight, cover )
+                textPx = maxOf( textPx, titlePx + subtitleLines * subtitleLinePx )
+            }
+            with( density ) { coverHeight + textPx.toDp() } + 12.dp
         }
 
         LazyRow(
