@@ -81,6 +81,8 @@ object AlbumItem: Visual(), MultiplatformItem {
             style = values.titleTextStyle,
             color = values.titleColor,
             maxLines = maxLines,
+            // Reserve every line so a row of cards keeps one height while scrolling
+            minLines = maxLines,
             overflow = TextOverflow.Ellipsis,
             textAlign = textAlign,
             modifier = modifier

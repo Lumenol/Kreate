@@ -102,12 +102,11 @@ data class HomePage(
                                 renderer.title?.runs?.firstOrNull()?.text,
                                 renderer.navigationEndpoint?.watchEndpoint
                             ),
-                            authors = renderer.subtitle?.runs?.map {
-                                Innertube.Info(
-                                    name = it.text,
-                                    endpoint = it.navigationEndpoint?.browseEndpoint
-                                )
-                            },
+                            // Subtitle is "Song • Artist • 1.2M plays": keep the linked artists
+                            authors = renderer.subtitle?.runs
+                                ?.mapNotNull { run ->
+                                    run.navigationEndpoint?.browseEndpoint?.let { Innertube.Info( run.text, it ) }
+                                },
                             album = null,
                             durationText = null,
                             thumbnail = renderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.lastOrNull(),

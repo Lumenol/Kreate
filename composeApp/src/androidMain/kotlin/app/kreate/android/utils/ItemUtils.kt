@@ -46,6 +46,8 @@ import me.knighthat.innertube.model.InnertubeSong
 import org.koin.compose.koinInject
 import kotlin.math.max
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 
 
 object ItemUtils {
@@ -97,17 +99,34 @@ object ItemUtils {
             ) { childItem ->
 
                 when ( childItem ) {
-                    is Innertube.SongItem -> SongItem.Render(
-                        innertubeSong = childItem,
-                        hapticFeedback = hapticFeedback,
-                        values = songItemValues,
-                        isPlaying = childItem.key == currentlyPlaying,
+                    // In a row of cards a song is a card too (cover, title, artists),
+                    // not a list row squeezed between them
+                    is Innertube.SongItem -> AlbumItem.VerticalStructure(
+                        widthDp = AlbumItem.thumbnailSize().width,
+                        thumbnail = {
+                            AlbumItem.Thumbnail( childItem.key, childItem.thumbnail?.url )
+                        },
+                        firstLine = {
+                            AlbumItem.Title(
+                                title = childItem.info?.name.orEmpty(),
+                                values = albumItemValues,
+                                textAlign = TextAlign.Start,
+                                maxLines = 2
+                            )
+                        },
+                        secondLine = {
+                            AlbumItem.Artists(
+                                artistsText = childItem.authors?.joinToString( ", " ) { it.name.orEmpty() }.orEmpty(),
+                                values = albumItemValues,
+                                textAlign = TextAlign.Start
+                            )
+                        },
                         onClick = {
                             player.forcePlay( childItem.asMediaItem )
                         },
                         onLongClick = {
-                            val page = MenuPage.Song(childItem.asMediaItem)
-                            menu.show( page, true )
+                            hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
+                            menu.show( MenuPage.Song( childItem.asMediaItem ), true )
                         }
                     )
 
