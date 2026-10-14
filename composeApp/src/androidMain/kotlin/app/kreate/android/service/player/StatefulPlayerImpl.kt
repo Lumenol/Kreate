@@ -105,12 +105,11 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
     private var timerJob: TimerJob? = null
     private var loudnessNormalizationJob: Job? = null
     private var bassBoostJob: Job? = null
-    private var reverbJob: Job? = null
     //</editor-fold>
     //<editor-fold desc="AudioFX">
     private lateinit var loudnessEnhancer: LoudnessEnhancer
     private lateinit var bassBoost: BassBoost
-    private lateinit var reverb: PresetReverb
+    private var reverb: PresetReverb? = null
     //</editor-fold>
 
     override val currentMediaItemState = _currentMediaItemState.asStateFlow()
@@ -466,8 +465,6 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         loudnessNormalizationJob = null
         bassBoostJob?.cancel()
         bassBoostJob = null
-        reverbJob?.cancel()
-        reverbJob = null
 
         player.stop()
     }
@@ -481,7 +478,8 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
 
         loudnessEnhancer.release()      // Must release after listener is removed to prevent race condition
         bassBoost.release()
-        reverb.release()
+        reverb?.release()
+        reverb = null
         clearAuxEffectInfo()
 
         player.release()
@@ -545,21 +543,40 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         }
     }
 
-    private fun updateReverb() {
-        if( !::reverb.isInitialized || !reverb.enabled )
-            return
-        else
-            logger.v { "Updating reverb..." }
+    /**
+     * Attaches, updates, or detaches the reverb effect according to
+     * [Preferences.AUDIO_REVERB_PRESET].
+     *
+     * An enabled [PresetReverb] declares `EFFECT_FLAG_VOLUME_CTRL`, which makes
+     * AudioFlinger hand volume control of the audio session over to the effect.
+     * It must therefore only exist while a preset other than
+     * [PresetReverb.PRESET_NONE] is selected, otherwise device volume no longer
+     * attenuates playback on devices whose effect implementation doesn't honor it.
+     */
+    @MainThread
+    private fun updateReverb( sessionId: Int = player.audioSessionId ) {
+        if( sessionId == C.AUDIO_SESSION_ID_UNSET ) return
 
         try {
-            reverbJob?.cancel()
+            val preset = Preferences.AUDIO_REVERB_PRESET.value.toShort()
 
-            reverbJob = coroutineScope.launch {
-                val preset by Preferences.AUDIO_REVERB_PRESET
-                reverb.preset = preset.toShort()
+            if( preset == PresetReverb.PRESET_NONE ) {
+                clearAuxEffectInfo()
+                reverb?.enabled = false
+                reverb?.release()
+                reverb = null
 
-                logger.d { "Reverb set to $preset" }
+                logger.d { "Reverb detached" }
+                return
             }
+
+            val presetReverb = reverb ?: PresetReverb( 1, sessionId ).also { reverb = it }
+            presetReverb.enabled = false
+            presetReverb.preset = preset
+            presetReverb.enabled = true
+            setAuxEffectInfo( AuxEffectInfo(presetReverb.id, 1f) )
+
+            logger.d { "Reverb set to $preset" }
         } catch( err: Exception ) {
             logger.e( err ) { "updateReverb failed!" }
             Toaster.e( R.string.error_reverb_failed )
@@ -614,16 +631,11 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         //</editor-fold>
         //<editor-fold desc="Reverb preset">
         try {
-            if( ::reverb.isInitialized )
-                reverb.release()
+            // Effect is bound to the previous session, it can't be reused
+            reverb?.release()
+            reverb = null
 
-            reverb = PresetReverb(1, audioSessionId)
-            reverb.enabled = true       // Value is set by presets
-
-            val auxEffect = AuxEffectInfo(reverb.id, 1f)
-            setAuxEffectInfo( auxEffect )
-
-            updateReverb()
+            updateReverb( audioSessionId )
         } catch( err: Exception ) {
             logger.e( err ) { "Reverb init failed!" }
         }
