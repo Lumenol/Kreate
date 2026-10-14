@@ -5,6 +5,7 @@ import android.os.Looper
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import app.kreate.android.R
+import it.fast4x.innertube.YtMusic.dislikeVideoOrSong
 import it.fast4x.innertube.YtMusic.likeVideoOrSong
 import it.fast4x.innertube.YtMusic.removelikeVideoOrSong
 import it.fast4x.rimusic.Database
@@ -49,7 +50,32 @@ object YouTubeSync {
         }
         MyDownloadHelper.downloadOnLike( mediaItem, likeState )
 
+        syncLikeState( context, mediaItem, likeState )
+    }
 
+    /**
+     * Cycles the like state of a song through like, dislike and neutral
+     * (as the notification and Android Auto like button do), then syncs it with YouTube.
+     *
+     * This function must not be called on **main thread**
+     */
+    suspend fun rotateSongLike( context: Context, mediaItem: MediaItem ) {
+        assert( Looper.myLooper() != Looper.getMainLooper() ) {
+            "Cannot run YouTubeSync.rotateSongLike on main thread"
+        }
+
+        Database.insertIgnore( mediaItem )
+        Database.songTable.rotateLikeState( mediaItem.mediaId )
+
+        val likeState = Database.songTable.likeState( mediaItem.mediaId ).first()
+        syncLikeState( context, mediaItem, likeState )
+    }
+
+    /**
+     * Sends [likeState] (`true` like, `false` dislike, `null` neutral)
+     * of [mediaItem] to YouTube when syncing is enabled.
+     */
+    private suspend fun syncLikeState( context: Context, mediaItem: MediaItem, likeState: Boolean? ) {
         // Stop here if it's not enabled
         if( !isYouTubeSyncEnabled() ) {
             with( mediaItem.mediaMetadata ) {
@@ -73,17 +99,15 @@ object YouTubeSync {
             return
         }
 
-        val response =
-            if( likeState == true )
-                likeVideoOrSong( mediaItem.mediaId )
-            else
-                removelikeVideoOrSong( mediaItem.mediaId )
-        val messageId = when {
-            likeState == true && response.isSuccess -> R.string.songs_liked_yt
-            likeState == true && response.isFailure -> R.string.songs_liked_yt_failed
-            likeState == null && response.isSuccess -> R.string.song_unliked_yt
-            // likeState == true && response.isFailure
-            else                                    -> R.string.songs_unliked_yt_failed
+        val response = when( likeState ) {
+            true -> likeVideoOrSong( mediaItem.mediaId )
+            false -> dislikeVideoOrSong( mediaItem.mediaId )
+            null -> removelikeVideoOrSong( mediaItem.mediaId )
+        }
+        val messageId = when( likeState ) {
+            true -> if( response.isSuccess ) R.string.songs_liked_yt else R.string.songs_liked_yt_failed
+            false -> if( response.isSuccess ) R.string.songs_disliked_yt else R.string.songs_disliked_yt_failed
+            null -> if( response.isSuccess ) R.string.song_unliked_yt else R.string.songs_unliked_yt_failed
         }
         if( response.isSuccess )
             Toaster.s( messageId )

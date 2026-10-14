@@ -112,6 +112,13 @@ object YtMusic {
         println("YtMusic likeVideoOrSong error: ${it.stackTraceToString()}")
     }
 
+    suspend fun dislikeVideoOrSong(VideoId: String) = runCatching {
+        println("YtMusic dislikeVideoOrSong VideoId: $VideoId")
+        Innertube.dislikeVideoOrSong(VideoId)
+    }.onFailure {
+        println("YtMusic dislikeVideoOrSong error: ${it.stackTraceToString()}")
+    }
+
     suspend fun removelikeVideoOrSong(VideoId: String) = runCatching {
         println("YtMusic removelikeVideoOrSong playlistIdId: $VideoId")
         Innertube.removelikeVideoOrSong(VideoId)

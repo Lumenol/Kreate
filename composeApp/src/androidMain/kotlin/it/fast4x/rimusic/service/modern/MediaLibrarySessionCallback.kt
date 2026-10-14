@@ -47,6 +47,7 @@ import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.MainActivity
 import it.fast4x.rimusic.enums.StatisticsType
 import it.fast4x.rimusic.service.MyDownloadHelper
+import me.knighthat.sync.YouTubeSync
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.ID_CACHED
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.ID_DOWNLOADED
 import it.fast4x.rimusic.service.modern.MediaSessionConstants.ID_FAVORITES
@@ -56,6 +57,7 @@ import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.asSong
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flowOn
@@ -82,11 +84,9 @@ class MediaLibrarySessionCallback(
     fun toggleLike( player: Player ) {
         val mediaItem = player.currentMediaItem ?: return
         val player: StatefulPlayer by inject()
-        Database.asyncTransaction {
-            songTable.rotateLikeState( mediaItem.mediaId )
-                     .also {
-                         listener.updateMediaControl( context, player )
-                     }
+        scope.launch( Dispatchers.IO ) {
+            YouTubeSync.rotateSongLike( context, mediaItem )
+            listener.updateMediaControl( context, player )
         }
 
         MyDownloadHelper.autoDownloadWhenLiked( mediaItem )
