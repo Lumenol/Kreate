@@ -2,13 +2,14 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.MusicPlaylistShelfRenderer
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class MusicPlaylistShelfRendererImpl(
     override val playlistId: String?,
-    override val contents: List<ContentImpl> = emptyList(),
-    override val collapsedItemCount: Int,
-    override val contentsMultiSelectable: Boolean,
+    @Serializable(with = SkipInvalidListSerializer::class) override val contents: List<ContentImpl> = emptyList(),
+    override val collapsedItemCount: Int = 0,
+    override val contentsMultiSelectable: Boolean = false,
     override val targetId: String?
 ): MusicPlaylistShelfRenderer {
 
@@ -20,7 +21,7 @@ internal data class MusicPlaylistShelfRendererImpl(
 
         @Serializable
         internal data class ContinuationItemRendererImpl(
-            override val trigger: String,
+            override val trigger: String = "",
             override val continuationEndpoint: ContinuationImpl
         ): MusicPlaylistShelfRenderer.Content.ContinuationItemRenderer {
 
@@ -31,8 +32,8 @@ internal data class MusicPlaylistShelfRendererImpl(
 
                 @Serializable
                 internal data class CommandImpl(
-                    override val token: String,
-                    override val request: String
+                    override val token: String = "",
+                    override val request: String = ""
                 ): MusicPlaylistShelfRenderer.Content.ContinuationItemRenderer.Continuation.Command
             }
         }

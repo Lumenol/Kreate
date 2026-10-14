@@ -10,6 +10,6 @@ internal data class AccessibilityImpl(
 
     @Serializable
     internal data class DataImpl(
-        override val label: String
+        override val label: String = ""
     ): Accessibility.Data
 }

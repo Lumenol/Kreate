@@ -11,8 +11,8 @@ data class OverlayImpl(
     @Serializable
     data class MusicItemThumbnailOverlayRendererImpl(
         override val background: BackgroundImpl,
-        override val contentPosition: String,
-        override val displayStyle: String
+        override val contentPosition: String = "",
+        override val displayStyle: String = ""
     ): Overlay.MusicItemThumbnailOverlayRenderer {
 
         @Serializable

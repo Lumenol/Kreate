@@ -2,14 +2,15 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.MusicResponsiveListItemRenderer
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class MusicResponsiveListItemRendererImpl(
     override val thumbnail: ThumbnailImpl?,
     override val overlay: OverlayImpl?,
-    override val flexColumns: List<ColumImpl> = emptyList(),
-    override val fixedColumns: List<ColumImpl> = emptyList(),
-    override val badges: List<BadgeImpl> = emptyList(),
+    @Serializable(with = SkipInvalidListSerializer::class) override val flexColumns: List<ColumImpl> = emptyList(),
+    @Serializable(with = SkipInvalidListSerializer::class) override val fixedColumns: List<ColumImpl> = emptyList(),
+    @Serializable(with = SkipInvalidListSerializer::class) override val badges: List<BadgeImpl> = emptyList(),
     override val playlistItemData: PlaylistItemDataImpl?,
     override val flexColumnDisplayStyle: String?,
     override val navigationEndpoint: EndpointImpl?,
@@ -27,7 +28,7 @@ internal data class MusicResponsiveListItemRendererImpl(
         @Serializable
         internal data class RendererImpl(
             override val text: RunsImpl?,
-            override val displayPriority: String,
+            override val displayPriority: String = "",
             override val size: String?
         ): MusicResponsiveListItemRenderer.Colum.Renderer
     }

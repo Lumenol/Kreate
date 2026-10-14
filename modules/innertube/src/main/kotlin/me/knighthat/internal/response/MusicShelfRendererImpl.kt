@@ -2,16 +2,17 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.MusicShelfRenderer
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class MusicShelfRendererImpl(
     override val title: RunsImpl?,
-    override val contents: List<ContentImpl> = emptyList(),
+    @Serializable(with = SkipInvalidListSerializer::class) override val contents: List<ContentImpl> = emptyList(),
     override val bottomText: RunsImpl?,
     override val bottomEndpoint: EndpointImpl?,
     override val contentsMultiSelectable: Boolean?,
-    override val subheaders: List<SubheaderImpl> = emptyList(),
-    override val continuations: List<ContinuationImpl> = emptyList()
+    @Serializable(with = SkipInvalidListSerializer::class) override val subheaders: List<SubheaderImpl> = emptyList(),
+    @Serializable(with = SkipInvalidListSerializer::class) override val continuations: List<ContinuationImpl> = emptyList()
 ): MusicShelfRenderer {
 
     @Serializable
@@ -26,7 +27,7 @@ internal data class MusicShelfRendererImpl(
 
         @Serializable
         internal data class RendererImpl(
-            override val startItems: List<ItemImpl>
+            @Serializable(with = SkipInvalidListSerializer::class) override val startItems: List<ItemImpl> = emptyList()
         ) : MusicShelfRenderer.Subheader.Renderer {
 
             @Serializable

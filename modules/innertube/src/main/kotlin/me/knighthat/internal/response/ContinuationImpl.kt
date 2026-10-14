@@ -11,6 +11,6 @@ data class ContinuationImpl(
 
     @Serializable
     data class DataImpl(
-        override val continuation: String
+        override val continuation: String = ""
     ): Continuation.Data
 }

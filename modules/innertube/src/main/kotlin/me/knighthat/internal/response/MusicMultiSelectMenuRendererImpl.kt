@@ -2,11 +2,12 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.MusicMultiSelectMenuRenderer
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class MusicMultiSelectMenuRendererImpl(
     override val title: TitleImpl,
-    override val options: List<OptionImpl>
+    @Serializable(with = SkipInvalidListSerializer::class) override val options: List<OptionImpl> = emptyList()
 ) : MusicMultiSelectMenuRenderer {
 
     @Serializable
@@ -29,14 +30,14 @@ internal data class MusicMultiSelectMenuRendererImpl(
         @Serializable
         internal data class ItemRendererImpl(
             override val title: RunsImpl,
-            override val formItemEntityKey: String,
+            override val formItemEntityKey: String = "",
             override val selectedAccessibility: AccessibilityImpl? = null,
             override val deselectedAccessibility: AccessibilityImpl? = null
         ) : MusicMultiSelectMenuRenderer.Option.ItemRenderer
 
         @Serializable
         internal data class DividerRendererImpl(
-            override val hack: Boolean
+            override val hack: Boolean = false
         ) : MusicMultiSelectMenuRenderer.Option.DividerRenderer
     }
 }

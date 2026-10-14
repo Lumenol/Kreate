@@ -2,6 +2,7 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.Endpoint
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 data class EndpointImpl(
@@ -15,7 +16,7 @@ data class EndpointImpl(
 
     @Serializable
     data class BrowseImpl(
-        override val browseId: String,
+        override val browseId: String = "",
         override val params: String?,
         override val browseEndpointContextSupportedConfigs: ContextImpl?
     ): Endpoint.Browse {
@@ -27,46 +28,46 @@ data class EndpointImpl(
 
             @Serializable
             data class MusicConfigImpl(
-                override val pageType: String
+                override val pageType: String = ""
             ): Endpoint.Browse.Context.MusicConfig
         }
     }
 
     @Serializable
     data class LikeImpl(
-        override val status: String,
+        override val status: String = "",
         override val target: TargetImpl
     ): Endpoint.Like {
 
         @Serializable
         data class TargetImpl(
-            override val playlistId: String
+            override val playlistId: String = ""
         ): Endpoint.Like.Target
     }
 
     @Serializable
     data class PlaylistEditImpl(
-        override val playlistId: String,
-        override val actions: List<ActionImpl> = emptyList()
+        override val playlistId: String = "",
+        @Serializable(with = SkipInvalidListSerializer::class) override val actions: List<ActionImpl> = emptyList()
     ): Endpoint.PlaylistEdit {
 
         @Serializable
         data class ActionImpl(
-            override val setVideoId: String,
-            override val action: String,
-            override val removedVideoId: String
+            override val setVideoId: String = "",
+            override val action: String = "",
+            override val removedVideoId: String = ""
         ): Endpoint.PlaylistEdit.Action
     }
 
     @Serializable
     data class SearchImpl(
-        override val query: String,
+        override val query: String = "",
         override val params: String?
     ): Endpoint.Search
 
     @Serializable
     data class WatchImpl(
-        override val videoId: String,
+        override val videoId: String = "",
         override val playlistId: String?,
         override val index: Int?,
         override val params: String?,
@@ -84,7 +85,7 @@ data class EndpointImpl(
 
             @Serializable
             data class VssLoggingContextImpl(
-                override val serializedContextData: String
+                override val serializedContextData: String = ""
             ): Endpoint.Watch.LoggingContext.VssLoggingContext
         }
 
@@ -96,7 +97,7 @@ data class EndpointImpl(
             @Serializable
             data class WatchEndpointMusicConfigImpl(
                 override val hasPersistentPlaylistPanel: Boolean?,
-                override val musicVideoType: String
+                override val musicVideoType: String = ""
             ): Endpoint.Watch.WatchEndpointMusicSupportedConfigs.WatchEndpointMusicConfig
         }
     }

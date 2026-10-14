@@ -2,10 +2,11 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.Tabs
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class TabsImpl(
-    override val tabs: List<TabImpl> = emptyList()
+    @Serializable(with = SkipInvalidListSerializer::class) override val tabs: List<TabImpl> = emptyList()
 ): Tabs {
 
     @Serializable

@@ -2,12 +2,13 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.MusicCarouselShelfRenderer
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class MusicCarouselShelfRendererImpl(
     override val header: HeaderImpl,
-    override val contents: List<ContentImpl> = emptyList(),
-    override val itemSize: String,
+    @Serializable(with = SkipInvalidListSerializer::class) override val contents: List<ContentImpl> = emptyList(),
+    override val itemSize: String = "",
     override val numItemsPerColumn: String?
 ): MusicCarouselShelfRenderer {
 
@@ -21,7 +22,7 @@ internal data class MusicCarouselShelfRendererImpl(
             override val title: RunsImpl,
             override val strapline: RunsImpl?,
             override val accessibilityData: AccessibilityImpl?,
-            override val headerStyle: String
+            override val headerStyle: String = ""
         ): MusicCarouselShelfRenderer.Header.MusicCarouselShelfBasicHeaderRenderer
     }
 

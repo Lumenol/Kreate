@@ -2,13 +2,14 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.PlaylistPanelRenderer
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class PlaylistPanelRendererImpl(
-    override val contents: List<ContentImpl> = emptyList(),
+    @Serializable(with = SkipInvalidListSerializer::class) override val contents: List<ContentImpl> = emptyList(),
     override val playlistId: String?,
-    override val isInfinite: Boolean,
-    override val continuations: List<ContinuationImpl> = emptyList(),
+    override val isInfinite: Boolean = false,
+    @Serializable(with = SkipInvalidListSerializer::class) override val continuations: List<ContinuationImpl> = emptyList(),
     override val numItemsToShow: Short?
 ): PlaylistPanelRenderer {
 
@@ -23,13 +24,13 @@ internal data class PlaylistPanelRendererImpl(
             override val longBylineText: RunsImpl,
             override val thumbnail: ThumbnailsImpl,
             override val lengthText: RunsImpl,
-            override val selected: Boolean,
+            override val selected: Boolean = false,
             override val navigationEndpoint: EndpointImpl,
-            override val videoId: String,
+            override val videoId: String = "",
             override val shortBylineText: RunsImpl,
-            override val badges: List<BadgeImpl> = emptyList(),
+            @Serializable(with = SkipInvalidListSerializer::class) override val badges: List<BadgeImpl> = emptyList(),
             override val playlistSetVideoId: String?,
-            override val canReorder: Boolean,
+            override val canReorder: Boolean = false,
             override val queueNavigationEndpoint: EndpointImpl?
         ): PlaylistPanelRenderer.Content.VideoRenderer
     }
