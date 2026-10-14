@@ -924,7 +924,7 @@ sealed class Preferences<T>(
             Enum( preferences, Key.STATISTIC_PAGE_CATEGORY, "statisticsCategory", StatisticsCategory.Songs )
         }
         val MARQUEE_TEXT_EFFECT by lazy {
-            Boolean(preferences, Key.MARQUEE_TEXT_EFFECT, "", false )
+            Boolean(preferences, Key.MARQUEE_TEXT_EFFECT, "", true )
         }
         val PARENTAL_CONTROL by lazy {
             Boolean( preferences, Key.PARENTAL_CONTROL, "parentalControlEnabled", false )

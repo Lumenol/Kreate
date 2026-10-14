@@ -78,7 +78,6 @@ import kotlinx.coroutines.Dispatchers
 import me.knighthat.innertube.model.InnertubeSong
 import me.knighthat.utils.Toaster
 import org.koin.java.KoinJavaComponent.inject
-import app.kreate.android.utils.scrollingTextOverflow
 
 object SongItem: Visual() {
 
@@ -113,8 +112,8 @@ object SongItem: Visual() {
             style = values.titleTextStyle,
             color = values.titleColor,
             maxLines = 1,
-            overflow = scrollingTextOverflow(),
-            modifier = modifier.scrollingText()
+            overflow = TextOverflow.Ellipsis,
+            modifier = modifier
         )
 
     /**
@@ -138,8 +137,8 @@ object SongItem: Visual() {
             style = values.artistsTextStyle,
             color = values.artistsColor,
             maxLines = 1,
-            overflow = scrollingTextOverflow(),
-            modifier = modifier.scrollingText()
+            overflow = TextOverflow.Ellipsis,
+            modifier = modifier
         )
 
     /**
@@ -164,8 +163,8 @@ object SongItem: Visual() {
             style = values.durationTextStyle,
             color = values.durationColor,
             maxLines = 1,
-            overflow = scrollingTextOverflow(),
-            modifier = modifier.scrollingText()
+            overflow = TextOverflow.Ellipsis,
+            modifier = modifier
         )
 
     /**
@@ -460,7 +459,7 @@ object SongItem: Visual() {
                 )
 
                 if( !song.isLocal )
-                    CacheAndDownloadIcon( song.id, song, values, MyDownloadHelper::handleDownload , modifier ) {
+                    CacheAndDownloadIcon( song.id, song, values, MyDownloadHelper::handleDownload ) {
                         val cache: Cache by inject(Cache::class.java, CacheType.CACHE)
                         cache.removeResource( song.id )
                     }

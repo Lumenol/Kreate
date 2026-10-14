@@ -9,6 +9,7 @@ import it.fast4x.innertube.models.oddElements
 import it.fast4x.innertube.utils.from
 import kotlinx.serialization.Serializable
 import it.fast4x.innertube.utils.asYear
+import it.fast4x.innertube.models.NavigationEndpoint
 
 @Serializable
 data class HomePage(
@@ -71,14 +72,23 @@ data class HomePage(
 
             private fun fromMusicResponsiveListItemRenderer( renderer: MusicResponsiveListItemRenderer ): Innertube.SongItem? =
                 Innertube.SongItem.from( renderer )?.copy(
-                    // Second column is "Artist • 39M plays": keep only the linked artists
                     authors = renderer.flexColumns
                                       .getOrNull( 1 )
                                       ?.musicResponsiveListItemFlexColumnRenderer
                                       ?.text
                                       ?.runs
-                                      ?.mapNotNull { run ->
-                                          run.navigationEndpoint?.browseEndpoint?.let { Innertube.Info( run.text, it ) }
+                                      ?.let { runs ->
+                                          // Second column is "Artist • 39M plays": keep the linked
+                                          // artists, or the text before the first "•" when the
+                                          // account's home doesn't link them
+                                          runs.mapNotNull { run ->
+                                                  run.navigationEndpoint?.browseEndpoint?.let { Innertube.Info( run.text, it ) }
+                                              }
+                                              .ifEmpty {
+                                                  runs.takeWhile { it.text?.trim() != "•" }
+                                                      .mapNotNull { it.text?.takeIf( String::isNotBlank ) }
+                                                      .map { Innertube.Info<NavigationEndpoint.Endpoint.Browse>( it, null ) }
+                                              }
                                       }
                 )
 

@@ -64,7 +64,6 @@ import kotlinx.coroutines.flow.mapLatest
 import me.knighthat.innertube.model.InnertubePlaylist
 import me.knighthat.innertube.response.Runs
 import it.fast4x.rimusic.utils.monthlyPlaylistTitle
-import app.kreate.android.utils.scrollingTextOverflow
 
 object PlaylistItem: Visual(), MultiplatformItem {
 
@@ -96,16 +95,17 @@ object PlaylistItem: Visual(), MultiplatformItem {
         title: String,
         values: Values,
         textAlign: TextAlign,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        maxLines: Int = 1
     ) =
         Text(
             text = title,
             style = values.titleTextStyle,
             color = values.titleColor,
-            maxLines = 1,
-            overflow = scrollingTextOverflow(),
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
             textAlign = textAlign,
-            modifier = modifier.scrollingText()
+            modifier = modifier
         )
 
     /**
@@ -130,9 +130,9 @@ object PlaylistItem: Visual(), MultiplatformItem {
             style = values.subtitleTextStyle,
             color = values.subtitleTextColor,
             maxLines = 1,
-            overflow = scrollingTextOverflow(),
+            overflow = TextOverflow.Ellipsis,
             textAlign = textAlign,
-            modifier = modifier.scrollingText()
+            modifier = modifier
         )
 
     @Composable
@@ -394,7 +394,7 @@ object PlaylistItem: Visual(), MultiplatformItem {
                     }
             },
             firstLine = {
-                Title( playlist.displayName(), values, TextAlign.Start )
+                Title( playlist.displayName(), values, TextAlign.Start, maxLines = 2 )
             },
             onClick = click@ {
                 onClick.invoke()
@@ -435,7 +435,8 @@ object PlaylistItem: Visual(), MultiplatformItem {
                 Title(
                     title = innertubePlaylist.title.orEmpty(),
                     values = values,
-                    textAlign = TextAlign.Start
+                    textAlign = TextAlign.Start,
+                    maxLines = 2
                 )
             },
             onClick = click@ {
@@ -474,7 +475,8 @@ object PlaylistItem: Visual(), MultiplatformItem {
                 Title(
                     title = innertubePlaylist.name,
                     values = values,
-                    textAlign = TextAlign.Start
+                    textAlign = TextAlign.Start,
+                    maxLines = 2
                 )
             },
             secondLine = nd@ {

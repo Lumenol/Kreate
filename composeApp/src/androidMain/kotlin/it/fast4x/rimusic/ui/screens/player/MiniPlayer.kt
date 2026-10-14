@@ -75,7 +75,6 @@ import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.favoritesIcon
-import it.fast4x.rimusic.ui.styling.favoritesOverlay
 import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.isExplicit
@@ -189,10 +188,10 @@ fun MiniPlayer(
     )
     val disableClosingPlayerSwipingDown by Preferences.MINI_DISABLE_SWIPE_DOWN_TO_DISMISS
 
+    // Docked full width above the navigation bar, like most music apps,
+    // instead of a floating card with side margins
     SwipeToDismissBox(
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .clip(RoundedCornerShape(12.dp)),
+        modifier = Modifier.fillMaxWidth(),
         state = dismissState,
         backgroundContent = {
             /*
@@ -277,14 +276,16 @@ fun MiniPlayer(
                 .background(colorPalette().background2)
                 .fillMaxWidth()
                 .drawBehind {
+                    // A thin line along the top edge: filling the whole background
+                    // read as a two-tone card rather than as progress
                     if (backgroundProgress == BackgroundProgress.Both || backgroundProgress == BackgroundProgress.MiniPlayer) {
                         drawRect(
-                            color = colorPalette.favoritesOverlay,
+                            color = colorPalette.favoritesIcon,
                             topLeft = Offset.Zero,
                             size = Size(
                                 width = positionAndDuration.first.toFloat() /
                                         positionAndDuration.second.absoluteValue * size.width,
-                                height = size.maxDimension
+                                height = 2.dp.toPx()
                             )
                         )
                     }

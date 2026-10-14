@@ -43,7 +43,6 @@ import it.fast4x.rimusic.utils.asAlbum
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.shimmerEffect
 import me.knighthat.innertube.model.InnertubeAlbum
-import app.kreate.android.utils.scrollingTextOverflow
 
 object AlbumItem: Visual(), MultiplatformItem {
 
@@ -74,16 +73,17 @@ object AlbumItem: Visual(), MultiplatformItem {
         title: String,
         values: Values,
         textAlign: TextAlign,
-        modifier: Modifier = Modifier
+        modifier: Modifier = Modifier,
+        maxLines: Int = 1
     ) =
         Text(
             text = title,
             style = values.titleTextStyle,
             color = values.titleColor,
-            maxLines = 1,
-            overflow = scrollingTextOverflow(),
+            maxLines = maxLines,
+            overflow = TextOverflow.Ellipsis,
             textAlign = textAlign,
-            modifier = modifier.scrollingText()
+            modifier = modifier
         )
 
     /**
@@ -108,9 +108,9 @@ object AlbumItem: Visual(), MultiplatformItem {
             style = values.artistsTextStyle,
             color = values.artistsColor,
             maxLines = 1,
-            overflow = scrollingTextOverflow(),
+            overflow = TextOverflow.Ellipsis,
             textAlign = textAlign,
-            modifier = modifier.scrollingText()
+            modifier = modifier
         )
 
     /**
@@ -262,6 +262,7 @@ object AlbumItem: Visual(), MultiplatformItem {
                     title = album.cleanTitle(),
                     values = values,
                     textAlign = TextAlign.Start,
+                    maxLines = 2,
                     modifier = Modifier.padding( vertical = VERTICAL_SPACING.dp )
                                        .fillMaxWidth( .9f )
                 )

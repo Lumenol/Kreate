@@ -143,6 +143,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.foundation.layout.calculateEndPadding
 
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalCoroutinesApi::class)
@@ -327,6 +329,12 @@ fun HomeQuickPicks(
     val chartsPageArtistLazyGridState = rememberLazyGridState()
 
     val endPaddingValues = windowInsets.only(WindowInsetsSides.End).asPaddingValues()
+    // Rows start at the same 16 dp margin as the section headers instead of the screen edge
+    val layoutDirection = LocalLayoutDirection.current
+    val rowContentPadding = PaddingValues(
+        start = 16.dp,
+        end = 16.dp + endPaddingValues.calculateEndPadding( layoutDirection )
+    )
 
     val sectionTextModifier = Modifier
         .padding(horizontal = 16.dp)
@@ -376,11 +384,13 @@ fun HomeQuickPicks(
                 )
 
         ) {
+            // Narrow enough that the next column clearly peeks in: at 90% short
+            // titles left a lot of empty space and hid that the grid scrolls
             val quickPicksLazyGridItemWidthFactor =
                 if (isLandscape && maxWidth * 0.475f >= 320.dp) {
                     0.475f
                 } else {
-                    0.9f
+                    0.78f
                 }
             val itemInHorizontalGridWidth = maxWidth * quickPicksLazyGridItemWidthFactor
 
@@ -539,7 +549,7 @@ fun HomeQuickPicks(
 
                             LazyHorizontalGrid(
                                 rows = GridCells.Fixed( rows ),
-                                contentPadding = endPaddingValues,
+                                contentPadding = rowContentPadding,
                                 modifier = Modifier.fillMaxWidth()
                                                    .height( Dimensions.itemsVerticalPadding * rows * 9 )
                             ) {
@@ -662,7 +672,7 @@ fun HomeQuickPicks(
                         state = quickPicksLazyGridState,
                         rows = GridCells.Fixed(if (relatedInit != null) 3 else 1),
                         flingBehavior = ScrollableDefaults.flingBehavior(),
-                        contentPadding = endPaddingValues,
+                        contentPadding = rowContentPadding,
                         modifier = Modifier.fillMaxWidth()
                                            .height(
                                                if ( relatedInit != null)
@@ -757,7 +767,7 @@ fun HomeQuickPicks(
                             )
 
                             LazyRow(
-                                contentPadding = endPaddingValues,
+                                contentPadding = rowContentPadding,
                                 horizontalArrangement = Arrangement.spacedBy(AlbumItem.COLUMN_SPACING.dp )
                             ) {
                                 items(
@@ -778,7 +788,7 @@ fun HomeQuickPicks(
                         )
 
                         LazyRow(
-                            contentPadding = endPaddingValues,
+                            contentPadding = rowContentPadding,
                             horizontalArrangement = Arrangement.spacedBy(AlbumItem.COLUMN_SPACING.dp )
                         ) {
                             items(
@@ -800,7 +810,7 @@ fun HomeQuickPicks(
                         )
 
                         LazyRow(
-                            contentPadding = endPaddingValues,
+                            contentPadding = rowContentPadding,
                             horizontalArrangement = Arrangement.spacedBy(AlbumItem.COLUMN_SPACING.dp )
                         ) {
                             items(
@@ -821,7 +831,7 @@ fun HomeQuickPicks(
                         )
 
                         LazyRow(
-                            contentPadding = endPaddingValues,
+                            contentPadding = rowContentPadding,
                             horizontalArrangement = Arrangement.spacedBy( ArtistItem.COLUMN_SPACING.dp )
                         ) {
                             items(
@@ -848,7 +858,7 @@ fun HomeQuickPicks(
                         )
 
                         LazyRow(
-                            contentPadding = endPaddingValues,
+                            contentPadding = rowContentPadding,
                             horizontalArrangement = Arrangement.spacedBy( PlaylistItem.COLUMN_SPACING.dp )
                         ) {
                             items(
@@ -925,7 +935,7 @@ fun HomeQuickPicks(
                             )
 
                             LazyRow(
-                                contentPadding = endPaddingValues,
+                                contentPadding = rowContentPadding,
                                 horizontalArrangement = Arrangement.spacedBy( PlaylistItem.COLUMN_SPACING.dp )
                             ) {
                                 items(
@@ -1003,7 +1013,7 @@ fun HomeQuickPicks(
                                         }
 
                                         LazyRow(
-                                            contentPadding = endPaddingValues,
+                                            contentPadding = rowContentPadding,
                                             modifier = Modifier.wrapContentHeight(),
                                             horizontalArrangement = Arrangement.spacedBy( PlaylistItem.COLUMN_SPACING.dp )
                                         ) {

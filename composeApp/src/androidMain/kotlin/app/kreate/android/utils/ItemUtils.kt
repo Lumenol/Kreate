@@ -45,6 +45,7 @@ import me.knighthat.innertube.model.InnertubePlaylist
 import me.knighthat.innertube.model.InnertubeSong
 import org.koin.compose.koinInject
 import kotlin.math.max
+import androidx.compose.foundation.layout.PaddingValues
 
 
 object ItemUtils {
@@ -86,6 +87,8 @@ object ItemUtils {
 
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(COLUMN_SPACING.dp ),
+            // Same 16 dp start margin as the section headers
+            contentPadding = PaddingValues( horizontal = 16.dp ),
             modifier = modifier
         ) {
             items(
@@ -259,6 +262,8 @@ object ItemUtils {
 
         LazyRow(
             horizontalArrangement = Arrangement.spacedBy(COLUMN_SPACING.dp ),
+            // Same 16 dp start margin as the section headers
+            contentPadding = PaddingValues( horizontal = 16.dp ),
             modifier = modifier
         ) {
             items(
