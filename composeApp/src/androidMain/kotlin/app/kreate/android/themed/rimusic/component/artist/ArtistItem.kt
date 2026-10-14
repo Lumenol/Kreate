@@ -38,6 +38,7 @@ import it.fast4x.rimusic.utils.asArtist
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.shimmerEffect
 import me.knighthat.innertube.model.InnertubeArtist
+import app.kreate.android.utils.scrollingTextOverflow
 
 object ArtistItem: Visual(), MultiplatformItem {
 
@@ -72,7 +73,7 @@ object ArtistItem: Visual(), MultiplatformItem {
             style = values.titleTextStyle,
             color = values.titleColor,
             maxLines = 1,
-            overflow = TextOverflow.Clip,
+            overflow = scrollingTextOverflow(),
             textAlign = textAlign,
             modifier = modifier.scrollingText()
         )

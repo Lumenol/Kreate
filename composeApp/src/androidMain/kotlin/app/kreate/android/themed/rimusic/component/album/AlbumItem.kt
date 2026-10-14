@@ -43,6 +43,7 @@ import it.fast4x.rimusic.utils.asAlbum
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.shimmerEffect
 import me.knighthat.innertube.model.InnertubeAlbum
+import app.kreate.android.utils.scrollingTextOverflow
 
 object AlbumItem: Visual(), MultiplatformItem {
 
@@ -80,7 +81,7 @@ object AlbumItem: Visual(), MultiplatformItem {
             style = values.titleTextStyle,
             color = values.titleColor,
             maxLines = 1,
-            overflow = TextOverflow.Clip,
+            overflow = scrollingTextOverflow(),
             textAlign = textAlign,
             modifier = modifier.scrollingText()
         )
@@ -107,7 +108,7 @@ object AlbumItem: Visual(), MultiplatformItem {
             style = values.artistsTextStyle,
             color = values.artistsColor,
             maxLines = 1,
-            overflow = TextOverflow.Clip,
+            overflow = scrollingTextOverflow(),
             textAlign = textAlign,
             modifier = modifier.scrollingText()
         )
@@ -167,7 +168,7 @@ object AlbumItem: Visual(), MultiplatformItem {
         thirdLine: @Composable ColumnScope.() -> Unit = {}
     ) =
         Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+            horizontalAlignment = Alignment.Start,
             modifier = modifier.requiredWidth( widthDp )
                                .combinedClickable(
                                    onClick = onClick,
@@ -260,7 +261,7 @@ object AlbumItem: Visual(), MultiplatformItem {
                 Title(
                     title = album.cleanTitle(),
                     values = values,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
                     modifier = Modifier.padding( vertical = VERTICAL_SPACING.dp )
                                        .fillMaxWidth( .9f )
                 )
@@ -272,7 +273,7 @@ object AlbumItem: Visual(), MultiplatformItem {
                 Artists(
                     artistsText = album.cleanAuthorsText(),
                     values = values,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
                     modifier = Modifier.fillMaxWidth( .9f )
                 )
             },
@@ -282,7 +283,7 @@ object AlbumItem: Visual(), MultiplatformItem {
                 Year(
                     year = album.year,
                     values = values,
-                    textAlign = TextAlign.Center,
+                    textAlign = TextAlign.Start,
                     modifier = Modifier.fillMaxWidth( .9f )
                 )
             },

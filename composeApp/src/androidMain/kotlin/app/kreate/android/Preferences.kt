@@ -806,13 +806,13 @@ sealed class Preferences<T>(
         //</editor-fold>
         //<editor-fold desc="Platform indicator">
         val ALBUMS_PLATFORM_INDICATOR by lazy {
-            Enum(preferences, Key.ALBUMS_PLATFORM_INDICATOR, "", PlatformIndicatorType.ICON)
+            Enum(preferences, Key.ALBUMS_PLATFORM_INDICATOR, "", PlatformIndicatorType.DISABLED)
         }
         val ARTISTS_PLATFORM_INDICATOR by lazy {
-            Enum(preferences, Key.ARTISTS_PLATFORM_INDICATOR, "", PlatformIndicatorType.ICON)
+            Enum(preferences, Key.ARTISTS_PLATFORM_INDICATOR, "", PlatformIndicatorType.DISABLED)
         }
         val PLAYLISTS_PLATFORM_INDICATOR by lazy {
-            Enum(preferences, Key.PLAYLISTS_PLATFORM_INDICATOR, "", PlatformIndicatorType.ICON)
+            Enum(preferences, Key.PLAYLISTS_PLATFORM_INDICATOR, "", PlatformIndicatorType.DISABLED)
         }
         //</editor-fold>
         //<editor-fold desc="Thumbnail roundness">
@@ -924,7 +924,7 @@ sealed class Preferences<T>(
             Enum( preferences, Key.STATISTIC_PAGE_CATEGORY, "statisticsCategory", StatisticsCategory.Songs )
         }
         val MARQUEE_TEXT_EFFECT by lazy {
-            Boolean(preferences, Key.MARQUEE_TEXT_EFFECT, "", true )
+            Boolean(preferences, Key.MARQUEE_TEXT_EFFECT, "", false )
         }
         val PARENTAL_CONTROL by lazy {
             Boolean( preferences, Key.PARENTAL_CONTROL, "parentalControlEnabled", false )

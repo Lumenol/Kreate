@@ -522,7 +522,8 @@ fun HomeQuickPicks(
                                                    }
                                                }
                                                .padding(horizontal = 16.dp)
-                                               .padding(vertical = 4.dp)
+                                               // Same spacing as the other sections' headers
+                                               .padding(top = 24.dp, bottom = 8.dp)
                         )
 
                         val currentMediaItem by player.currentMediaItemState.collectAsState()

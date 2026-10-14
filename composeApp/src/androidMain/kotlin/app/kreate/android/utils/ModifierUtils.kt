@@ -3,6 +3,7 @@ package app.kreate.android.utils
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.ui.Modifier
 import app.kreate.android.Preferences
+import androidx.compose.ui.text.style.TextOverflow
 
 /**
  * Apply marquee effect (scrolling text) if
@@ -19,3 +20,10 @@ fun Modifier.scrollingText( iterations: Int = Int.MAX_VALUE ) =
         this.basicMarquee( iterations = iterations )
     else
         this
+
+/**
+ * Overflow matching [scrollingText]: clipped while the text scrolls,
+ * otherwise cut with "…" so a long title never looks chopped off.
+ */
+fun scrollingTextOverflow(): TextOverflow =
+    if( Preferences.MARQUEE_TEXT_EFFECT.value ) TextOverflow.Clip else TextOverflow.Ellipsis
