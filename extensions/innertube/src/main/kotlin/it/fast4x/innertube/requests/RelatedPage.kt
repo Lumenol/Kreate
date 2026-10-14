@@ -10,10 +10,12 @@ import it.fast4x.innertube.models.MusicCarouselShelfRenderer
 import it.fast4x.innertube.models.NextResponse
 import it.fast4x.innertube.models.bodies.BrowseBody
 import it.fast4x.innertube.models.bodies.NextBody
-import it.fast4x.innertube.utils.findSectionByStrapline
-import it.fast4x.innertube.utils.findSectionByTitle
 import it.fast4x.innertube.utils.from
 import it.fast4x.innertube.utils.runCatchingNonCancellable
+import it.fast4x.innertube.utils.RELATED_TAB_PREFIX
+import it.fast4x.innertube.utils.watchNextTabBrowseId
+import it.fast4x.innertube.utils.findCarousel
+import it.fast4x.innertube.utils.hasSongs
 
 
 
@@ -23,17 +25,7 @@ suspend fun Innertube.relatedPage(body: NextBody) = runCatchingNonCancellable {
         mask("contents.singleColumnMusicWatchNextResultsRenderer.tabbedRenderer.watchNextTabbedResultsRenderer.tabs.tabRenderer(endpoint,title)")
     }.body<NextResponse>()
 
-    val browseId = nextResponse
-        .contents
-        ?.singleColumnMusicWatchNextResultsRenderer
-        ?.tabbedRenderer
-        ?.watchNextTabbedResultsRenderer
-        ?.tabs
-        ?.getOrNull(2)
-        ?.tabRenderer
-        ?.endpoint
-        ?.browseEndpoint
-        ?.browseId
+    val browseId = nextResponse.watchNextTabBrowseId( RELATED_TAB_PREFIX )
         ?: return@runCatchingNonCancellable null
 
     val response = client.post(browse) {
@@ -45,34 +37,29 @@ suspend fun Innertube.relatedPage(body: NextBody) = runCatchingNonCancellable {
         .contents
         ?.sectionListRenderer
 
-    println("mediaItem Innertube RelatedPage sectionListRenderer ${sectionListRenderer
-        ?.findSectionByTitle("You might also like")
-        ?.musicCarouselShelfRenderer
-        ?.contents}")
-
     Innertube.RelatedPage(
         songs = sectionListRenderer
-            ?.findSectionByTitle("You might also like")
-            ?.musicCarouselShelfRenderer
+            .findCarousel { it.hasSongs() }
             ?.contents
             ?.mapNotNull(MusicCarouselShelfRenderer.Content::musicResponsiveListItemRenderer)
             ?.mapNotNull(Innertube.SongItem::from),
         playlists = sectionListRenderer
-            ?.findSectionByTitle("Recommended playlists")
-            ?.musicCarouselShelfRenderer
+            .findCarousel { carousel -> carousel.contents.any { it.musicTwoRowItemRenderer?.isPlaylist == true } }
             ?.contents
             ?.mapNotNull(MusicCarouselShelfRenderer.Content::musicTwoRowItemRenderer)
             ?.mapNotNull(Innertube.PlaylistItem::from)
             ?.sortedByDescending { it.channel?.name == "YouTube Music" },
         albums = sectionListRenderer
-            ?.findSectionByStrapline("MORE FROM")
-            ?.musicCarouselShelfRenderer
+            // "More from <artist>", the only section with a strapline
+            .findCarousel { carousel ->
+                carousel.header?.musicCarouselShelfBasicHeaderRenderer?.strapline?.runs?.isNotEmpty() == true
+                        && carousel.contents.any { it.musicTwoRowItemRenderer?.isAlbum == true }
+            }
             ?.contents
             ?.mapNotNull(MusicCarouselShelfRenderer.Content::musicTwoRowItemRenderer)
             ?.mapNotNull(Innertube.AlbumItem::from),
         artists = sectionListRenderer
-            ?.findSectionByTitle("Similar artists")
-            ?.musicCarouselShelfRenderer
+            .findCarousel { carousel -> carousel.contents.any { it.musicTwoRowItemRenderer?.isArtist == true } }
             ?.contents
             ?.mapNotNull(MusicCarouselShelfRenderer.Content::musicTwoRowItemRenderer)
             ?.mapNotNull(Innertube.ArtistItem::from),
