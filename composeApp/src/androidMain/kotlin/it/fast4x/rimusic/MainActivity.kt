@@ -162,6 +162,8 @@ import kotlin.math.sqrt
 import kotlin.system.exitProcess
 import it.fast4x.rimusic.utils.isLandscape
 import it.fast4x.rimusic.enums.NavigationBarPosition
+import it.fast4x.rimusic.enums.PlayerTimelineType
+import it.fast4x.rimusic.enums.PlayerPlayButtonType
 
 
 @UnstableApi
@@ -218,6 +220,20 @@ MainActivity :
             if( Preferences.COLOR_PALETTE.value == ColorPaletteName.Dynamic )
                 Preferences.COLOR_PALETTE.value = ColorPaletteName.Default
             Preferences.NEUTRAL_PALETTE_MIGRATED.value = true
+        }
+
+        // Same for the player: its old defaults are stored too. Apply the redesigned
+        // layout once (plain progress bar, elapsed / total time only, round play
+        // button, ⋮ menu shown, no duplicate repeat); later changes in settings stay.
+        if( !Preferences.REDESIGN_PLAYER_MIGRATED.value ) {
+            Preferences.PLAYER_TIMELINE_TYPE.value = PlayerTimelineType.Default
+            Preferences.PLAYER_PLAY_BUTTON_TYPE.value = PlayerPlayButtonType.Default
+            Preferences.PLAYER_SHOW_SONGS_REMAINING_TIME.value = false
+            Preferences.PLAYER_SHOW_SEEK_BUTTONS.value = false
+            Preferences.PLAYER_SHOW_TOTAL_QUEUE_TIME.value = false
+            Preferences.PLAYER_ACTION_LOOP.value = false
+            Preferences.PLAYER_ACTION_SHOW_MENU.value = true
+            Preferences.REDESIGN_PLAYER_MIGRATED.value = true
         }
 
         MonetCompat.enablePaletteCompat()

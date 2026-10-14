@@ -851,6 +851,10 @@ sealed class Preferences<T>(
         val NEUTRAL_PALETTE_MIGRATED by lazy {
             Boolean( preferences, Key.NEUTRAL_PALETTE_MIGRATED, "", false )
         }
+        /** Whether the one-time switch to the redesigned player layout already ran */
+        val REDESIGN_PLAYER_MIGRATED by lazy {
+            Boolean( preferences, Key.REDESIGN_PLAYER_MIGRATED, "", false )
+        }
         val THEME_MODE by lazy {
             Enum( preferences, Key.THEME_MODE, "colorPaletteMode", ColorPaletteMode.Dark )
         }
@@ -1939,6 +1943,7 @@ sealed class Preferences<T>(
         const val MAIN_THEME = "MainTheme"
         const val COLOR_PALETTE = "ColorPalette"
         const val NEUTRAL_PALETTE_MIGRATED = "NeutralPaletteMigrated"
+        const val REDESIGN_PLAYER_MIGRATED = "RedesignPlayerMigrated"
         const val THEME_MODE = "ThemeMode"
         const val STARTUP_SCREEN = "StartupScreen"
         const val FONT = "Font"
