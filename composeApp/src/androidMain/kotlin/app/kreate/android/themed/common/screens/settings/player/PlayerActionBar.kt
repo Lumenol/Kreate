@@ -14,6 +14,13 @@ import it.fast4x.rimusic.enums.PlayerType
 fun LazyListScope.playerActionBarSection( search: SettingEntrySearch, isLandscape: Boolean ) {
     header( R.string.player_action_bar )
 
+    entry( search, R.string.setting_entry_player_tabs ) {
+        SettingComponents.BooleanEntry(
+            Preferences.PLAYER_ACTION_TABS,
+            R.string.setting_entry_player_tabs,
+            R.string.setting_description_player_tabs
+        )
+    }
     entry( search, R.string.action_bar_transparent_background ) {
         SettingComponents.BooleanEntry(
             Preferences.PLAYER_TRANSPARENT_ACTIONS_BAR,

@@ -360,6 +360,10 @@ sealed class Preferences<T>(
         val PLAYER_ACTION_SHOW_MENU by lazy {
             Boolean( preferences, Key.PLAYER_ACTION_SHOW_MENU, "showButtonPlayerMenu", true )
         }
+        /** "Up next · Lyrics · Related" tabs instead of the row of icons */
+        val PLAYER_ACTION_TABS by lazy {
+            Boolean( preferences, Key.PLAYER_ACTION_TABS, "", true )
+        }
         val PLAYER_ACTION_START_RADIO by lazy {
             Boolean( preferences, Key.PLAYER_ACTION_START_RADIO, "showButtonPlayerStartRadio", false )
         }
@@ -857,7 +861,7 @@ sealed class Preferences<T>(
                 COLOR_PALETTE, THEME_MODE, PLAYER_BACKGROUND,
                 PLAYER_TIMELINE_TYPE, PLAYER_PLAY_BUTTON_TYPE, PLAYER_SHOW_SONGS_REMAINING_TIME,
                 PLAYER_SHOW_SEEK_BUTTONS, PLAYER_SHOW_TOTAL_QUEUE_TIME, PLAYER_ACTION_LOOP,
-                PLAYER_ACTION_SHOW_MENU, MARQUEE_TEXT_EFFECT, NAVIGATION_BAR_POSITION,
+                PLAYER_ACTION_SHOW_MENU, PLAYER_ACTION_TABS, MARQUEE_TEXT_EFFECT, NAVIGATION_BAR_POSITION,
                 ALBUMS_PLATFORM_INDICATOR, ARTISTS_PLATFORM_INDICATOR, PLAYLISTS_PLATFORM_INDICATOR
             ).forEach { it.reset() }
         }
@@ -1806,6 +1810,7 @@ sealed class Preferences<T>(
         const val PLAYER_ACTION_SHUFFLE = "PlayerActionShuffle"
         const val PLAYER_ACTION_SLEEP_TIMER = "PlayerActionSleepTimer"
         const val PLAYER_ACTION_SHOW_MENU = "PlayerActionShowMenu"
+        const val PLAYER_ACTION_TABS = "PlayerActionTabs"
         const val PLAYER_ACTION_START_RADIO = "PlayerActionStartRadio"
         const val PLAYER_ACTION_OPEN_EQUALIZER = "PlayerActionOpenEqualizer"
         const val PLAYER_ACTION_DISCOVER = "PlayerActionDiscover"

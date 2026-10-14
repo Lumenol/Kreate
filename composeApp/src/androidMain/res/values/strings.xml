@@ -801,6 +801,12 @@
     <string name="setting_entry_reset_appearance">Restore default appearance</string>
     <string name="setting_description_reset_appearance">Colors, player and home cards back to their defaults. Your account, downloads and history are kept.</string>
     <string name="setting_confirm_reset_appearance">Restore the default appearance? Your account, downloads and history are kept.</string>
+    <string name="setting_entry_player_tabs">Up next · Lyrics · Related tabs</string>
+    <string name="setting_description_player_tabs">Show these three tabs at the bottom of the player instead of the row of icons</string>
+    <string name="player_tab_up_next">Up next</string>
+    <string name="player_tab_lyrics">Lyrics</string>
+    <string name="player_tab_related">Related</string>
+    <string name="player_related_empty">No related songs found</string>
     <string name="info_explicit_song">This song may not be suitable for all ages</string>
     <string name="info_added_by_smart_recommendations">Added by smart recommendations</string>
     <string name="info_delete_cache">Delete cache</string>

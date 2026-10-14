@@ -804,6 +804,12 @@ Volume BAS : titre précédent</string>
     <string name="setting_entry_reset_appearance">Rétablir l\'apparence par défaut</string>
     <string name="setting_description_reset_appearance">Couleurs, lecteur et cartes de l\'accueil reviennent aux réglages par défaut. Votre compte, vos téléchargements et votre historique sont conservés.</string>
     <string name="setting_confirm_reset_appearance">Rétablir l\'apparence par défaut ? Votre compte, vos téléchargements et votre historique sont conservés.</string>
+    <string name="setting_entry_player_tabs">Onglets À suivre · Paroles · Similaires</string>
+    <string name="setting_description_player_tabs">Affiche ces trois onglets en bas du lecteur à la place de la rangée d\'icônes</string>
+    <string name="player_tab_up_next">À suivre</string>
+    <string name="player_tab_lyrics">Paroles</string>
+    <string name="player_tab_related">Similaires</string>
+    <string name="player_related_empty">Aucun titre similaire trouvé</string>
     <string name="info_explicit_song">Ce titre n\'est peut-être pas adapté à tous les âges </string>
     <string name="info_added_by_smart_recommendations">Ajouté par les recommandations intelligentes</string>
     <string name="info_delete_cache">Supprimer le cache</string>
