@@ -63,6 +63,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.mapLatest
 import me.knighthat.innertube.model.InnertubePlaylist
 import me.knighthat.innertube.response.Runs
+import it.fast4x.rimusic.utils.monthlyPlaylistTitle
 
 object PlaylistItem: Visual(), MultiplatformItem {
 
@@ -392,7 +393,7 @@ object PlaylistItem: Visual(), MultiplatformItem {
                     }
             },
             firstLine = {
-                Title( playlist.cleanName(), values, TextAlign.Center )
+                Title( playlist.displayName(), values, TextAlign.Center )
             },
             onClick = click@ {
                 onClick.invoke()
@@ -539,7 +540,7 @@ object PlaylistItem: Visual(), MultiplatformItem {
                 }
             },
             firstLine = {
-                Title( playlist.cleanName(), values, TextAlign.Start )
+                Title( playlist.displayName(), values, TextAlign.Start )
             },
             onClick = click@ {
                 onClick.invoke()
@@ -629,3 +630,8 @@ object PlaylistItem: Visual(), MultiplatformItem {
         }
     }
 }
+
+/** Monthly playlists read "October 2026" instead of their raw "202610" name */
+@Composable
+private fun Playlist.displayName(): String =
+    if( isMonthly ) monthlyPlaylistTitle( name ) ?: cleanName() else cleanName()

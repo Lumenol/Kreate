@@ -8,6 +8,7 @@ import it.fast4x.innertube.models.MusicTwoRowItemRenderer
 import it.fast4x.innertube.models.oddElements
 import it.fast4x.innertube.utils.from
 import kotlinx.serialization.Serializable
+import it.fast4x.innertube.utils.asYear
 
 @Serializable
 data class HomePage(
@@ -123,7 +124,7 @@ data class HomePage(
                                     endpoint = it.navigationEndpoint?.browseEndpoint
                                 )
                             },
-                            year = renderer.subtitle?.runs?.lastOrNull()?.text,
+                            year = renderer.subtitle?.runs?.lastOrNull()?.text.asYear(),
                             thumbnail = renderer.thumbnailRenderer?.musicThumbnailRenderer?.thumbnail?.thumbnails?.lastOrNull(),
 //                            explicit = renderer.subtitleBadges?.find {
 //                                it.musicInlineBadgeRenderer?.icon?.iconType == "MUSIC_EXPLICIT_BADGE"
