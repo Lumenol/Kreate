@@ -2,10 +2,11 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.ChipCloudRenderer
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class ChipCloudRendererImpl(
-    override val chips: List<ChipImpl> = emptyList()
+    @Serializable(with = SkipInvalidListSerializer::class) override val chips: List<ChipImpl> = emptyList()
 ): ChipCloudRenderer {
 
     @Serializable

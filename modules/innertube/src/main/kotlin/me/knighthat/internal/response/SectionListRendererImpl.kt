@@ -2,12 +2,13 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.SectionListRenderer
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class SectionListRendererImpl(
     override val header: HeaderImpl?,
-    override val contents: List<ContentImpl> = emptyList(),
-    override val continuations: List<ContinuationImpl> = emptyList()
+    @Serializable(with = SkipInvalidListSerializer::class) override val contents: List<ContentImpl> = emptyList(),
+    @Serializable(with = SkipInvalidListSerializer::class) override val continuations: List<ContinuationImpl> = emptyList()
 ): SectionListRenderer {
 
     @Serializable
@@ -56,7 +57,7 @@ internal data class SectionListRendererImpl(
             override val description: DescriptionImpl?,
             override val straplineTextOne: RunsImpl?,
             override val straplineThumbnail: ThumbnailImpl?,
-            override val subtitleBadge: List<BadgeImpl> = emptyList(),
+            @Serializable(with = SkipInvalidListSerializer::class) override val subtitleBadge: List<BadgeImpl> = emptyList(),
             override val secondSubtitle: RunsImpl?
         ): SectionListRenderer.Content.MusicResponsiveHeaderRenderer {
 
@@ -79,7 +80,7 @@ internal data class SectionListRendererImpl(
 
         @Serializable
         internal data class GridRendererImpl(
-            override val items: List<ItemImpl> = emptyList()
+            @Serializable(with = SkipInvalidListSerializer::class) override val items: List<ItemImpl> = emptyList()
         ): SectionListRenderer.Content.GridRenderer {
 
             @Serializable

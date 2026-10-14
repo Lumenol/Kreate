@@ -2,10 +2,11 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.SearchSuggestionsResponse
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class SearchSuggestionsResponseImpl(
-    override val contents: List<ContentImpl> = emptyList(),
+    @Serializable(with = SkipInvalidListSerializer::class) override val contents: List<ContentImpl> = emptyList(),
     override val responseContext: InnertubeResponseImpl.ContextImpl
 ): SearchSuggestionsResponse {
 
@@ -16,7 +17,7 @@ internal data class SearchSuggestionsResponseImpl(
 
         @Serializable
         internal data class RendererImpl(
-            override val contents: List<ContentImpl> = emptyList()
+            @Serializable(with = SkipInvalidListSerializer::class) override val contents: List<ContentImpl> = emptyList()
         ): SearchSuggestionsResponse.Content.Renderer {
 
             @Serializable

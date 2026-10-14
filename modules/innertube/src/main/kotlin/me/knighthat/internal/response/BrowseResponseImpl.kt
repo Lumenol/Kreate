@@ -2,6 +2,7 @@ package me.knighthat.internal.response
 
 import kotlinx.serialization.Serializable
 import me.knighthat.innertube.response.BrowseResponse
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class BrowseResponseImpl(
@@ -10,7 +11,7 @@ internal data class BrowseResponseImpl(
     override val maxAgeStoreSeconds: Int?,
     override val microformat: MicroformatImpl?,
     override val background: ThumbnailImpl?,
-    override val onResponseReceivedActions: List<ResponseReceivedActionImpl> = emptyList(),
+    @Serializable(with = SkipInvalidListSerializer::class) override val onResponseReceivedActions: List<ResponseReceivedActionImpl> = emptyList(),
     override val responseContext: InnertubeResponseImpl.ContextImpl,
     override val continuationContents: ContinuationContentsImpl?
 ): BrowseResponse {

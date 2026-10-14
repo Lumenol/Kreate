@@ -37,16 +37,16 @@ internal data class MicroformatImpl(
 
         @Serializable
         internal data class PageOwnerDetailsImpl(
-            override val name: String,
-            override val externalChannelId: String,
-            override val youtubeProfileUrl: String
+            override val name: String = "",
+            override val externalChannelId: String = "",
+            override val youtubeProfileUrl: String = ""
         ): Microformat.Data.PageOwnerDetails
 
         @Serializable
         internal data class VideoDetailsImpl(
-            override val externalVideoId: String,
-            override val durationSeconds: String,
-            override val durationIso8601: String
+            override val externalVideoId: String = "",
+            override val durationSeconds: String = "",
+            override val durationIso8601: String = ""
         ): Microformat.Data.VideoDetails
     }
 
@@ -56,29 +56,29 @@ internal data class MicroformatImpl(
         override val embed: EmbedImpl,
         override val title: SimpleTextImpl?,
         override val description: SimpleTextImpl?,
-        override val lengthSeconds: String,
-        override val ownerProfileUrl: String,
-        override val externalChannelId: String,
-        override val isFamilySafe: Boolean,
+        override val lengthSeconds: String = "",
+        override val ownerProfileUrl: String = "",
+        override val externalChannelId: String = "",
+        override val isFamilySafe: Boolean = false,
         override val availableCountries: List<String> = emptyList(),
-        override val isUnlisted: Boolean,
-        override val hasYpcMetadata: Boolean,
-        override val viewCount: String,
-        override val category: String,
-        override val publishDate: String,
-        override val ownerChannelName: String,
-        override val uploadDate: String,
-        override val isShortsEligible: Boolean,
-        override val externalVideoId: String,
-        override val likeCount: String,
-        override val canonicalUrl: String
+        override val isUnlisted: Boolean = false,
+        override val hasYpcMetadata: Boolean = false,
+        override val viewCount: String = "",
+        override val category: String = "",
+        override val publishDate: String = "",
+        override val ownerChannelName: String = "",
+        override val uploadDate: String = "",
+        override val isShortsEligible: Boolean = false,
+        override val externalVideoId: String = "",
+        override val likeCount: String = "",
+        override val canonicalUrl: String = ""
     ) : Microformat.Player {
 
         @Serializable
         internal data class EmbedImpl(
-            override val iframeUrl: String,
-            override val width: Int,
-            override val height: Int
+            override val iframeUrl: String = "",
+            override val width: Int = 0,
+            override val height: Int = 0
         ): Microformat.Player.Embed
     }
 }

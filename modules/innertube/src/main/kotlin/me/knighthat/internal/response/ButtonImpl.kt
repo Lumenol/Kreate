@@ -17,7 +17,7 @@ internal data class ButtonImpl(
         override val subscribed: Boolean?,
         override val enabled: Boolean?,
         override val type: String?,
-        override val channelId: String,
+        override val channelId: String = "",
         override val showPreference: Boolean?,
         override val subscriberCountWithSubscribeText: RunsImpl?,
         override val subscribedButtonText: RunsImpl?,

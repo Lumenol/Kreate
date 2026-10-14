@@ -45,6 +45,9 @@ private val JSON: Json = Json {
     encodeDefaults = true
     ignoreUnknownKeys = true
     explicitNulls = false
+    // YouTube sometimes sends `null` (or an unknown enum value) for a field
+    // the models don't expect it for: fall back to its default instead of failing
+    coerceInputValues = true
 
     // Exclude ("type": "me.knighthat.innertube.*")
     // since there's no intention to deserialize json

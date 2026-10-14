@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import me.knighthat.innertube.response.PrimaryResults
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class PrimaryResultsImpl(
@@ -12,7 +13,7 @@ internal data class PrimaryResultsImpl(
 
     @Serializable
     data class ResultsImpl(
-        override val contents: List<ContentImpl> = emptyList()
+        @Serializable(with = SkipInvalidListSerializer::class) override val contents: List<ContentImpl> = emptyList()
     ): PrimaryResults.Results {
 
         @Serializable
@@ -65,7 +66,7 @@ internal data class PrimaryResultsImpl(
                         override val title: RunsImpl,
                         override val navigationEndpoint: EndpointImpl,
                         override val subscriberCountText: SimpleTextImpl?,
-                        override val badges: List<BadgeImpl> = emptyList()
+                        @Serializable(with = SkipInvalidListSerializer::class) override val badges: List<BadgeImpl> = emptyList()
                     ): PrimaryResults.Results.Content.VideoSecondaryInfoRenderer.Owner.Renderer
                 }
 
@@ -76,15 +77,15 @@ internal data class PrimaryResultsImpl(
 
                     @Serializable
                     data class RendererImpl(
-                        override val collapsedItemCount: Int
+                        override val collapsedItemCount: Int = 0
                     ): PrimaryResults.Results.Content.VideoSecondaryInfoRenderer.MetadataRowContainer.Renderer
                 }
 
                 @Serializable
                 data class AttributedDescriptionImpl(
-                    override val content: String,
-                    override val styleRuns: List<StyleRunImpl> = emptyList(),
-                    override val headerRuns: List<HeaderRunImpl> = emptyList()
+                    override val content: String = "",
+                    @Serializable(with = SkipInvalidListSerializer::class) override val styleRuns: List<StyleRunImpl> = emptyList(),
+                    @Serializable(with = SkipInvalidListSerializer::class) override val headerRuns: List<HeaderRunImpl> = emptyList()
                 ): PrimaryResults.Results.Content.VideoSecondaryInfoRenderer.AttributedDescription {
 
                     @Serializable
@@ -92,7 +93,7 @@ internal data class PrimaryResultsImpl(
                         override val startIndex: UShort,
                         override val length: UShort,
                         override val styleRunExtensions: ExtensionImpl,
-                        override val fontFamilyName: String
+                        override val fontFamilyName: String = ""
                     ): PrimaryResults.Results.Content.VideoSecondaryInfoRenderer.AttributedDescription.StyleRun {
 
                         @Serializable
@@ -118,7 +119,7 @@ internal data class PrimaryResultsImpl(
                     data class HeaderRunImpl(
                         override val startIndex: UShort,
                         override val length: UShort,
-                        override val headerMapping: String
+                        override val headerMapping: String = ""
                     ): PrimaryResults.Results.Content.VideoSecondaryInfoRenderer.AttributedDescription.HeaderRun
                 }
             }

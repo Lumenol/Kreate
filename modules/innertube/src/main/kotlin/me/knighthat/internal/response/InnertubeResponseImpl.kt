@@ -4,6 +4,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import me.knighthat.innertube.response.InnertubeResponse
+import me.knighthat.internal.util.SkipInvalidListSerializer
 
 @Serializable
 internal data class InnertubeResponseImpl(
@@ -13,7 +14,7 @@ internal data class InnertubeResponseImpl(
     @Serializable
     internal data class ContextImpl(
         override val visitorData: String?,
-        override val serviceTrackingParams: List<ServiceTrackingImpl> = emptyList()
+        @Serializable(with = SkipInvalidListSerializer::class) override val serviceTrackingParams: List<ServiceTrackingImpl> = emptyList()
     ): InnertubeResponse.Context {
 
         @Serializable
