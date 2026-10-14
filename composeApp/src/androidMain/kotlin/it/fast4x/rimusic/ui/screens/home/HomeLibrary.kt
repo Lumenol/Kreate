@@ -179,12 +179,10 @@ fun HomeLibrary(
         ) {
             Column( Modifier.fillMaxSize() ) {
                 // Sticky tab's title
-                TabHeader( R.string.playlists ) {
+                // The Library's chips already name the tab: count, then every action in "⋮"
+                TabToolBar.Compact( listOf( sort, search, shuffle, newPlaylistDialog, importPlaylistDialog, itemSize ) ) {
                     HeaderInfo( itemsOnDisplay.size.toString(), R.drawable.playlist )
                 }
-
-                // Sticky tab's tool bar
-                TabToolBar.Buttons( sort, search, shuffle, newPlaylistDialog, importPlaylistDialog, itemSize )
 
                 // Sticky search bar
                 search.SearchBar()

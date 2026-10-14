@@ -62,6 +62,8 @@ import me.knighthat.component.tab.LikeComponent
 import me.knighthat.component.tab.Locator
 import me.knighthat.component.tab.SongShuffler
 import org.koin.compose.koinInject
+import androidx.compose.ui.res.stringResource
+import it.fast4x.rimusic.utils.forcePlayFromBeginning
 
 @UnstableApi
 @ExperimentalMaterial3Api
@@ -149,13 +151,22 @@ fun HomeSongsScreen(
             )
     ) {
         Column( Modifier.fillMaxSize() ) {
-            // Sticky tab's title
-            TabHeader( R.string.songs ) {
-                HeaderInfo( itemsOnDisplayState.size.toString(), R.drawable.musical_notes )
+            // The Library's chips already name the tab: play all / shuffle first,
+            // every other action in the "⋮" menu
+            TabToolBar.Compact( buttons ) {
+                TabToolBar.PillButton(
+                    text = stringResource( R.string.play_all ),
+                    iconId = R.drawable.play,
+                    filled = true,
+                    onClick = { player.forcePlayFromBeginning( getMediaItems() ) }
+                )
+                TabToolBar.PillButton(
+                    text = stringResource( R.string.shuffle ),
+                    iconId = R.drawable.shuffle,
+                    filled = false,
+                    onClick = shuffle::onShortClick
+                )
             }
-
-            // Sticky tab's tool bar
-            TabToolBar.Buttons( buttons )
 
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,

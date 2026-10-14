@@ -28,6 +28,22 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import it.fast4x.rimusic.ui.components.ButtonsRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.material3.Icon
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.painterResource
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.semiBold
+import it.fast4x.rimusic.enums.BuiltInPlaylist
 
 
 @ExperimentalMaterial3Api
@@ -70,7 +86,15 @@ fun HomeScreen(
     ) { currentTabIndex ->
         saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
             if( currentTabIndex in LIBRARY_TABS )
-                LibraryTabs( currentTabIndex, onTabChanged ) {
+                LibraryTabs(
+                    currentTab = currentTabIndex,
+                    onTabChanged = onTabChanged,
+                    onHistory = { NavRoutes.history.navigateHere( navController ) },
+                    onDownloads = {
+                        Preferences.HOME_SONGS_TYPE.value = BuiltInPlaylist.Downloaded
+                        onTabChanged( 1 )
+                    }
+                ) {
                     LibraryTab( currentTabIndex, navController )
                 }
             else when (currentTabIndex) {
@@ -116,6 +140,8 @@ private val LIBRARY_TABS = 1..4
 private fun LibraryTabs(
     currentTab: Int,
     onTabChanged: (Int) -> Unit,
+    onHistory: () -> Unit,
+    onDownloads: () -> Unit,
     content: @Composable () -> Unit
 ) {
     Column( Modifier.fillMaxSize() ) {
@@ -130,6 +156,15 @@ private fun LibraryTabs(
             onValueUpdate = onTabChanged,
             modifier = Modifier.padding( vertical = 8.dp )
         )
+
+        // History and downloads used to hide in the avatar menu and a song filter
+        Row(
+            horizontalArrangement = Arrangement.spacedBy( 8.dp ),
+            modifier = Modifier.padding( horizontal = 16.dp ).padding( bottom = 4.dp )
+        ) {
+            LibraryShortcut( stringResource( R.string.history ), R.drawable.history, onHistory, Modifier.weight( 1f ) )
+            LibraryShortcut( stringResource( R.string.downloaded ), R.drawable.download, onDownloads, Modifier.weight( 1f ) )
+        }
 
         Box( Modifier.weight( 1f ) ) { content() }
     }
@@ -178,3 +213,31 @@ private fun LibraryTab( tab: Int, navController: NavController ) {
                 )
             }
 }
+
+@Composable
+private fun LibraryShortcut(
+    text: String,
+    iconId: Int,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) =
+    Row(
+        horizontalArrangement = Arrangement.spacedBy( 10.dp ),
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.clip( RoundedCornerShape( 10.dp ) )
+                           .background( colorPalette().background1 )
+                           .clickable( onClick = onClick )
+                           .padding( horizontal = 12.dp, vertical = 10.dp )
+    ) {
+        Icon(
+            painter = painterResource( iconId ),
+            contentDescription = null,
+            tint = colorPalette().text,
+            modifier = Modifier.size( 20.dp )
+        )
+        BasicText(
+            text = text,
+            style = typography().xs.semiBold.color( colorPalette().text ),
+            maxLines = 1
+        )
+    }
