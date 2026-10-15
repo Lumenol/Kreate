@@ -205,6 +205,12 @@
     <string name="ui_tab">Interface</string>
     <string name="tab_player">Lecteur</string>
     <string name="filter_all">Tous</string>
+    <string name="stats_period_today">Aujourd\'hui</string>
+    <string name="stats_period_week">Semaine</string>
+    <string name="stats_period_month">Mois</string>
+    <string name="stats_period_3_months">3 mois</string>
+    <string name="stats_period_6_months">6 mois</string>
+    <string name="stats_period_year">Année</string>
     <string name="history_tab_local">Kreate</string>
     <string name="history_tab_ytm">Compte YouTube</string>
     <string name="biggest">Très gros</string>

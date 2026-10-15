@@ -212,20 +212,6 @@ fun StatisticsPage(
             ) {
 
                 item(
-                    key = "header",
-                    span = { GridItemSpan(maxLineSpan) }
-                ) {
-                    HeaderWithIcon(
-                        title = statisticsType.text,
-                        iconId = statisticsType.androidIconId,
-                        enabled = true,
-                        showIcon = true,
-                        modifier = Modifier,
-                        onClick = {}
-                    )
-                }
-
-                item(
                     key = "header_tabs",
                     span = { GridItemSpan(maxLineSpan) }
                 ) {
