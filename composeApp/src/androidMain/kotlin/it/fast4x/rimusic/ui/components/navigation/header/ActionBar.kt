@@ -97,6 +97,9 @@ fun ActionBar(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
+    // History in sight: in the menu alone, behind the account picture, nobody found it
+    HeaderIcon( R.drawable.history ) { NavRoutes.history.navigateHere( navController ) }
+
     // Search Icon
     HeaderIcon( R.drawable.search ) {
         navController.navigate( NavRoutes.search.name ) {

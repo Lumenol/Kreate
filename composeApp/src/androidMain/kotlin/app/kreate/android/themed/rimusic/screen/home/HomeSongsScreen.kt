@@ -1,5 +1,15 @@
 package app.kreate.android.themed.rimusic.screen.home
 
+import it.fast4x.rimusic.utils.semiBold
+import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.typography
+import androidx.compose.foundation.layout.size
+import androidx.compose.ui.res.painterResource
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.clickable
+import androidx.compose.runtime.collectAsState
+import androidx.media3.exoplayer.offline.Download
+import it.fast4x.rimusic.service.MyDownloadHelper
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -229,18 +239,38 @@ fun HomeSongsScreen(
                                         )
                                         .fillMaxWidth()
                             )
-                            // The finished ones are listed here, the others on their own page
-                            if( builtInPlaylist === BuiltInPlaylist.Downloaded )
-                                androidx.compose.foundation.layout.Row(
-                                    Modifier.padding( start = SettingComponents.HORIZONTAL_PADDING.dp, bottom = 8.dp )
-                                ) {
-                                    TabToolBar.PillButton(
-                                        text = stringResource( R.string.downloads_in_progress_title ),
-                                        iconId = R.drawable.download_progress,
-                                        filled = false,
-                                        onClick = { NavRoutes.DOWNLOADS.navigateHere( navController ) }
-                                    )
+                            // The finished ones are listed here; one quiet line leads to the
+                            // others, only when some are running or failed
+                            if( builtInPlaylist === BuiltInPlaylist.Downloaded ) {
+                                val downloads by MyDownloadHelper.instance.downloads.collectAsState()
+                                val running = downloads.values.count {
+                                    it.state == Download.STATE_QUEUED || it.state == Download.STATE_DOWNLOADING
+                                            || it.state == Download.STATE_RESTARTING || it.state == Download.STATE_STOPPED
                                 }
+                                val failed = downloads.values.count { it.state == Download.STATE_FAILED }
+                                if( running + failed > 0 )
+                                    androidx.compose.foundation.layout.Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.fillMaxWidth()
+                                                           .clickable { NavRoutes.DOWNLOADS.navigateHere( navController ) }
+                                                           .padding( horizontal = SettingComponents.HORIZONTAL_PADDING.dp, vertical = 8.dp )
+                                    ) {
+                                        BasicText(
+                                            text = listOfNotNull(
+                                                stringResource( R.string.downloads_running_count, running ).takeIf { running > 0 },
+                                                stringResource( R.string.downloads_failed_count, failed ).takeIf { failed > 0 }
+                                            ).joinToString( " · " ),
+                                            style = typography().xs.semiBold.color( if( failed > 0 ) colorPalette().red else colorPalette().textSecondary ),
+                                            modifier = Modifier.weight( 1f )
+                                        )
+                                        androidx.compose.material3.Icon(
+                                            painter = painterResource( R.drawable.chevron_forward ),
+                                            contentDescription = stringResource( R.string.downloads_in_progress_title ),
+                                            tint = colorPalette().textSecondary,
+                                            modifier = Modifier.size( 16.dp )
+                                        )
+                                    }
+                            }
                         }
                         else -> {}
                     }
