@@ -68,6 +68,11 @@ fun Player.positionAndDurationState(): State<Pair<Long, Long>> {
         val pollJob = launch {
             while (isActive) {
                 delay(500)
+                // A seek into the part already buffered never leaves STATE_READY,
+                // so onPlaybackStateChanged doesn't fire and the bar used to stay
+                // frozen until the next song
+                if (isSeeking && playbackState == Player.STATE_READY)
+                    isSeeking = false
                 if (!isSeeking) {
                     state.value = currentPosition to duration
                 }
