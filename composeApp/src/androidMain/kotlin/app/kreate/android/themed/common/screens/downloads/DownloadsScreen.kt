@@ -3,9 +3,14 @@
 package app.kreate.android.themed.common.screens.downloads
 
 import android.content.Context
+import app.kreate.android.service.player.StatefulPlayer
+import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.forcePlay
+import org.koin.compose.koinInject
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,6 +49,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.media3.exoplayer.offline.Download
+import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import app.kreate.android.R
@@ -83,7 +90,21 @@ private fun rememberPendingDownloads(): List<Download> {
 fun DownloadsScreen( navController: NavController, miniPlayer: @Composable () -> Unit = {} ) {
     val context = LocalContext.current
     val downloads = rememberPendingDownloads()
-    var paused by remember { mutableStateOf( MyDownloadHelper.instance.downloadManager.downloadsPaused ) }
+    remember { DownloadFailures.init( context ) }
+    val manager = MyDownloadHelper.instance.downloadManager
+    var paused by remember { mutableStateOf( manager.downloadsPaused ) }
+    DisposableEffect( manager ) {
+        val listener = object : DownloadManager.Listener {
+            override fun onDownloadsPausedChanged( downloadManager: DownloadManager, downloadsPaused: Boolean ) {
+                paused = downloadsPaused
+            }
+        }
+        manager.addListener( listener )
+        // A new DownloadManager starts paused and only the service un-pauses it:
+        // without this, after a restart the page showed everything "Paused"
+        DownloadService.start( context, MyDownloadService::class.java )
+        onDispose { manager.removeListener( listener ) }
+    }
 
     DetailSkeleton(
         navController = navController,
@@ -124,7 +145,11 @@ fun DownloadsScreen( navController: NavController, miniPlayer: @Composable () ->
                         iconId = if( paused ) R.drawable.play else R.drawable.pause,
                         enabled = downloads.isNotEmpty()
                     ) {
-                        if( paused ) DownloadService.sendResumeDownloads( context, MyDownloadService::class.java, false )
+                        if( paused ) {
+                            DownloadService.sendResumeDownloads( context, MyDownloadService::class.java, false )
+                            // Also lifts the pauses set on single rows
+                            DownloadService.sendSetStopReason( context, MyDownloadService::class.java, null, Download.STOP_REASON_NONE, false )
+                        }
                         else DownloadService.sendPauseDownloads( context, MyDownloadService::class.java, false )
                         paused = !paused
                     }
@@ -151,7 +176,14 @@ fun DownloadsScreen( navController: NavController, miniPlayer: @Composable () ->
                 }
 
             items( downloads, key = { it.request.id } ) { download ->
-                DownloadRow( download, paused, context )
+                DownloadRow( download, paused, context ) {
+                    // Everything paused: run this one only, keep the others stopped
+                    downloads.filter { it !== download && it.state != Download.STATE_FAILED }
+                             .forEach { setPaused( context, it, true ) }
+                    setPaused( context, download, false )
+                    DownloadService.sendResumeDownloads( context, MyDownloadService::class.java, false )
+                    paused = false
+                }
             }
         }
     }
@@ -160,13 +192,27 @@ fun DownloadsScreen( navController: NavController, miniPlayer: @Composable () ->
 private fun cancel( context: Context, download: Download ) =
     DownloadService.sendRemoveDownload( context, MyDownloadService::class.java, download.request.id, false )
 
+/** Any non-zero reason keeps a single download stopped until it's lifted */
+private const val STOP_REASON_USER = 1
+
+private fun setPaused( context: Context, download: Download, pause: Boolean ) =
+    DownloadService.sendSetStopReason(
+        context, MyDownloadService::class.java, download.request.id,
+        if( pause ) STOP_REASON_USER else Download.STOP_REASON_NONE, false
+    )
+
 @Composable
-private fun DownloadRow( download: Download, paused: Boolean, context: Context ) {
+private fun DownloadRow( download: Download, paused: Boolean, context: Context, resumeOnly: () -> Unit ) {
     val songId = download.request.id
     val song by remember( songId ) { Database.songTable.findById( songId ) }.collectAsState( null )
     val title = song?.cleanTitle() ?: download.request.data.decodeToString()
     val failed = download.state == Download.STATE_FAILED
     val percent = download.percentDownloaded.takeIf { it >= 0f }
+    val player: StatefulPlayer = koinInject()
+    val stopped = paused || download.state == Download.STATE_STOPPED
+    // A failed row unfolds on long press so the whole reason can be read
+    var expanded by remember( songId ) { mutableStateOf( false ) }
+    val unfolded = failed && expanded
 
     val reasons by DownloadFailures.reasons.collectAsState()
     val status = when {
@@ -184,7 +230,13 @@ private fun DownloadRow( download: Download, paused: Boolean, context: Context )
     Row(
         horizontalArrangement = Arrangement.spacedBy( 14.dp ),
         verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth().padding( horizontal = 16.dp, vertical = 8.dp )
+        modifier = Modifier.fillMaxWidth()
+                           .combinedClickable(
+                               // Plays the song, to know what it is
+                               onClick = { song?.let { player.forcePlay( it.asMediaItem ) } },
+                               onLongClick = if( failed ) { { expanded = !expanded } } else null
+                           )
+                           .padding( horizontal = 16.dp, vertical = 8.dp )
     ) {
         Image(
             painter = ImageFactory.rememberAsyncImagePainter( song?.thumbnailUrl ),
@@ -196,15 +248,26 @@ private fun DownloadRow( download: Download, paused: Boolean, context: Context )
             BasicText(
                 text = title,
                 style = typography().s.semiBold.color( colorPalette().text ),
-                maxLines = 1,
+                maxLines = if( unfolded ) Int.MAX_VALUE else 1,
                 overflow = TextOverflow.Ellipsis
             )
-            BasicText(
-                text = listOfNotNull( song?.cleanArtistsText()?.takeIf( String::isNotBlank ), status ).joinToString( " · " ),
-                style = typography().xs.color( if( failed ) colorPalette().red else colorPalette().textSecondary ),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
+            val artists = song?.cleanArtistsText()?.takeIf( String::isNotBlank )
+            if( unfolded ) {
+                artists?.let {
+                    BasicText( it, style = typography().xs.color( colorPalette().textSecondary ) )
+                }
+                BasicText(
+                    text = status,
+                    style = typography().xs.color( colorPalette().red ),
+                    modifier = Modifier.padding( top = 2.dp )
+                )
+            } else
+                BasicText(
+                    text = listOfNotNull( artists, status ).joinToString( " · " ),
+                    style = typography().xs.color( if( failed ) colorPalette().red else colorPalette().textSecondary ),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             if( !failed )
                 LinearProgressIndicator(
                     progress = { (percent ?: 0f) / 100f },
@@ -213,7 +276,16 @@ private fun DownloadRow( download: Download, paused: Boolean, context: Context )
                     modifier = Modifier.fillMaxWidth().padding( top = 6.dp ).height( 3.dp )
                 )
         }
-        if( failed )
+        if( !failed )
+            IconButton( onClick = { if( paused ) resumeOnly() else setPaused( context, download, !stopped ) } ) {
+                Icon(
+                    painterResource( if( stopped ) R.drawable.play else R.drawable.pause ),
+                    stringResource( if( stopped ) R.string.downloads_resume else R.string.downloads_pause ),
+                    tint = colorPalette().text,
+                    modifier = Modifier.size( 20.dp )
+                )
+            }
+        else
             IconButton( onClick = {
                 DownloadService.sendAddDownload( context, MyDownloadService::class.java, download.request, false )
             } ) {

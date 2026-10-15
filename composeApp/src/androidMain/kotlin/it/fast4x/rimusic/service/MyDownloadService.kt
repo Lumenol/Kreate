@@ -45,6 +45,7 @@ class MyDownloadService : DownloadService(
                 FOREGROUND_NOTIFICATION_ID + 1
             )
         )
+        DownloadFailures.init( this )
         downloadManager.addListener( DownloadFailures )
         return downloadManager
     }
