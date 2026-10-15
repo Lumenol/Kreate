@@ -31,6 +31,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.offline.Download
 import app.kreate.android.Preferences
+import app.kreate.android.utils.BlockedArtists
 import app.kreate.android.R
 import app.kreate.android.service.PlayerEventUpdateDiscord
 import app.kreate.android.utils.innertube.CURRENT_LOCALE
@@ -724,11 +725,19 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
     }
 
     /**
-     * Ids among [songs] that radio must not queue: disliked songs, and with
-     * Discover on, songs already liked or saved in a playlist.
+     * Ids among [songs] that radio must not queue: disliked songs, songs by a
+     * blocked artist, and with Discover on, songs already liked or in a playlist.
      */
     private suspend fun songsKeptOutOfRadio( songs: List<InnertubeSong> ): Set<String> {
         val disliked = Database.songTable.allDisliked().first().mapTo( HashSet() ) { it.id }
+
+        // Songs by a blocked artist
+        val blockedArtists = BlockedArtists.ids
+        if( blockedArtists.isNotEmpty() )
+            songs.filterTo( ArrayList() ) { song ->
+                song.artists.any { it.navigationEndpoint?.browseEndpoint?.browseId in blockedArtists }
+            }.mapTo( disliked ) { it.id }
+
         if( !Preferences.ENABLE_DISCOVER.value ) return disliked
 
         return songs.mapNotNullTo( disliked ) { song ->

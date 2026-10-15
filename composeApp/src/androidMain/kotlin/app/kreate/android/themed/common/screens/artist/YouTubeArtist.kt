@@ -1,5 +1,9 @@
 package app.kreate.android.themed.common.screens.artist
 
+import me.knighthat.utils.Toaster
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import app.kreate.android.utils.BlockedArtists
 import androidx.compose.runtime.getValue
 import app.kreate.android.themed.common.component.DetailMenu
 import app.kreate.android.themed.common.component.DetailSkeleton
@@ -330,6 +334,20 @@ fun YouTubeArtist(
             }
         }
     }
+    // Radio and the infinite queue leave the artist out
+    var isBlocked by remember { mutableStateOf( BlockedArtists.isBlocked( viewModel.browseId ) ) }
+    val block = object: MenuIcon {
+        override val iconId: Int = R.drawable.close
+        override val menuIconTitle: String
+            @Composable
+            get() = stringResource( if( isBlocked ) R.string.unblock_artist else R.string.block_artist )
+
+        override fun onShortClick() {
+            isBlocked = BlockedArtists.toggle( viewModel.browseId )
+            val name = artistPage?.name ?: dbArtist?.cleanName().orEmpty()
+            Toaster.s( if( isBlocked ) R.string.artist_blocked else R.string.artist_unblocked, name )
+        }
+    }
     downloadAllDialog.Render()
     deleteAllDownloadsDialog.Render()
     //</editor-fold>
@@ -347,7 +365,7 @@ fun YouTubeArtist(
                 navController = navController,
                 miniPlayer = miniPlayer,
                 actions = {
-                    DetailMenu( listOf(share, playNext, enqueue, downloadAllDialog, deleteAllDownloadsDialog) )
+                    DetailMenu( listOf(share, playNext, enqueue, downloadAllDialog, deleteAllDownloadsDialog, block) )
                 }
             ) {
                 val currentTabIndex = tabIndex

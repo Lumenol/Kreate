@@ -715,6 +715,10 @@ sealed class Preferences<T>(
         val PROXY_SCHEME by lazy {
             Enum( preferences, Key.PROXY_SCHEME, "ProxyMode", Proxy.Type.HTTP )
         }
+        /** Ids of the artists radio never plays, comma separated */
+        val BLOCKED_ARTISTS by lazy {
+            String( preferences, Key.BLOCKED_ARTISTS, "", "" )
+        }
         val PROXY_HOST by lazy {
             String( preferences, Key.PROXY_HOST, "proxyHostnameKey", "" )
         }
@@ -1922,6 +1926,7 @@ sealed class Preferences<T>(
         const val DISCORD_ACCESS_TOKEN = "DiscordPersonalAccessToken"
         const val IS_PROXY_ENABLED = "IsProxyEnabled"
         const val PROXY_SCHEME = "ProxyScheme"
+        const val BLOCKED_ARTISTS = "BlockedArtists"
         const val PROXY_HOST = "ProxyHost"
         const val PROXY_PORT  = "ProxyPort"
         const val DOH_SERVER = "DnsOverHttpsServer"
