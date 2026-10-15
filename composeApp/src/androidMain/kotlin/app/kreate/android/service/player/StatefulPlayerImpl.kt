@@ -247,11 +247,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             // Involves Player's call, must happen on main thread
             withContext( Dispatchers.Main ) {
                 setMediaItems( mediaItems, startIndex, startPositionMs )
-                // Only when playback resumes on its own: preparing fetches the stream
-                // and posts a notification for a queue nobody asked to play yet.
-                // play() prepares an idle player itself.
-                if( Preferences.RESUME_PLAYBACK_ON_STARTUP.value )
-                    prepare()
+                prepare()
             }
         }
     }
