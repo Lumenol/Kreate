@@ -28,6 +28,10 @@
     <string name="shuffle">Shuffle</string>
     <string name="play_all">Play all</string>
     <string name="share">Share</string>
+    <string name="block_artist">Block artist</string>
+    <string name="unblock_artist">Unblock artist</string>
+    <string name="artist_blocked">%1$s won\'t play in radio anymore</string>
+    <string name="artist_unblocked">%1$s can play in radio again</string>
     <string name="quick_play_next">Play next</string>
     <string name="quick_add_to_playlist">Playlist</string>
     <string name="from_wikipedia_cca">From Wikipedia under Creative Commons Attribution CC-BY-SA 3.0</string>
