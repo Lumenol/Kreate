@@ -281,6 +281,10 @@ fun AppNavigation(
             )
         }
 
+        composable( route = NavRoutes.DOWNLOADS.name ) {
+            app.kreate.android.themed.common.screens.downloads.DownloadsScreen( navController, miniPlayer )
+        }
+
         composable(route = NavRoutes.history.name) {
             HistoryScreen(
                 navController = navController,
