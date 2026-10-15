@@ -1,6 +1,9 @@
 package it.fast4x.rimusic.ui.screens.home
 
 
+import app.kreate.constant.ArtistSortBy
+import app.kreate.android.themed.common.component.initialOf
+import app.kreate.android.themed.common.component.FastScroller
 import android.annotation.SuppressLint
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -247,25 +250,33 @@ fun HomeArtists(
                     ArtistItem.Values.from( colorPalette, typography )
                 }
 
-                LazyVerticalGrid(
-                    state = lazyGridState,
-                    columns = GridCells.Adaptive( itemSize.size.dp ),
-                    modifier = Modifier.background( colorPalette().background0 )
-                                       .fillMaxSize(),
-                    contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer ),
-                    verticalArrangement = Arrangement.spacedBy( ArtistItem.ROW_SPACING.dp )
-                ) {
-                    items(
-                        items = itemsOnDisplay,
-                        key = Artist::id
-                    ) { artist ->
-                        ArtistItem.Render(
-                            artist = artist,
-                            values = artistItemValues,
-                            navController = navController,
-                            sizeDp = sizeDp,
-                            onClick = search::hideIfEmpty,
-                        )
+                Box( Modifier.fillMaxSize() ) {
+                    LazyVerticalGrid(
+                        state = lazyGridState,
+                        columns = GridCells.Adaptive( itemSize.size.dp ),
+                        modifier = Modifier.background( colorPalette().background0 )
+                                           .fillMaxSize(),
+                        contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer ),
+                        verticalArrangement = Arrangement.spacedBy( ArtistItem.ROW_SPACING.dp )
+                    ) {
+                        items(
+                            items = itemsOnDisplay,
+                            key = Artist::id
+                        ) { artist ->
+                            ArtistItem.Render(
+                                artist = artist,
+                                values = artistItemValues,
+                                navController = navController,
+                                sizeDp = sizeDp,
+                                onClick = search::hideIfEmpty,
+                            )
+                        }
+                    }
+
+                    // Letter bubble only when sorted by name
+                    FastScroller( lazyGridState ) { index ->
+                        if( sort.sortBy != ArtistSortBy.TITLE ) return@FastScroller null
+                        initialOf( itemsOnDisplay.getOrNull( index )?.cleanName() )
                     }
                 }
             }
