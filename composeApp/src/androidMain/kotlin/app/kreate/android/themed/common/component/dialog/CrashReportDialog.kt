@@ -159,9 +159,10 @@ class CrashReportDialog(private val context: Context): Dialog() {
             val uriHandler = LocalUriHandler.current
             Button(
                 onClick = {
-                    hideDialog()
-
+                    // Copy first: hiding the dialog deletes the crash log
                     writeCrashlogToClipboard()
+
+                    hideDialog()
 
                     uriHandler.openUri(
                         with(Repository ) {
