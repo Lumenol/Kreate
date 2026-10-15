@@ -1007,7 +1007,7 @@ sealed class Preferences<T>(
             Boolean( preferences, Key.CLOSE_APP_ON_BACK, "closeWithBackButton", true )
         }
         val PLAYBACK_SKIP_ON_ERROR by lazy {
-            Boolean( preferences, Key.PLAYBACK_SKIP_ON_ERROR, "skipMediaOnError", false )
+            Boolean( preferences, Key.PLAYBACK_SKIP_ON_ERROR, "skipMediaOnError", true )
         }
         val USE_SYSTEM_FONT by lazy {
             Boolean( preferences, Key.USE_SYSTEM_FONT, "useSystemFont", false )

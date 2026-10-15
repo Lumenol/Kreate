@@ -539,6 +539,9 @@ Volume BAS : titre précédent</string>
     <string name="error_no_internet">Pas de réseau</string>
     <string name="error_timeout">Délai de connexion expiré</string>
     <string name="error_unknown">Erreur Inconnue</string>
+    <string name="error_playback_failed">Lecture impossible : %1$s</string>
+    <string name="error_youtube_refused_stream">YouTube a refusé le flux (HTTP %1$d)</string>
+    <string name="error_audio_format_unsupported">Ce format audio ne peut pas être lu sur cet appareil</string>
     <string name="delete_song">Voulez-vous vraiment supprimer ce titre ? Elle sera supprimée de la base de données. Cette action est irréversible.</string>
     <string name="info_check_update_now">Vérifiez maintenant</string>
     <string name="info_no_update_available">Aucune mise à jour disponible</string>
