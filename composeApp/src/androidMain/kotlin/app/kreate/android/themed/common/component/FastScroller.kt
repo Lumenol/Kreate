@@ -88,7 +88,8 @@ private fun BoxScope.FastScroller(
     scrollTo: suspend (Int) -> Unit,
     label: (Int) -> String?
 ) {
-    val isLong by remember { derivedStateOf { total() >= MIN_ITEMS } }
+    // Many items, or few but big ones (mood tiles): at least 3 screens long
+    val isLong by remember { derivedStateOf { total() >= MIN_ITEMS || (visible() > 0 && total() >= visible() * 3) } }
     if( !isLong ) return
 
     val scope = rememberCoroutineScope()
