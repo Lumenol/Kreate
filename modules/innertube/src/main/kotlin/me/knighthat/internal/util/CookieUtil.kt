@@ -20,5 +20,5 @@ internal fun getSapisidHash( cookies: String, host: String ): String {
               .joinToString("") { "%02x".format(it) }
               .also { sapisidHash = it }
 
-    return "${currentTime}_${sapisidHash}_u"
+    return "${currentTime}_${sapisidHash}"
 }

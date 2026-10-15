@@ -119,7 +119,9 @@ internal class InnertubeImpl: Innertube {
                         append( HttpHeaders.Cookie, provider.cookies )
                         append(
                             name = HttpHeaders.Authorization,
-                            value = "SAPISIDHASH $sapisidHash SAPISID1PHASH $sapisidHash SAPISID3PHASH $sapisidHash"
+                            // One SAPISID hash, like the Metrolist client whose logged-in calls work:
+                            // the 1P/3P variants need their own cookies, reusing SAPISID got a 401
+                            value = "SAPISIDHASH $sapisidHash"
                         )
                     }
                 }
@@ -139,7 +141,9 @@ internal class InnertubeImpl: Innertube {
         val context = getContext( Context.WEB_REMIX_DEFAULT, localization, visitorData, useLogin )
         val body = BrowseBody.builder( context ).builder().build()
 
-        return post( Endpoints.BROWSE, body ).body<BrowseResponseImpl>()
+        // The context speaks for the account when useLogin: the cookies must go too,
+        // or YouTube answers 401 (private playlists, "Liked music")
+        return post( Endpoints.BROWSE, body, useLogin = useLogin ).body<BrowseResponseImpl>()
     }
 
     @Throws(IOException::class)
@@ -153,7 +157,7 @@ internal class InnertubeImpl: Innertube {
         val context = getContext( template, localization, visitorData, useLogin )
         val body = NextBody.builder( context ).builder().build()
 
-        return post( Endpoints.NEXT , body ).body<NextResponseImpl>()
+        return post( Endpoints.NEXT, body, useLogin = useLogin ).body<NextResponseImpl>()
     }
 
     override fun setProvider( provider: Innertube.KtorProvider ) {
