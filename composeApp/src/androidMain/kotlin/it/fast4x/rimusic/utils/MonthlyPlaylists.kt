@@ -62,18 +62,49 @@ private suspend fun renameOldMonthlyPlaylists() {
     withContext( Dispatchers.Main ) { Preferences.MONTHLY_PLAYLISTS_RENAMED.value = true }
 }
 
+/** [month]'s 50 most played songs into its playlist; an existing one is emptied first */
+private suspend fun fillMonth( month: LocalDate, existing: Playlist? ) {
+    val songs = Database.eventTable
+                        .findSongsMostPlayedBetween(
+                            from = TimeDateUtils.toStartDateMillis( month ),
+                            to = TimeDateUtils.toStartDateMillis( month.plusMonths( 1 ) ),
+                            limit = MONTHLY_SIZE
+                        )
+                        .first()
+    if( songs.isEmpty() ) return          // no history that month: leave things as they are
+
+    Database.asyncTransaction {
+        existing?.let { songPlaylistMapTable.clear( it.id ) }
+        mapIgnore( playlist = existing ?: Playlist( name = monthlyName( month ), isMonthly = true ), songs = songs.toTypedArray() )
+    }
+}
+
 /**
- * Last month's 50 most played songs, named after that month, and last year's
- * 100 most played ("Top 2025"), each made once.
+ * One playlist per past month with its 50 most played songs, named after that
+ * month, and last year's 100 most played ("Top 2025").
+ *
+ * Every month since the first song played gets its playlist, not just the last
+ * one: a month without opening the library used to be skipped for good. Once,
+ * the playlists made before the 50 limit are cut down to it.
  */
 private suspend fun updateRecapPlaylists( context: Context ) {
     renameOldMonthlyPlaylists()
 
     val firstOfThisMonth = LocalDate.now().withDayOfMonth( 1 )
-    val lastMonth = firstOfThisMonth.minusMonths( 1 )
-    val monthName = monthlyName( lastMonth )
-    if( !Database.playlistTable.exists( monthName ).first() )
-        addPlaylistOfMostPlayed( lastMonth, firstOfThisMonth, Playlist( name = monthName, isMonthly = true ), MONTHLY_SIZE )
+    Database.eventTable.firstPlayedAt()?.let { first ->
+        val byName = Database.playlistTable.allMonthly().associateBy { it.name }
+        val trim = !Preferences.MONTHLY_PLAYLISTS_TRIMMED.value
+        var month = java.time.Instant.ofEpochMilli( first )
+                                     .atZone( java.time.ZoneId.systemDefault() )
+                                     .toLocalDate()
+                                     .withDayOfMonth( 1 )
+        while( month < firstOfThisMonth ) {
+            val existing = byName[monthlyName( month )]
+            if( existing == null || trim ) fillMonth( month, existing )
+            month = month.plusMonths( 1 )
+        }
+        if( trim ) withContext( Dispatchers.Main ) { Preferences.MONTHLY_PLAYLISTS_TRIMMED.value = true }
+    }
 
     val firstOfThisYear = firstOfThisMonth.withMonth( 1 )
     val lastYear = firstOfThisYear.minusYears( 1 )

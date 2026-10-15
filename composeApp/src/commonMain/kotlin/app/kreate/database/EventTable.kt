@@ -27,6 +27,14 @@ interface EventTable: DatabaseTable<Event> {
     @Query("SELECT COUNT(*) FROM playback_history")
     fun countAll(): Flow<Long>
 
+    /** When the first song was ever played, `null` with no history */
+    @Query("SELECT MIN(created_at) FROM playback_history")
+    fun firstPlayedAt(): Long?
+
+    /** How many different songs were played between [from] and [to] */
+    @Query("SELECT COUNT(DISTINCT song_id) FROM playback_history WHERE created_at BETWEEN :from AND :to")
+    fun countSongsBetween( from: Long, to: Long = Long.MAX_VALUE ): Flow<Int>
+
     @Transaction
     @Query("SELECT DISTINCT * FROM playback_history LIMIT :limit")
     fun allWithSong( limit: Int = Int.MAX_VALUE ): Flow<List<EventWithSong>>
