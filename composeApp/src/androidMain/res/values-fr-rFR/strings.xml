@@ -19,6 +19,10 @@
     <string name="an_error_has_occurred">Une erreur est survenue</string>
     <string name="albums">Albums</string>
     <string name="artists">Artistes</string>
+    <string name="block_artist">Bloquer l\'artiste</string>
+    <string name="unblock_artist">Débloquer l\'artiste</string>
+    <string name="artist_blocked">%1$s ne passera plus en radio</string>
+    <string name="artist_unblocked">%1$s peut de nouveau passer en radio</string>
     <string name="enter_the_playlist_name">Entrez le nom de la playlist</string>
     <string name="playlists">Playlists</string>
     <string name="favorites">Favoris</string>
@@ -28,10 +32,6 @@
     <string name="shuffle">Aléatoire</string>
     <string name="play_all">Tout lire</string>
     <string name="share">Partager</string>
-    <string name="block_artist">Bloquer l\'artiste</string>
-    <string name="unblock_artist">Débloquer l\'artiste</string>
-    <string name="artist_blocked">%1$s ne passera plus en radio</string>
-    <string name="artist_unblocked">%1$s peut de nouveau passer en radio</string>
     <string name="quick_play_next">À la suite</string>
     <string name="quick_add_to_playlist">Playlist</string>
     <string name="from_wikipedia_cca">De Wikipédia sous licence Creative Commons CC-BY-SA 3.0</string>
