@@ -1,5 +1,6 @@
 package it.fast4x.rimusic.ui.screens.player
 
+import it.fast4x.rimusic.service.modern.isLocal
 import android.annotation.SuppressLint
 import android.graphics.RenderEffect
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -1777,15 +1778,15 @@ fun Player(
                                     .size(24.dp)
                             )
 
-                        Image(
-                            bitmap = AppIcon.Round.imageBitmap( context ),
-                            contentDescription = "Kreate",
-                            modifier = Modifier.size( 24.dp )
-                                               .clickable {
-                                                   onDismiss()
-                                                   NavRoutes.home.navigateHere( navController )
-                                               }
-                        )
+                        // Share where the app logo was (it only led home; ⌄ closes the player)
+                        if( !mediaItem.isLocal )
+                            Image(
+                                painter = painterResource( R.drawable.share_social ),
+                                contentDescription = stringResource( R.string.share ),
+                                colorFilter = ColorFilter.tint( colorPalette().collapsedPlayerProgressBar ),
+                                modifier = Modifier.size( 24.dp )
+                                                   .clickable { app.kreate.android.utils.shareSong( context, mediaItem.mediaId ) }
+                            )
 
                             if (!showButtonPlayerMenu)
                                 Image(

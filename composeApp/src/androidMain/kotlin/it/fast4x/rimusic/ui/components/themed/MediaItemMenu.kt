@@ -1349,6 +1349,16 @@ fun MediaItemMenu(
                     )
                 }
 
+                if( !mediaItem.isLocal )
+                    MenuEntry(
+                        icon = R.drawable.share_social,
+                        text = stringResource( R.string.share ),
+                        onClick = {
+                            onDismiss()
+                            app.kreate.android.utils.shareSong( context, mediaItem.mediaId )
+                        }
+                    )
+
                 if (onMatchingSong != null)
                     MenuEntry(
                         icon = R.drawable.random,
