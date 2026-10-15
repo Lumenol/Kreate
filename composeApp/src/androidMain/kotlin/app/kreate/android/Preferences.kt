@@ -1080,6 +1080,9 @@ sealed class Preferences<T>(
             Boolean( preferences, Key.HOME_SONGS_INCLUDE_ON_DEVICE_IN_ALL, "includeLocalSongs", false )
         }
         /** Monthly playlists renamed to the month their songs were played in, see MonthlyPlaylists.kt */
+        val MONTHLY_PLAYLISTS_TRIMMED by lazy {
+            Boolean( preferences, Key.MONTHLY_PLAYLISTS_TRIMMED, "", false )
+        }
         val MONTHLY_PLAYLISTS_RENAMED by lazy {
             Boolean( preferences, Key.MONTHLY_PLAYLISTS_RENAMED, "", false )
         }
@@ -2071,6 +2074,7 @@ sealed class Preferences<T>(
         const val HOME_SONGS_INCLUDE_ON_DEVICE_IN_ALL = "HomeSongsIncludeOnDeviceInAll"
         const val MONTHLY_PLAYLIST_COMPILATION = "MonthlyPlaylistCompilation"
         const val MONTHLY_PLAYLISTS_RENAMED = "MonthlyPlaylistsRenamed"
+        const val MONTHLY_PLAYLISTS_TRIMMED = "MonthlyPlaylistsTrimmed"
         const val SHOW_MONTHLY_PLAYLISTS = "ShowMonthlyPlaylists"
         const val SHOW_PINNED_PLAYLISTS = "ShowPinnedPlaylists"
         const val SHOW_PLAYLIST_INDICATOR = "ShowPlaylistIndicator"

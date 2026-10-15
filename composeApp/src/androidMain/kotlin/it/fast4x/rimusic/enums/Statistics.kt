@@ -35,7 +35,15 @@ enum class StatisticsType(
      *
      * @return real timestamp in millis.
      */
-    fun timeStampInMillis() = System.currentTimeMillis() - this.duration.inWholeMilliseconds
+    fun timeStampInMillis(): Long =
+        // "Today" starts at midnight: the last 24 h counted yesterday evening too
+        if( this == Today )
+            java.time.LocalDate.now()
+                               .atStartOfDay( java.time.ZoneId.systemDefault() )
+                               .toInstant()
+                               .toEpochMilli()
+        else
+            System.currentTimeMillis() - this.duration.inWholeMilliseconds
 }
 
 enum class StatisticsCategory(
