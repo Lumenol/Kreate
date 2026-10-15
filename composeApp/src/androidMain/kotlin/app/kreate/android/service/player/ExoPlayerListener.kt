@@ -14,6 +14,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.HttpDataSource
+import androidx.media3.datasource.cache.Cache
 import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.media3.session.CommandButton
 import androidx.media3.session.MediaSession
@@ -21,6 +22,7 @@ import app.kreate.android.Preferences
 import app.kreate.android.R
 import app.kreate.android.utils.ConnectivityUtils
 import app.kreate.database.models.PersistentQueue
+import app.kreate.di.CacheType
 import app.kreate.di.clearCachedStreamUrlOf
 import co.touchlab.kermit.Logger
 import it.fast4x.rimusic.Database
@@ -65,6 +67,7 @@ class ExoPlayerListener(
 ): Player.Listener, KoinComponent {
 
     private val context: Context by inject()
+    private val streamingCache: Cache by inject( CacheType.CACHE )
 
     private var volumeNormalizationJob: Job = Job()
     private var errorTimestamp = 0L
@@ -190,6 +193,40 @@ class ExoPlayerListener(
         return true
     }
 
+    /**
+     * The streaming cache is keyed by song only: when an earlier attempt left part of a
+     * different stream of the same song, writing the new one fails in `SimpleCache.commitFile`
+     * and the song stops after a few seconds, every time. Dropping the song's cached data and
+     * its stream url lets it start over with one consistent stream (from Craeckie/Kreate 09701b49).
+     *
+     * @return `true` if recovery was started and the error should not be handled further
+     */
+    @MainThread
+    private fun tryRecoverCorruptedCache( error: PlaybackException ): Boolean {
+        if( recoveryAttempts >= MAX_RECOVERY_ATTEMPTS || !error.isCacheCommitError() ) return false
+        val mediaId = player.currentMediaItem?.mediaId ?: return false
+
+        recoveryAttempts++
+        val position = player.currentPosition
+        logger.w { "streaming cache of $mediaId is corrupted, evicting it and resuming at ${position}ms" }
+
+        clearCachedStreamUrlOf( mediaId )
+        // The failed load is torn down by now, nothing holds the cache entry
+        runCatching { streamingCache.removeResource( mediaId ) }
+            .onFailure { logger.e( it ) { "failed to evict the cache of $mediaId" } }
+        player.seekTo( position )
+        player.prepare()
+        return true
+    }
+
+    /** It surfaces as a generic source error, only the stack tells it apart */
+    private fun Throwable.isCacheCommitError(): Boolean =
+        generateSequence( this, Throwable::cause ).any { t ->
+            t.stackTrace.any {
+                it.className == "androidx.media3.datasource.cache.SimpleCache" && it.methodName == "commitFile"
+            }
+        }
+
     @MainThread
     private fun printErrorMessage( errMsg: String )  {
         // If the same error is set within 10s, it'll be ignored.
@@ -290,7 +327,7 @@ class ExoPlayerListener(
             return
         }
 
-        if( tryRecover( error ) ) return
+        if( tryRecoverCorruptedCache( error ) || tryRecover( error ) ) return
 
         readableMessage( error, rootCause ).also( ::printErrorMessage )
 
