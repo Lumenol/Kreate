@@ -378,7 +378,9 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         val context: Context by inject()
         val title = context.getString( R.string.sleep_timer_ended )
         timerJob = coroutineScope.timer( duration.inWholeMilliseconds ) {
-            pause()
+            // The timer ends on an IO thread; the player only accepts calls from
+            // the main thread and crashed the app with "accessed on the wrong thread"
+            coroutineScope.launch( Dispatchers.Main ) { pause() }
 
             val notification = NotificationCompat
                 .Builder(context, SleepTimerNotificationChannelId)
