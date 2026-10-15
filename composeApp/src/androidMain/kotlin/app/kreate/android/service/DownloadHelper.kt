@@ -40,6 +40,13 @@ interface DownloadHelper {
     /** [purgeDownload] for every download the index knows about. */
     fun purgeAllDownloads()
 
+    /**
+     * Downloads again every downloaded song, in the download quality set now.
+     *
+     * @return how many songs are downloaded again
+     */
+    fun redownloadAll(): Int
+
     fun autoDownload( mediaItem: MediaItem )
 
     fun autoDownloadWhenLiked( mediaItem: MediaItem )

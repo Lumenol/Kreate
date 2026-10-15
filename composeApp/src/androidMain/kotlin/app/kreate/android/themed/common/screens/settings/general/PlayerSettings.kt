@@ -1,5 +1,7 @@
 package app.kreate.android.themed.common.screens.settings.general
 
+import me.knighthat.utils.Toaster
+import it.fast4x.rimusic.service.MyDownloadHelper
 import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
@@ -39,6 +41,23 @@ fun LazyListScope.playerSettingsSection( search: SettingEntrySearch ) {
             preference = Preferences.AUDIO_QUALITY,
             titleId = R.string.audio_quality_format,
             action = SettingComponents.Action.RESTART_PLAYER_SERVICE
+        )
+    }
+    entry( search, R.string.download_quality ) {
+        SettingComponents.EnumEntry(
+            preference = Preferences.DOWNLOAD_QUALITY,
+            titleId = R.string.download_quality
+        )
+    }
+    entry( search, R.string.redownload_all ) {
+        SettingComponents.Text(
+            title = stringResource( R.string.redownload_all ),
+            subtitle = stringResource( R.string.redownload_all_description ),
+            onClick = {
+                val count = MyDownloadHelper.redownloadAll()
+                if( count > 0 ) Toaster.i( R.string.redownload_started, *arrayOf<Any?>( count ) )    // not the (id, duration) overload
+                else Toaster.i( R.string.redownload_none )
+            }
         )
     }
     entry( search, R.string.enable_connection_metered ) {

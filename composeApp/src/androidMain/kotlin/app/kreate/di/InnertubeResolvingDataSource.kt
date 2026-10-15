@@ -305,19 +305,24 @@ private suspend fun makeStreamCache(
     }
 }
 
-private fun getPlayableUrl( songId: String ): YTPlayerUtils.PlaybackData = runBlocking( Dispatchers.IO ) {
+/**
+ * @param quality of a download that has its own, `null` for the playback quality.
+ * Each quality has its own cached url, so a download doesn't reuse the stream played.
+ */
+private fun getPlayableUrl( songId: String, quality: AudioQualityFormat? = null ): YTPlayerUtils.PlaybackData = runBlocking( Dispatchers.IO ) {
     logger.v { "Processing $songId" }
 
     if( !CipherDeobfuscator.isInitialized() )
         CipherDeobfuscator.initialize( get(Context::class.java) )
 
-    cachedOrNull( songId )?.let { return@runBlocking it }
+    val urlKey = if( quality == null ) songId else "$songId#$quality"
+    cachedOrNull( urlKey )?.let { return@runBlocking it }
 
-    resolvingLocks.computeIfAbsent( songId ) { Mutex() }.withLock {
+    resolvingLocks.computeIfAbsent( urlKey ) { Mutex() }.withLock {
         // Another caller may have resolved it while this one was waiting
-        cachedOrNull( songId )?.let { return@runBlocking it }
+        cachedOrNull( urlKey )?.let { return@runBlocking it }
 
-        resolvePlayableUrl( songId )
+        resolvePlayableUrl( songId, quality, urlKey )
     }
 }
 
@@ -333,7 +338,7 @@ private fun cachedOrNull( songId: String ): YTPlayerUtils.PlaybackData? {
     return null
 }
 
-private suspend fun resolvePlayableUrl( songId: String ): YTPlayerUtils.PlaybackData {
+private suspend fun resolvePlayableUrl( songId: String, quality: AudioQualityFormat?, urlKey: String ): YTPlayerUtils.PlaybackData {
     logger.i { "Resolving stream url of $songId" }
 
     if( YouTube.visitorData == null )
@@ -347,7 +352,7 @@ private suspend fun resolvePlayableUrl( songId: String ): YTPlayerUtils.Playback
                }
 
     val connManager = get<Context>(Context::class.java).getSystemService<ConnectivityManager>()!!
-    val audioQuality by Preferences.AUDIO_QUALITY
+    val audioQuality = quality ?: Preferences.AUDIO_QUALITY.value
 
     val data = YTPlayerUtils.playerResponseForPlayback(
         videoId = songId,
@@ -357,7 +362,7 @@ private suspend fun resolvePlayableUrl( songId: String ): YTPlayerUtils.Playback
     ).getOrThrow()
     // Handle expired url with 30secs offset
     val validFor = data.streamExpiresInSeconds.seconds - 30.seconds
-    cachedStreamUrl[songId] = CachedStream( data, System.currentTimeMillis() + validFor.inWholeMilliseconds )
+    cachedStreamUrl[urlKey] = CachedStream( data, System.currentTimeMillis() + validFor.inWholeMilliseconds )
 
     return data
 }
@@ -371,7 +376,11 @@ fun Scope.resolveInnertubeMedia( dataSpec: DataSpec ): DataSpec {
     }
     upsertSongInfo( get(), songId )
 
-    val cache = getPlayableUrl( songId )
+    // Downloads with a quality of their own ask for it in their uri
+    val quality = runCatching {
+        dataSpec.uri.getQueryParameter( DOWNLOAD_QUALITY_PARAM )?.let( AudioQualityFormat::valueOf )
+    }.getOrNull()
+    val cache = getPlayableUrl( songId, quality )
     saveFormat( songId, cache )
     val length = cache.format.contentLength ?: C.LENGTH_UNSET.toLong()
     return dataSpec.buildUpon()
@@ -420,8 +429,14 @@ private fun saveFormat( songId: String, data: YTPlayerUtils.PlaybackData ) {
  *
  * @return `true` if song's url was cached, and is deleted, `false` otherwise.
  */
-fun clearCachedStreamUrlOf( songId: String ): Boolean =
-    cachedStreamUrl.remove( songId ) != null
+fun clearCachedStreamUrlOf( songId: String ): Boolean {
+    // The urls resolved for downloads in another quality go too
+    cachedStreamUrl.keys.removeAll { it.startsWith( "$songId#" ) }
+    return cachedStreamUrl.remove( songId ) != null
+}
+
+/** Query parameter of a download's uri carrying its [AudioQualityFormat] */
+const val DOWNLOAD_QUALITY_PARAM = "quality"
 
 /**
  * @return the url that registers a playback of [songId] on YouTube,

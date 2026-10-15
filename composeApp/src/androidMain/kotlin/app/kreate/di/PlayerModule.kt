@@ -2,6 +2,7 @@
 
 package app.kreate.di
 
+import app.kreate.android.service.DownloadCacheState
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.media3.common.AudioAttributes
@@ -112,28 +113,31 @@ val playerModule = module {
     // TODO: Convert this into factory
     single<StatefulPlayer> {
         //<editor-fold desc="DataSource">
+        // Regular cache, then the network (or a local file)
+        val streaming = get<CacheDataSource.Factory>(CacheType.CACHE)
+            // The final upstream handles 2 cases, local files and remote files
+            .setUpstreamDataSourceFactory( get<ResolvingDataSource.Factory>() )
+            // Player is allowed to write chunks into this storage.
+            .setCacheWriteDataSinkFactory(
+                CacheDataSink.Factory()
+                    .setCache( get(CacheType.CACHE) )
+                    // Chunks are small so recovery can work better
+                    .setFragmentSize( CHUNK_LENGTH )
+                    // Bigger than default buffer size to avoid
+                    // constant write to disk, but small enough
+                    // to avoid data loss if app crashes
+                    .setBufferSize( 64 * 1024 )     // 64KiB
+            )
+        // Download cache first, read-only, for downloads that are complete
+        val downloaded = get<CacheDataSource.Factory>(CacheType.DOWNLOAD)
+            .setCacheWriteDataSinkFactory( null )
+            .setUpstreamDataSourceFactory( streaming )
+        val downloadCache: Cache = get(CacheType.DOWNLOAD)
         val dataSource = DefaultMediaSourceFactory(
-            // At the bottom of the stack, it's download cache
-            get<CacheDataSource.Factory>(CacheType.DOWNLOAD)
-                // Read-only cache, player doesn't get to write anything in here
-                .setCacheWriteDataSinkFactory( null )
-                .setUpstreamDataSourceFactory(
-                    // Next up is regular cache
-                    get<CacheDataSource.Factory>(CacheType.CACHE)
-                        // The final upstream handles 2 cases, local files and remote files
-                        .setUpstreamDataSourceFactory( get<ResolvingDataSource.Factory>() )
-                        // Player is allowed to write chunks into this storage.
-                        .setCacheWriteDataSinkFactory(
-                            CacheDataSink.Factory()
-                                .setCache( get(CacheType.CACHE) )
-                                // Chunks are small so recovery can work better
-                                .setFragmentSize( CHUNK_LENGTH )
-                                // Bigger than default buffer size to avoid
-                                // constant write to disk, but small enough
-                                // to avoid data loss if app crashes
-                                .setBufferSize( 64 * 1024 )     // 64KiB
-                        )
-                )
+            CompletedDownloadsFirst( downloaded, streaming ) { songId ->
+                val state = get<DownloadHelper>().downloads.value[songId]?.state
+                DownloadCacheState.isDownloaded( state, downloadCache, songId )
+            }
         )
         dataSource.setLoadErrorHandlingPolicy( ErrorHandlingPolicy() )
         //</editor-fold>

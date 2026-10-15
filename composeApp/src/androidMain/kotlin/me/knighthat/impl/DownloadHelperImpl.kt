@@ -1,5 +1,6 @@
 package me.knighthat.impl
 
+import app.kreate.di.DOWNLOAD_QUALITY_PARAM
 import android.content.Context
 import android.graphics.Bitmap
 import androidx.annotation.OptIn
@@ -174,14 +175,10 @@ class DownloadHelperImpl(
             return
         }
 
-        val downloadRequest = DownloadRequest
-            .Builder(
-                /* id      = */ mediaItem.mediaId,
-                /* uri     = */ mediaItem.mediaId.toUri()
-            )
-            .setCustomCacheKey(mediaItem.mediaId)
-            .setData("${mediaItem.mediaMetadata.artist.toString()} - ${mediaItem.mediaMetadata.title.toString()}".encodeToByteArray()) // Title in notification
-            .build()
+        val downloadRequest = downloadRequestOf(
+            mediaItem.mediaId,
+            "${mediaItem.mediaMetadata.artist.toString()} - ${mediaItem.mediaMetadata.title.toString()}".encodeToByteArray() // Title in notification
+        )
 
         Database.asyncTransaction {
             insertIgnore( mediaItem )
@@ -240,6 +237,36 @@ class DownloadHelperImpl(
                     }
             }
         }
+    }
+
+    /** The uri carries the download quality when it isn't the playback one, see [DOWNLOAD_QUALITY_PARAM] */
+    private fun downloadRequestOf( songId: String, notificationTitle: ByteArray ): DownloadRequest {
+        val quality = Preferences.DOWNLOAD_QUALITY.value.format
+        val uri = if( quality == null ) songId else "$songId?$DOWNLOAD_QUALITY_PARAM=$quality"
+        return DownloadRequest.Builder( songId, uri.toUri() )
+                              .setCustomCacheKey( songId )
+                              .setData( notificationTitle )
+                              .build()
+    }
+
+    override fun redownloadAll(): Int {
+        val completed = downloads.value.values.filter { it.state == Download.STATE_COMPLETED }
+        if( completed.isEmpty() ) return 0
+        if( !isNetworkConnected( context ) ) {
+            Toaster.noInternet()
+            return 0
+        }
+
+        coroutineScope.launch {
+            completed.forEach { download ->
+                val songId = download.request.id
+                // Removing first: adding a completed download again downloads nothing,
+                // its bytes are already there. The manager runs both in order.
+                context.removeDownload<MyDownloadService>( songId )
+                context.download<MyDownloadService>( downloadRequestOf( songId, download.request.data ) )
+            }
+        }
+        return completed.size
     }
 
     override fun purgeAllDownloads() {

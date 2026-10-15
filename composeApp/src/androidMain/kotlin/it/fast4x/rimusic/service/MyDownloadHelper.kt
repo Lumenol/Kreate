@@ -25,6 +25,8 @@ object MyDownloadHelper : KoinComponent {
 
     fun purgeAllDownloads() = instance.purgeAllDownloads()
 
+    fun redownloadAll() = instance.redownloadAll()
+
     fun autoDownload(mediaItem: MediaItem) = instance.autoDownload( mediaItem )
 
     fun autoDownloadWhenLiked(mediaItem: MediaItem) = instance.autoDownloadWhenLiked( mediaItem )

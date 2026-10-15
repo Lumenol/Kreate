@@ -195,6 +195,12 @@
     <string name="audio_quality_format_high">Élevée</string>
     <string name="audio_quality_format_medium">Moyenne</string>
     <string name="audio_quality_format_low">Basse</string>
+    <string name="download_quality">Qualité des téléchargements</string>
+    <string name="download_quality_same_as_playback">Comme la lecture</string>
+    <string name="redownload_all">Retélécharger dans cette qualité</string>
+    <string name="redownload_all_description">Les titres téléchargés sont téléchargés de nouveau, l\'un après l\'autre</string>
+    <string name="redownload_started">%1$d titres en cours de retéléchargement</string>
+    <string name="redownload_none">Aucun titre téléchargé</string>
     <string name="audio_quality_format_unknown">Inconnue</string>
     <string name="do_you_really_want_to_delete_download">Voulez-vous vraiment supprimer le téléchargement ?</string>
     <string name="disable_scrolling_text">Désactiver le défilement du texte</string>
