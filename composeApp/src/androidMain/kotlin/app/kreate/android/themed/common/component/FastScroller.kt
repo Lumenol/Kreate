@@ -114,12 +114,9 @@ private fun BoxScope.FastScroller(
         }
     }
 
-    BoxWithConstraints(
-        Modifier.align( Alignment.CenterEnd )
-                .fillMaxHeight()
-                .padding( vertical = 8.dp )
-                .width( 40.dp )
-                .pointerInput( Unit ) {
+    // Takes touches only while the thumb shows: the strip lies over the list's
+    // right edge (drag handles, swipes, buttons), which must keep working
+    val dragArea = if( isShown ) Modifier.pointerInput( Unit ) {
                     fun jumpTo( y: Float ) {
                         dragFraction = (y / size.height).coerceIn( 0f, 1f )
                         val index = (dragFraction * (total() - 1)).roundToInt()
@@ -130,7 +127,14 @@ private fun BoxScope.FastScroller(
                         onDragEnd = { isDragging = false },
                         onDragCancel = { isDragging = false }
                     ) { change, _ -> jumpTo( change.position.y ) }
-                }
+                } else Modifier
+
+    BoxWithConstraints(
+        Modifier.align( Alignment.CenterEnd )
+                .fillMaxHeight()
+                .padding( vertical = 8.dp )
+                .width( 24.dp )
+                .then( dragArea )
     ) {
         val thumbHeight = 48.dp
         val travel = with( density ) { (maxHeight - thumbHeight).toPx() }
@@ -157,7 +161,7 @@ private fun BoxScope.FastScroller(
         if( bubble != null )
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.offset { IntOffset( -with( density ) { 72.dp.roundToPx() }, thumbY - with( density ) { 4.dp.roundToPx() } ) }
+                modifier = Modifier.offset { IntOffset( -with( density ) { 64.dp.roundToPx() }, thumbY - with( density ) { 4.dp.roundToPx() } ) }
                                    .size( 56.dp )
                                    .clip( CircleShape )
                                    .background( colorPalette().text )

@@ -651,10 +651,10 @@ fun LocalPlaylistSongs(
                 }
             }
 
-            FloatingActionsContainerWithScrollToTop(lazyListState = lazyListState)
-
-            // Letter bubble only when sorted by a name; the list starts with the header
-            FastScroller( reorderingState.lazyListState ) { index ->
+            // Below the floating buttons; not while songs can be reordered, their
+            // drag handles are on the right edge too. Letter bubble only when sorted
+            // by a name; the list starts with the header.
+            if( positionLock.isLocked() ) FastScroller( reorderingState.lazyListState ) { index ->
                 val song = itemsOnDisplay.getOrNull( index - 1 ) ?: return@FastScroller null
                 when( viewModel.sort.sortBy ) {
                     PlaylistSongSortBy.TITLE -> initialOf( song.cleanTitle() )
@@ -662,6 +662,8 @@ fun LocalPlaylistSongs(
                     else -> null
                 }
             }
+
+            FloatingActionsContainerWithScrollToTop(lazyListState = lazyListState)
 
             val showFloatingIcon by Preferences.SHOW_FLOATING_ICON
             if ( UiType.ViMusic.isCurrent() && showFloatingIcon )
