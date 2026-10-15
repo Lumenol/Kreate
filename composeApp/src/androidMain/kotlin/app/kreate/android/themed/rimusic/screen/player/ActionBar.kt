@@ -1,5 +1,6 @@
 package app.kreate.android.themed.rimusic.screen.player
 
+import androidx.media3.exoplayer.offline.Download
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.media.audiofx.AudioEffect
@@ -497,7 +498,7 @@ fun BoxScope.ActionBar(
                     DownloadStateIconButton(
                         icon = if (isDownloaded) R.drawable.downloaded else R.drawable.download,
                         color = if (isDownloaded) colorPalette().accent else Color.Gray,
-                        downloadState = getDownloadState(mediaItem.mediaId),
+                        downloadState = getDownloadState(mediaItem.mediaId) ?: Download.STATE_STOPPED,
                         onClick = {
                             manageDownload(
                                 context = context,

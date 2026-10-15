@@ -75,6 +75,17 @@ class DownloadHelperImpl(
     )
     private val downloadCache: Cache by inject( CacheType.DOWNLOAD )
 
+    private fun stateName( state: Int ): String = when( state ) {
+        Download.STATE_QUEUED       -> "QUEUED"
+        Download.STATE_STOPPED      -> "STOPPED"
+        Download.STATE_DOWNLOADING  -> "DOWNLOADING"
+        Download.STATE_COMPLETED    -> "COMPLETED"
+        Download.STATE_FAILED       -> "FAILED"
+        Download.STATE_REMOVING     -> "REMOVING"
+        Download.STATE_RESTARTING   -> "RESTARTING"
+        else                        -> "UNKNOWN($state)"
+    }
+
     override val downloads: MutableStateFlow<Map<String, Download>>
     override val downloadManager by lazy {
         val listener = object: DownloadManager.Listener {

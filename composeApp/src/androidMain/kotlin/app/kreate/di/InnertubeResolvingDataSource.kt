@@ -79,7 +79,8 @@ private val jsonParser =
  * Acts as a lock to keep [upsertSongFormat] from starting before
  * [upsertSongInfo] finishes.
  */
-private var databaseWorker: Job = Job()
+@Volatile
+private var databaseWorker: Job = Job().apply { complete() }    // Nothing to wait for until the first upsert
 
 //<editor-fold desc="Database handlers">
 /**
@@ -347,11 +348,47 @@ fun Scope.resolveInnertubeMedia( dataSpec: DataSpec ): DataSpec {
     upsertSongInfo( get(), songId )
 
     val cache = getPlayableUrl( songId )
+    saveFormat( songId, cache )
     val length = cache.format.contentLength ?: C.LENGTH_UNSET.toLong()
     return dataSpec.buildUpon()
                    .setUri(cache.streamUrl)
                    .setLength( length )
                    .build()
+}
+
+/**
+ * Saves the format of the stream being played. Without it, loudness normalization
+ * had nothing to work with and a song could never show as fully cached: since the
+ * resolver moved to YTPlayerUtils, the formats of online songs weren't saved at all.
+ */
+private fun saveFormat( songId: String, data: YTPlayerUtils.PlaybackData ) {
+    // Every range request of the same song comes through here
+    if( songId == justInserted.load() ) return
+
+    val format = data.format
+    CoroutineScope( Dispatchers.IO ).launch {
+        // The song's row (written by upsertSongInfo) must exist first
+        databaseWorker.join()
+
+        Database.asyncTransaction {
+            try {
+                formatTable.upsert(
+                    Format(
+                        songId,
+                        format.itag,
+                        format.mimeType,
+                        format.bitrate.toLong(),
+                        format.contentLength,
+                        format.lastModified,
+                        (data.audioConfig?.loudnessDb ?: format.loudnessDb)?.toFloat()
+                    )
+                )
+                justInserted.store( songId )
+            } catch( err: android.database.sqlite.SQLiteConstraintException ) {
+                logger.w( err ) { "$songId isn't in the database, its format isn't saved" }
+            }
+        }
+    }
 }
 
 /**
