@@ -40,6 +40,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.MissingFieldException
@@ -66,6 +68,13 @@ private const val METHOD_IOS = 2
  */
 private val justInserted = AtomicReference("")
 private val cachedStreamUrl = ConcurrentHashMap<String, CachedStream>()
+/**
+ * One lock per song: the player and the downloader often ask for the same song
+ * at the same moment, and both used to miss the cache and resolve it (one song
+ * could cost 5 player requests and 2 downloads). Per song, so resolving one
+ * never blocks another. Idea from Craeckie/Kreate c2848ef2.
+ */
+private val resolvingLocks = ConcurrentHashMap<String, Mutex>()
 private val logger = Logger.withTag("dataspec")
 private val jsonParser =
     Json {
@@ -301,15 +310,30 @@ private fun getPlayableUrl( songId: String ): YTPlayerUtils.PlaybackData = runBl
     if( !CipherDeobfuscator.isInitialized() )
         CipherDeobfuscator.initialize( get(Context::class.java) )
 
-    cachedStreamUrl[songId]?.let { cached ->
-        if( System.currentTimeMillis() < cached.expiresAtMillis ) {
-            logger.d { "Stream url of $songId is cached" }
-            return@runBlocking cached.data
-        }
+    cachedOrNull( songId )?.let { return@runBlocking it }
 
-        logger.d { "Cached stream url of $songId expired" }
-        cachedStreamUrl.remove( songId )
+    resolvingLocks.computeIfAbsent( songId ) { Mutex() }.withLock {
+        // Another caller may have resolved it while this one was waiting
+        cachedOrNull( songId )?.let { return@runBlocking it }
+
+        resolvePlayableUrl( songId )
     }
+}
+
+private fun cachedOrNull( songId: String ): YTPlayerUtils.PlaybackData? {
+    val cached = cachedStreamUrl[songId] ?: return null
+    if( System.currentTimeMillis() < cached.expiresAtMillis ) {
+        logger.d { "Stream url of $songId is cached" }
+        return cached.data
+    }
+
+    logger.d { "Cached stream url of $songId expired" }
+    cachedStreamUrl.remove( songId, cached )
+    return null
+}
+
+private suspend fun resolvePlayableUrl( songId: String ): YTPlayerUtils.PlaybackData {
+    logger.i { "Resolving stream url of $songId" }
 
     if( YouTube.visitorData == null )
         YouTube.visitorData()
@@ -334,7 +358,7 @@ private fun getPlayableUrl( songId: String ): YTPlayerUtils.PlaybackData = runBl
     val validFor = data.streamExpiresInSeconds.seconds - 30.seconds
     cachedStreamUrl[songId] = CachedStream( data, System.currentTimeMillis() + validFor.inWholeMilliseconds )
 
-    data
+    return data
 }
 //</editor-fold>
 
