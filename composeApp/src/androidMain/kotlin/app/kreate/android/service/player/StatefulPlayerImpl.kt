@@ -272,7 +272,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         this.stopRadio()
 
         // Play song immediately while other songs are being loaded
-        if( !append && player.currentMediaItem?.mediaId != mediaItem.mediaId )
+        if( player.currentMediaItem?.mediaId != mediaItem.mediaId )
             player.forcePlay( mediaItem )
 
         // Prevent UI from freezing up while data is being fetched

@@ -15,7 +15,7 @@ fun getLikeState(mediaId: String): Int {
         Database.songTable
                 .likeState( mediaId )
                 .distinctUntilChanged()
-    }.collectAsState( false, Dispatchers.IO )
+    }.collectAsState( null, Dispatchers.IO )     // Neutral until read: `false` showed the disliked icon on each song change
     val icon by Preferences.LIKE_ICON
 
     return when( songLikeState ) {
