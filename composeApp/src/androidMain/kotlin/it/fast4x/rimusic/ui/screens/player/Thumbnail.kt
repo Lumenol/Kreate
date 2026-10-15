@@ -87,10 +87,8 @@ fun Thumbnail(
     showthumbnail: Boolean,
     modifier: Modifier = Modifier
 ) {
-    println("Thumbnail call")
     val player: StatefulPlayer = koinInject()
 
-    println("Thumbnail call after return")
 
     val (thumbnailSizeDp, thumbnailSizePx) = Dimensions.thumbnails.player.song.let {
         it to (it - 64.dp).px

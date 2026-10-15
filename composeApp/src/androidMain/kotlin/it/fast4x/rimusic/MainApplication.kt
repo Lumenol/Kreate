@@ -7,6 +7,7 @@ import android.net.NetworkRequest
 import androidx.core.content.getSystemService
 import androidx.lifecycle.ProcessLifecycleOwner
 import app.kreate.android.Preferences
+import app.kreate.android.coil3.ThumbnailSizeInterceptor
 import app.kreate.android.drawable.AppIcon
 import app.kreate.android.service.innertube.InnertubeProvider
 import app.kreate.android.utils.ConnectivityUtils
@@ -103,6 +104,8 @@ class MainApplication : Application(), SingletonImageLoader.Factory {
                                   null
                           }
                           .components {
+                              // Before the fetcher, so the smaller image is what's downloaded
+                              add( ThumbnailSizeInterceptor() )
                               add(
                                   KtorNetworkFetcherFactory(client)
                               )
