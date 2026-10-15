@@ -430,7 +430,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             return
         }
 
-        if( volumeAnimator == null ) steadyVolume = volume
+        if( volumeAnimator?.isRunning != true ) steadyVolume = volume
         startFade(
             start = 0f,
             end = steadyVolume,
@@ -449,7 +449,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             return
         }
 
-        if( volumeAnimator == null ) steadyVolume = volume
+        if( volumeAnimator?.isRunning != true ) steadyVolume = volume
         startFade(
             start = volume,
             end = 0f,
