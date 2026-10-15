@@ -182,8 +182,15 @@ fun HomeLibrary(
             Column( Modifier.fillMaxSize() ) {
                 // Sticky tab's title
                 // The Library's chips already name the tab: count, then every action in "⋮"
+                // Count and filter in one row: the chips row inside the grid is gone
                 TabToolBar.Compact( listOf( sort, search, shuffle, newPlaylistDialog, importPlaylistDialog, itemSize ) ) {
                     HeaderInfo( itemsOnDisplay.size.toString(), R.drawable.playlist )
+                    TabToolBar.FilterPill(
+                        options = buttonsList.map { it.first },
+                        current = playlistType,
+                        label = { type -> buttonsList.first { it.first == type }.second },
+                        onSelect = { playlistType = it }
+                    )
                 }
 
                 // Sticky search bar
@@ -196,18 +203,6 @@ fun HomeLibrary(
                     verticalArrangement = Arrangement.spacedBy( PlaylistItem.ROW_SPACING.dp ),
                     contentPadding = PaddingValues(bottom = Dimensions.bottomSpacer)
                 ) {
-                    item(
-                        key = "separator",
-                        contentType = 0,
-                        span = { GridItemSpan(maxLineSpan) }) {
-                        ButtonsRow(
-                            chips = buttonsList,
-                            currentValue = playlistType,
-                            onValueUpdate = { playlistType = it },
-                            modifier = Modifier.padding(start = 12.dp, end = 12.dp)
-                        )
-                    }
-
                     items(
                         items = itemsOnDisplay,
                         key = System::identityHashCode

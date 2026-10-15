@@ -120,6 +120,7 @@ object TabToolBar {
     fun Compact(
         buttons: List<Button>,
         modifier: Modifier = Modifier,
+        trailing: @Composable RowScope.() -> Unit = {},
         leading: @Composable RowScope.() -> Unit = {}
     ) {
         val menuItems = buttons.filterIsInstance<MenuIcon>()
@@ -133,11 +134,94 @@ object TabToolBar {
         ) {
             leading()
             Spacer( Modifier.weight( 1f ) )
+            trailing()
             buttons.filterNot { it is MenuIcon }.forEach { it.ToolBarButton() }
             if( menuItems.isNotEmpty() )
                 ellipsisMenu.ToolBarButton()
         }
     }
+
+    /**
+     * One pill for a list's filters ("All ▾"): it opens the choices instead of a
+     * whole row of chips, so the top of the Library takes 2 rows instead of 4.
+     */
+    @Composable
+    fun <E> FilterPill(
+        options: List<E>,
+        current: E,
+        label: @Composable ( E ) -> String,
+        onSelect: ( E ) -> Unit
+    ) {
+        var expanded by remember { mutableStateOf( false ) }
+        Box {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy( 4.dp ),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.height( 36.dp )
+                                   .clip( CircleShape )
+                                   .background( colorPalette().background2 )
+                                   .clickable { expanded = true }
+                                   .padding( start = 14.dp, end = 10.dp )
+            ) {
+                BasicText(
+                    text = label( current ),
+                    style = typography().xs.semiBold.color( colorPalette().text ),
+                    maxLines = 1
+                )
+                androidx.compose.material3.Icon(
+                    painter = painterResource( app.kreate.android.R.drawable.chevron_down ),
+                    contentDescription = null,
+                    tint = colorPalette().text,
+                    modifier = Modifier.size( 16.dp )
+                )
+            }
+            androidx.compose.material3.DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                containerColor = colorPalette().background1
+            ) {
+                options.forEach { option ->
+                    androidx.compose.material3.DropdownMenuItem(
+                        text = {
+                            BasicText(
+                                text = label( option ),
+                                style = typography().s.semiBold.color(
+                                    if( option == current ) colorPalette().accent else colorPalette().text
+                                )
+                            )
+                        },
+                        onClick = {
+                            expanded = false
+                            onSelect( option )
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    /** Round icon button next to [FilterPill] ("Play all", "Shuffle") */
+    @Composable
+    fun IconPill(
+        iconId: Int,
+        description: String,
+        filled: Boolean,
+        onClick: () -> Unit
+    ) =
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size( 36.dp )
+                               .clip( CircleShape )
+                               .background( if( filled ) colorPalette().text else colorPalette().background2 )
+                               .clickable( onClick = onClick )
+        ) {
+            androidx.compose.material3.Icon(
+                painter = painterResource( iconId ),
+                contentDescription = description,
+                tint = if( filled ) colorPalette().background0 else colorPalette().text,
+                modifier = Modifier.size( 18.dp )
+            )
+        }
 
     /** Pill button for the main actions of [Compact] ("Play all", "Shuffle") */
     @Composable
