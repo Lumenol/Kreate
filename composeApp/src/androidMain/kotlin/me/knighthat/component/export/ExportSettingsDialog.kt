@@ -32,7 +32,7 @@ class ExportSettingsDialog private constructor(
 ): ExportToFileDialog(valueState, activeState, launcher) {
 
     companion object {
-        private fun onExportToCsv( outStream: OutputStream ) {
+        fun onExportToCsv( outStream: OutputStream ) {
             val entries = Preferences.preferences.all.mapNotNull {
                 val value = it.value ?: return@mapNotNull null
                 val type = value::class.simpleName ?: return@mapNotNull null

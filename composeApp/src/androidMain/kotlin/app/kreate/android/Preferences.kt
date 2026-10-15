@@ -995,6 +995,33 @@ sealed class Preferences<T>(
         val ZOOM_OUT_ANIMATION by lazy {
             Boolean( preferences, Key.ZOOM_OUT_ANIMATION, "buttonzoomout", false )
         }
+        //<editor-fold desc="Automatic backup">
+        val AUTO_BACKUP by lazy {
+            Boolean( preferences, Key.AUTO_BACKUP, "", false )
+        }
+        /** SAF tree uri of the folder backups go to, "" until one is picked */
+        val AUTO_BACKUP_FOLDER by lazy {
+            String( preferences, Key.AUTO_BACKUP_FOLDER, "", "" )
+        }
+        val AUTO_BACKUP_INTERVAL by lazy {
+            Enum( preferences, Key.AUTO_BACKUP_INTERVAL, "", app.kreate.android.utils.BackupInterval.WEEKLY )
+        }
+        val AUTO_BACKUP_KEEP by lazy {
+            Int( preferences, Key.AUTO_BACKUP_KEEP, "", 5 )
+        }
+        val AUTO_BACKUP_DATABASE by lazy {
+            Boolean( preferences, Key.AUTO_BACKUP_DATABASE, "", true )
+        }
+        val AUTO_BACKUP_HISTORY by lazy {
+            Boolean( preferences, Key.AUTO_BACKUP_HISTORY, "", true )
+        }
+        val AUTO_BACKUP_SETTINGS by lazy {
+            Boolean( preferences, Key.AUTO_BACKUP_SETTINGS, "", true )
+        }
+        val AUTO_BACKUP_LAST by lazy {
+            Long( preferences, Key.AUTO_BACKUP_LAST, "", 0L )
+        }
+        //</editor-fold>
         val ENABLE_DISCOVER by lazy {
             Boolean( preferences, Key.ENABLE_DISCOVER, "discover", false )
         }
@@ -2008,6 +2035,14 @@ sealed class Preferences<T>(
         const val MULTI_FLOATING_ICON_X_OFFSET = "MultiFloatingIconXOffset"
         const val MULTI_FLOATING_ICON_Y_OFFSET = "MultiFloatingIconYOffset"
         const val ZOOM_OUT_ANIMATION = "ZoomOutAnimation"
+        const val AUTO_BACKUP = "AutoBackup"
+        const val AUTO_BACKUP_FOLDER = "AutoBackupFolder"
+        const val AUTO_BACKUP_INTERVAL = "AutoBackupInterval"
+        const val AUTO_BACKUP_KEEP = "AutoBackupKeep"
+        const val AUTO_BACKUP_DATABASE = "AutoBackupDatabase"
+        const val AUTO_BACKUP_HISTORY = "AutoBackupHistory"
+        const val AUTO_BACKUP_SETTINGS = "AutoBackupSettings"
+        const val AUTO_BACKUP_LAST = "AutoBackupLast"
         const val ENABLE_DISCOVER = "EnableDiscover"
         const val ENABLE_PERSISTENT_QUEUE = "EnablePersistentQueue"
         const val RESUME_PLAYBACK_ON_STARTUP = "ResumePlaybackOnStartup"

@@ -1,5 +1,14 @@
 package app.kreate.android.themed.common.screens.settings
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.rememberLauncherForActivityResult
+import app.kreate.android.utils.AutoBackup
 import android.content.Context
 import android.text.format.Formatter
 import androidx.compose.foundation.background
@@ -295,6 +304,84 @@ fun DataSettings( paddingValues: PaddingValues ) {
                     subtitle = stringResource( R.string.restore_settings_from_file, stringResource( R.string.title_export_settings ) ),
                     onClick = importSettings::onShortClick
                 )
+            }
+
+            header( R.string.automatic_backup )
+            entry( search, R.string.automatic_backup ) {
+                SettingComponents.BooleanEntry(
+                    Preferences.AUTO_BACKUP,
+                    stringResource( R.string.automatic_backup ),
+                    subtitle = stringResource( R.string.automatic_backup_description )
+                )
+            }
+            if( Preferences.AUTO_BACKUP.value ) {
+                entry( search, R.string.backup_folder ) {
+                    var folderName by remember { mutableStateOf( AutoBackup.folderName( context ) ) }
+                    val pickFolder = rememberLauncherForActivityResult( ActivityResultContracts.OpenDocumentTree() ) { uri ->
+                        uri ?: return@rememberLauncherForActivityResult
+                        AutoBackup.setFolder( context, uri )
+                        folderName = AutoBackup.folderName( context )
+                    }
+                    SettingComponents.Text(
+                        title = stringResource( R.string.backup_folder ),
+                        subtitle = folderName ?: stringResource( R.string.backup_pick_folder ),
+                        onClick = { pickFolder.launch( null ) }
+                    )
+                }
+                entry( search, R.string.backup_frequency ) {
+                    SettingComponents.EnumEntry(
+                        preference = Preferences.AUTO_BACKUP_INTERVAL,
+                        title = stringResource( R.string.backup_frequency ),
+                        getName = { stringResource( it.textId ) }
+                    )
+                }
+                entry( search, R.string.backups_to_keep ) {
+                    SettingComponents.InputDialogEntry(
+                        preference = Preferences.AUTO_BACKUP_KEEP,
+                        title = stringResource( R.string.backups_to_keep ),
+                        constraint = InputDialogConstraints.POSITIVE_INTEGER,
+                        keyboardOption = KeyboardOptions( keyboardType = KeyboardType.Number )
+                    )
+                }
+                entry( search, R.string.backup_database ) {
+                    SettingComponents.BooleanEntry(
+                        Preferences.AUTO_BACKUP_DATABASE,
+                        stringResource( R.string.backup_database ),
+                        subtitle = stringResource( R.string.backup_database_description )
+                    )
+                }
+                entry( search, R.string.backup_history ) {
+                    SettingComponents.BooleanEntry(
+                        Preferences.AUTO_BACKUP_HISTORY,
+                        stringResource( R.string.backup_history ),
+                        subtitle = stringResource( R.string.backup_history_description ),
+                        isEnabled = Preferences.AUTO_BACKUP_DATABASE.value
+                    )
+                }
+                entry( search, R.string.backup_settings ) {
+                    SettingComponents.BooleanEntry(
+                        Preferences.AUTO_BACKUP_SETTINGS,
+                        stringResource( R.string.backup_settings ),
+                        subtitle = stringResource( R.string.description_exclude_credentials )
+                    )
+                }
+                entry( search, R.string.backup_now ) {
+                    val last = Preferences.AUTO_BACKUP_LAST.value
+                    val lastText = if( last == 0L ) stringResource( R.string.backup_never )
+                                   else java.text.DateFormat.getDateTimeInstance( java.text.DateFormat.MEDIUM, java.text.DateFormat.SHORT ).format( java.util.Date( last ) )
+                    SettingComponents.Text(
+                        title = stringResource( R.string.backup_now ),
+                        subtitle = stringResource( R.string.backup_last, lastText ),
+                        isEnabled = Preferences.AUTO_BACKUP_FOLDER.value.isNotBlank(),
+                        onClick = {
+                            CoroutineScope( Dispatchers.IO ).launch {
+                                AutoBackup.backup( context )
+                                          .onSuccess { Toaster.s( R.string.backup_done ) }
+                                          .onFailure { Toaster.e( R.string.backup_failed ) }
+                            }
+                        }
+                    )
+                }
             }
 
             header( R.string.search_history )

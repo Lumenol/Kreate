@@ -305,6 +305,15 @@ object Database : KoinComponent {
             this.block()
         }
 
+    /**
+     * Consistent copy of the whole database into [file] (which must not exist),
+     * without stopping the app: used by the automatic backup.
+     */
+    suspend fun vacuumInto( file: java.io.File ) = _internal.useWriterConnection { connection ->
+        val path = file.absolutePath.replace( "'", "''" )
+        connection.usePrepared( "VACUUM INTO '$path'" ) { it.step() }
+    }
+
     suspend fun checkpoint() = _internal.useWriterConnection { connection ->
         connection.usePrepared("PRAGMA wal_checkpoint(FULL)") { statement ->
             if (statement.step()) {
