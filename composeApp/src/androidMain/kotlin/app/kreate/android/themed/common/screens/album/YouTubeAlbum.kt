@@ -1,5 +1,6 @@
 package app.kreate.android.themed.common.screens.album
 
+import app.kreate.android.themed.common.component.ScrolledTitle
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import app.kreate.android.themed.common.component.DetailHeader
@@ -321,6 +322,7 @@ fun YouTubeAlbum(
     DetailSkeleton(
         navController = navController,
         miniPlayer = miniPlayer,
+        title = { ScrolledTitle( dbAlbum?.cleanTitle().orEmpty(), lazyListState ) },
         actions = {
             DetailMenu(
                 listOf(

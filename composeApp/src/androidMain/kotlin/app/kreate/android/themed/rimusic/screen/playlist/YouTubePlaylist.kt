@@ -189,6 +189,7 @@ fun YouTubePlaylist(
     DetailSkeleton(
         navController = navController,
         miniPlayer = miniPlayer,
+        title = { app.kreate.android.themed.common.component.ScrolledTitle( playlistPage?.name.orEmpty(), viewModel.listState ) },
         actions = {
             DetailMenu(
                 listOf( viewModel.search, enqueue, addToPlaylist, addToFavorite, deleteDownloadsDialog )

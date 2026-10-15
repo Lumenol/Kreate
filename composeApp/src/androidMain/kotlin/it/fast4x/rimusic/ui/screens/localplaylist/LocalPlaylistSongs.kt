@@ -398,6 +398,7 @@ fun LocalPlaylistSongs(
     DetailSkeleton(
         navController = navController,
         miniPlayer = miniPlayer,
+        title = { app.kreate.android.themed.common.component.ScrolledTitle( playlist?.displayName().orEmpty(), reorderingState.lazyListState ) },
         actions = {
             DetailMenu(
                 buildList {

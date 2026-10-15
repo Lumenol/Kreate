@@ -1,5 +1,6 @@
 package app.kreate.android.themed.common.component
 
+import androidx.compose.runtime.getValue
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibilityScope
 import androidx.compose.foundation.Image
@@ -127,6 +128,27 @@ fun DetailTopBar(
         expandedHeight = if( isLandscape ) 48.dp else TopAppBarDefaults.TopAppBarExpandedHeight,
         colors = AppHeader.colors()
     )
+
+/**
+ * [text] in the top bar once the page's header has scrolled away, so a long
+ * list still says which playlist or album it is (only ← and ⋯ were left).
+ */
+@Composable
+fun ScrolledTitle( text: String, listState: androidx.compose.foundation.lazy.LazyListState ) {
+    val scrolled by remember( listState ) { androidx.compose.runtime.derivedStateOf { listState.firstVisibleItemIndex > 0 } }
+    androidx.compose.animation.AnimatedVisibility(
+        visible = scrolled,
+        enter = androidx.compose.animation.fadeIn(),
+        exit = androidx.compose.animation.fadeOut()
+    ) {
+        androidx.compose.foundation.text.BasicText(
+            text = text,
+            style = typography().m.semiBold.color( colorPalette().text ),
+            maxLines = 1,
+            overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+        )
+    }
+}
 
 /** "⋮" listing [buttons] with their names; buttons that can't be menu items stay icons */
 @Composable
