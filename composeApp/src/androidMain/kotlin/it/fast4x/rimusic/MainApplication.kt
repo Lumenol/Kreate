@@ -1,5 +1,8 @@
 package it.fast4x.rimusic
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import app.kreate.android.utils.AutoBackup
 import android.app.Application
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -71,6 +74,8 @@ class MainApplication : Application(), SingletonImageLoader.Factory {
         }
         // Register app lifecycle tracker
         ProcessLifecycleOwner.get().lifecycle.addObserver(AppLifecycleTracker)
+        // Automatic backup, when one is due
+        CoroutineScope( Dispatchers.IO ).launch { AutoBackup.runIfDue( this@MainApplication ) }
     }
 
     override fun onTerminate() {
