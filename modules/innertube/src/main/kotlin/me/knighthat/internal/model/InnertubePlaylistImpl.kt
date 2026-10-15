@@ -42,35 +42,36 @@ internal data class InnertubePlaylistImpl(
             )
         }
 
-        fun from( visitorData: String?, renderer: TwoColumnBrowseResultsRenderer ): InnertubePlaylist {
-            val content = requireNotNull(
-                renderer.tabs
-                        .firstNotNullOfOrNull( Tabs.Tab::tabRenderer )
-                        ?.content
-                        ?.sectionListRenderer
-                        ?.contents
-                        ?.firstOrNull()
-            ) { "TwoColumnBrowseResultsRenderer doesn't contain SectionListRenderer.Content" }
-            val headerRenderer = requireNotNull(
-                content.musicResponsiveHeaderRenderer
-                        ?: content.musicEditablePlaylistDetailHeaderRenderer
-                                  ?.header
-                                  ?.musicResponsiveHeaderRenderer
-            ) { "Missing MusicResponsiveHeaderRenderer is missing from SectionListRenderer.Content" }
+        /** @param browseId requested, the response doesn't always repeat it */
+        fun from( visitorData: String?, renderer: TwoColumnBrowseResultsRenderer, browseId: String ): InnertubePlaylist {
+            // YouTube stopped sending the header (title, cover...) of some playlists,
+            // at least without login: the songs are still there, so don't fail the
+            // whole page for it (it showed every such playlist empty)
+            val content = renderer.tabs
+                                  .firstNotNullOfOrNull( Tabs.Tab::tabRenderer )
+                                  ?.content
+                                  ?.sectionListRenderer
+                                  ?.contents
+                                  ?.firstOrNull()
+            val headerRenderer = content?.musicResponsiveHeaderRenderer
+                ?: content?.musicEditablePlaylistDetailHeaderRenderer
+                          ?.header
+                          ?.musicResponsiveHeaderRenderer
 
             val sectionListRenderer = renderer.secondaryContents!!.sectionListRenderer
             val playlistShelfRenderer = sectionListRenderer.contents.first().musicPlaylistShelfRenderer
-            val playlistId = playlistShelfRenderer!!.playlistId!!
+            val playlistId = playlistShelfRenderer!!.playlistId ?: browseId
             val continuedPlaylist = ContinuedPlaylistImpl.from( playlistShelfRenderer.contents )
-            val description = headerRenderer.description?.musicDescriptionShelfRenderer?.description?.firstText
+            val description = headerRenderer?.description?.musicDescriptionShelfRenderer?.description?.firstText
 
             return InnertubePlaylistImpl(
                 // Add "VL" in case it's not there
                 if( playlistId.startsWith("VL") ) playlistId else "VL$playlistId",
-                    headerRenderer.title.firstText,
-                    headerRenderer.thumbnail.toThumbnailList(),
+                    headerRenderer?.title?.firstText.orEmpty(),
+                    // Without header, the first song's cover stands for the playlist
+                    headerRenderer?.thumbnail?.toThumbnailList() ?: continuedPlaylist.songs.firstOrNull()?.thumbnails.orEmpty(),
                                          description,
-                                         headerRenderer.secondSubtitle,      // Contains delimiters by default
+                                         headerRenderer?.secondSubtitle,      // Contains delimiters by default
                                          sectionListRenderer.continuations,
                                          continuedPlaylist.songs,
                                          continuedPlaylist.continuation,

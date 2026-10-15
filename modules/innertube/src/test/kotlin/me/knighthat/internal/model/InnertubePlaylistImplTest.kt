@@ -127,7 +127,7 @@ class InnertubePlaylistImplTest {
                        assertNotNull( renderer )
 
                        assertProperties(
-                           InnertubePlaylistImpl.from( Constants.CHROME_WINDOWS_VISITOR_DATA, renderer ),
+                           InnertubePlaylistImpl.from( Constants.CHROME_WINDOWS_VISITOR_DATA, renderer, id ),
                            id,
                            name,
                            thumbnailCount,
