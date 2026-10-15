@@ -402,7 +402,7 @@ object PlaylistItem: Visual(), MultiplatformItem {
                 if( navController == null ) return@click
 
                 if( playlist.browseId != null && playlist.id == -1L )
-                    NavRoutes.YT_PLAYLIST.navigateHere( navController, playlist.browseId )
+                    NavRoutes.YT_PLAYLIST.navigateHere( navController, onlinePlaylistRoute( playlist.browseId ) )
                 else
                     NavRoutes.localPlaylist.navigateHere( navController, playlist.id.toString() )
             },
@@ -551,7 +551,7 @@ object PlaylistItem: Visual(), MultiplatformItem {
                 if( navController == null ) return@click
 
                 if( playlist.browseId != null && playlist.id == -1L )
-                    NavRoutes.YT_PLAYLIST.navigateHere( navController, playlist.browseId )
+                    NavRoutes.YT_PLAYLIST.navigateHere( navController, onlinePlaylistRoute( playlist.browseId ) )
                 else
                     NavRoutes.localPlaylist.navigateHere( navController, playlist.id.toString() )
             },
@@ -638,3 +638,11 @@ object PlaylistItem: Visual(), MultiplatformItem {
 @Composable
 fun Playlist.displayName(): String =
     if( isMonthly ) monthlyPlaylistTitle( name ) ?: cleanName() else cleanName()
+
+/**
+ * Route argument for a playlist only on YouTube: the library listing drops the "VL"
+ * prefix the browse call needs ("LM" must become "VLLM"), and the user's own
+ * playlists may be private, so they're fetched logged in.
+ */
+private fun onlinePlaylistRoute( browseId: String ): String =
+    "${if( browseId.startsWith( "VL" ) ) browseId else "VL$browseId"}?useLogin=true"
