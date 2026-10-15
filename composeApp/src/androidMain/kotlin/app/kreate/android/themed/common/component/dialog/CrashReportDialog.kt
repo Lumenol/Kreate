@@ -159,16 +159,13 @@ class CrashReportDialog(private val context: Context): Dialog() {
             val uriHandler = LocalUriHandler.current
             Button(
                 onClick = {
-                    // Copy first: hiding the dialog deletes the crash log
-                    writeCrashlogToClipboard()
+                    // Read and copy first: hiding the dialog deletes the crash log
+                    val log = writeCrashlogToClipboard().orEmpty()
 
                     hideDialog()
 
-                    uriHandler.openUri(
-                        with(Repository ) {
-                            "$REPO_URL$ISSUE_TEMPLATE_PATH"
-                        }
-                    )
+                    // A new issue on this fork, already filled with the log
+                    uriHandler.openUri( Repository.crashIssueUrl( log ) )
                 },
                 colors = ButtonDefaults.buttonColors().copy(
                     containerColor = colorPalette.accent
