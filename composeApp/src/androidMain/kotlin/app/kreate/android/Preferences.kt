@@ -572,6 +572,9 @@ sealed class Preferences<T>(
         val AUDIO_QUALITY by lazy {
             Enum( preferences, Key.AUDIO_QUALITY, "audioQualityFormat", AudioQualityFormat.Auto )
         }
+        val DOWNLOAD_QUALITY by lazy {
+            Enum( preferences, Key.DOWNLOAD_QUALITY, "", it.fast4x.rimusic.enums.DownloadQuality.SameAsPlayback )
+        }
         val AUDIO_REVERB_PRESET by lazy {
             Int(preferences, Key.AUDIO_REVERB_PRESET, "audioReverbPreset", 0)
         }
@@ -1912,6 +1915,7 @@ sealed class Preferences<T>(
         const val HOME_LIBRARY_TYPE = "HomePlaylistType"
         const val AUDIO_FADE_DURATION = "AudioFadeDuration"
         const val AUDIO_QUALITY = "AudioQuality"
+        const val DOWNLOAD_QUALITY = "DownloadQuality"
         const val AUDIO_REVERB_PRESET = "AudioReverbPresetValue"
         const val AUDIO_SKIP_SILENCE = "AudioSkipSilence"
         const val AUDIO_VOLUME_NORMALIZATION = "AudioVolumeNormalization"
