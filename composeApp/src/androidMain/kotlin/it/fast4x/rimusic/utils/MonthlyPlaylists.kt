@@ -1,57 +1,92 @@
 package it.fast4x.rimusic.utils
 
+import kotlinx.coroutines.withContext
+import app.kreate.android.Preferences
+import androidx.compose.ui.platform.LocalContext
 import android.content.Context
 import androidx.annotation.DrawableRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.ui.res.stringResource
 import app.kreate.android.R
 import app.kreate.database.models.Playlist
 import it.fast4x.rimusic.Database
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOn
 import me.knighthat.utils.TimeDateUtils
 import java.time.LocalDate
 
-private suspend fun addMonthlyPlaylist( from: LocalDate, to: LocalDate, playlistName: String ) =
-    Database.eventTable
-            .findSongsMostPlayedBetween(
-                from = TimeDateUtils.toStartDateMillis( from ),
-                to = TimeDateUtils.toStartDateMillis( to )
-            )
-            .first()
-            .let {
-                Database.asyncTransaction {
-                    mapIgnore(
-                        playlist = Playlist(name = playlistName, isMonthly = true),
-                        songs = it.toTypedArray()
-                    )
-                }
+/** Most played songs kept in a month's playlist, and in a year's */
+private const val MONTHLY_SIZE = 50
+private const val YEARLY_SIZE = 100
+
+/** Playlist name of a month: year then month without padding, e.g. "20269" for September 2026 */
+private fun monthlyName( month: LocalDate ) = "${month.year}${month.monthValue}"
+
+private fun monthOf( name: String ): LocalDate? {
+    val digits = name.takeIf { it.all( Char::isDigit ) && it.length in 5..6 } ?: return null
+    val month = digits.drop( 4 ).toInt().takeIf { it in 1..12 } ?: return null
+    return LocalDate.of( digits.take( 4 ).toInt(), month, 1 )
+}
+
+private suspend fun addPlaylistOfMostPlayed( from: LocalDate, to: LocalDate, playlist: Playlist, limit: Int ) {
+    val songs = Database.eventTable
+                        .findSongsMostPlayedBetween(
+                            from = TimeDateUtils.toStartDateMillis( from ),
+                            to = TimeDateUtils.toStartDateMillis( to ),
+                            limit = limit
+                        )
+                        .first()
+    if( songs.isEmpty() ) return
+
+    Database.asyncTransaction {
+        mapIgnore( playlist = playlist, songs = songs.toTypedArray() )
+    }
+}
+
+/**
+ * Monthly playlists used to be named after the month they were made in: on
+ * October 1st, September's songs went into "October". Done once: each one is
+ * renamed to the month before, oldest first so a name is free when it's taken.
+ */
+private suspend fun renameOldMonthlyPlaylists() {
+    if( Preferences.MONTHLY_PLAYLISTS_RENAMED.value ) return
+
+    Database.playlistTable
+            .allMonthly()
+            .mapNotNull { playlist -> monthOf( playlist.name )?.let { playlist to it } }
+            .sortedBy { it.second }
+            .forEach { (playlist, month) ->
+                runCatching { Database.playlistTable.rename( playlist.id, monthlyName( month.minusMonths( 1 ) ) ) }
             }
+    withContext( Dispatchers.Main ) { Preferences.MONTHLY_PLAYLISTS_RENAMED.value = true }
+}
+
+/**
+ * Last month's 50 most played songs, named after that month, and last year's
+ * 100 most played ("Top 2025"), each made once.
+ */
+private suspend fun updateRecapPlaylists( context: Context ) {
+    renameOldMonthlyPlaylists()
+
+    val firstOfThisMonth = LocalDate.now().withDayOfMonth( 1 )
+    val lastMonth = firstOfThisMonth.minusMonths( 1 )
+    val monthName = monthlyName( lastMonth )
+    if( !Database.playlistTable.exists( monthName ).first() )
+        addPlaylistOfMostPlayed( lastMonth, firstOfThisMonth, Playlist( name = monthName, isMonthly = true ), MONTHLY_SIZE )
+
+    val firstOfThisYear = firstOfThisMonth.withMonth( 1 )
+    val lastYear = firstOfThisYear.minusYears( 1 )
+    val yearName = context.getString( R.string.top_of_year, lastYear.year.toString() )
+    if( !Database.playlistTable.exists( yearName ).first() )
+        addPlaylistOfMostPlayed( lastYear, firstOfThisYear, Playlist( name = yearName ), YEARLY_SIZE )
+}
 
 @Composable
 fun CheckMonthlyPlaylist() {
-    val (lastMonth, thisMonth) = remember {
-        val firstOfThisMonth = LocalDate.now().withDayOfMonth( 1 )
-        firstOfThisMonth.minusMonths( 1L ) to firstOfThisMonth
-    }
-
-    LaunchedEffect( lastMonth, thisMonth ) {
-        // I.E. April 2025 returns "202504"
-        val playlistName = "${thisMonth.year}${thisMonth.monthValue}"
-
-        Database.playlistTable
-                .exists( playlistName )
-                .flowOn( Dispatchers.IO )
-                .collectLatest { isMonthlyPlaylistExist ->
-                    // Force cancel this to prevent further updates
-                    if( isMonthlyPlaylistExist ) return@collectLatest
-
-                    addMonthlyPlaylist( lastMonth, thisMonth, playlistName )
-                }
+    val context = LocalContext.current
+    LaunchedEffect( Unit ) {
+        withContext( Dispatchers.IO ) { updateRecapPlaylists( context ) }
     }
 }
 
@@ -64,7 +99,7 @@ private val MONTH_TITLES = intArrayOf(
 
 /**
  * Monthly playlists are named year then month without padding
- * ("20268" is August 2026, "202610" October 2026, see [CheckMonthlyPlaylist]).
+ * ("20268" is August 2026, "202610" October 2026, see [monthlyName]).
  *
  * @return the localized "Month Year" title, `null` if [name] isn't one
  */

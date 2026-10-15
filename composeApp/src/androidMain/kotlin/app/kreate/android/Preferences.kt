@@ -991,6 +991,10 @@ sealed class Preferences<T>(
         val ZOOM_OUT_ANIMATION by lazy {
             Boolean( preferences, Key.ZOOM_OUT_ANIMATION, "buttonzoomout", false )
         }
+        /** Monthly playlists renamed to the month their songs were played in, see MonthlyPlaylists.kt */
+        val MONTHLY_PLAYLISTS_RENAMED by lazy {
+            Boolean( preferences, Key.MONTHLY_PLAYLISTS_RENAMED, "", false )
+        }
         val ENABLE_DISCOVER by lazy {
             Boolean( preferences, Key.ENABLE_DISCOVER, "discover", false )
         }
@@ -2003,6 +2007,7 @@ sealed class Preferences<T>(
         const val MULTI_FLOATING_ICON_X_OFFSET = "MultiFloatingIconXOffset"
         const val MULTI_FLOATING_ICON_Y_OFFSET = "MultiFloatingIconYOffset"
         const val ZOOM_OUT_ANIMATION = "ZoomOutAnimation"
+        const val MONTHLY_PLAYLISTS_RENAMED = "MonthlyPlaylistsRenamed"
         const val ENABLE_DISCOVER = "EnableDiscover"
         const val ENABLE_PERSISTENT_QUEUE = "EnablePersistentQueue"
         const val RESUME_PLAYBACK_ON_STARTUP = "ResumePlaybackOnStartup"
