@@ -141,8 +141,7 @@
             </intent-filter>
             <!-- NEW PLAYER SERVICE -->
 
-            <meta-data android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
+            <!-- Launcher shortcuts are registered at runtime: LauncherShortcuts -->
         </activity>
         <activity
                 android:name=".CopyCrashlogActivity"
