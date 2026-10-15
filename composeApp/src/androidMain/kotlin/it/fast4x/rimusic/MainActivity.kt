@@ -136,6 +136,7 @@ import it.fast4x.rimusic.ui.styling.typographyOf
 import it.fast4x.rimusic.utils.LocalMonetCompat
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.forcePlay
+import app.kreate.android.utils.warnIfYouTubeLoginExpired
 import app.kreate.android.utils.LauncherShortcuts
 import app.kreate.android.utils.playYouTubePlaylistLink
 import it.fast4x.rimusic.utils.getEnum
@@ -344,6 +345,12 @@ MainActivity :
         intentUriData = intent.data ?: intent.getStringExtra(Intent.EXTRA_TEXT)?.toUri()
         shortcutAction = intent.action?.takeIf { it in LauncherShortcuts.actions }
         LauncherShortcuts.register( this )
+
+        // Once per process, not on every rotation
+        if( !youTubeLoginChecked ) {
+            youTubeLoginChecked = true
+            lifecycleScope.launch( Dispatchers.IO ) { warnIfYouTubeLoginExpired( this@MainActivity ) }
+        }
 
         if ( Preferences.KEEP_SCREEN_ON.value )
             window.addFlags( WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON )
@@ -1105,6 +1112,8 @@ MainActivity :
     }
 
     companion object {
+        private var youTubeLoginChecked = false
+
         const val action_search = "it.fast4x.rimusic.action.search"
         const val action_songs = "it.fast4x.rimusic.action.songs"
         const val action_albums = "it.fast4x.rimusic.action.albums"

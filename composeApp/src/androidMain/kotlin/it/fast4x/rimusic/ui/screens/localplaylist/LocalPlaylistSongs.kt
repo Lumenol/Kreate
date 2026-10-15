@@ -93,6 +93,8 @@ import it.fast4x.rimusic.ui.components.MenuState
 import it.fast4x.rimusic.ui.components.SwipeableQueueItem
 import it.fast4x.rimusic.ui.components.tab.toolbar.Dialog
 import it.fast4x.rimusic.ui.components.themed.Enqueue
+import it.fast4x.rimusic.ui.components.themed.ShareLinks
+import app.kreate.android.utils.shareSongLinks
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.ListenOnYouTube
@@ -246,6 +248,10 @@ fun LocalPlaylistSongs(
         // Turn of selector clears the selected list
         itemSelector.isActive = false
     }
+    val shareLinks = ShareLinks {
+        if( context.shareSongLinks( getSongs(), itemSelector.isActive ) )
+            itemSelector.isActive = false
+    }
     val addToFavorite = LikeComponent( ::getSongs )
 
     val addToPlaylist = PlaylistsMenu.init(
@@ -397,6 +403,7 @@ fun LocalPlaylistSongs(
                         add( positionLock )
                     add( playNext )
                     add( enqueue )
+                    add( shareLinks )
                     add( addToPlaylist )
                     add( addToFavorite )
                     add( itemSelector )

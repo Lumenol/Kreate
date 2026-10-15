@@ -28,6 +28,10 @@
     <string name="shuffle">Aléatoire</string>
     <string name="play_all">Tout lire</string>
     <string name="share">Partager</string>
+    <string name="share_links">Partager les liens</string>
+    <string name="no_song_to_share">Aucun titre avec un lien à partager</string>
+    <string name="select_songs_to_share">Sélectionne d\'abord les titres à partager</string>
+    <string name="youtube_login_expired">Ta connexion YouTube a expiré : les « J\'aime » et l\'historique n\'arrivent plus sur YouTube. Reconnecte-toi dans Paramètres → Comptes.</string>
     <string name="quick_play_next">À la suite</string>
     <string name="quick_add_to_playlist">Playlist</string>
     <string name="from_wikipedia_cca">De Wikipédia sous licence Creative Commons CC-BY-SA 3.0</string>

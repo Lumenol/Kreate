@@ -28,6 +28,10 @@
     <string name="shuffle">Shuffle</string>
     <string name="play_all">Play all</string>
     <string name="share">Share</string>
+    <string name="share_links">Share links</string>
+    <string name="no_song_to_share">No song with a link to share</string>
+    <string name="select_songs_to_share">Select the songs to share first</string>
+    <string name="youtube_login_expired">Your YouTube login has expired: likes and history no longer reach YouTube. Sign in again in Settings → Accounts.</string>
     <string name="quick_play_next">Play next</string>
     <string name="quick_add_to_playlist">Playlist</string>
     <string name="from_wikipedia_cca">From Wikipedia under Creative Commons Attribution CC-BY-SA 3.0</string>
