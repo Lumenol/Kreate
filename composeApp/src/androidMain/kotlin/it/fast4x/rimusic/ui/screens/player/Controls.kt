@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -65,7 +66,7 @@ fun Controls(
     artistIds: List<Info>?,
     albumId: String?,
     shouldBePlaying: Boolean,
-    positionAndDuration: Pair<Long, Long>,
+    positionAndDuration: State<Pair<Long, Long>>,
     modifier: Modifier = Modifier,
     player: StatefulPlayer = koinInject()
 ) {

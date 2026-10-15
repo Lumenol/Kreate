@@ -2,6 +2,7 @@ package me.knighthat.impl
 
 import app.kreate.di.DOWNLOAD_QUALITY_PARAM
 import android.content.Context
+import android.database.sqlite.SQLiteDatabaseLockedException
 import android.graphics.Bitmap
 import androidx.annotation.OptIn
 import androidx.compose.runtime.getValue
@@ -122,10 +123,21 @@ class DownloadHelperImpl(
 
     init {
         val results = mutableMapOf<String, Download>()
-        val cursor = downloadManager.downloadIndex.getDownloads()
-        while ( cursor.moveToNext() ) {
-            results[cursor.download.request.id] = cursor.download
-        }
+        // At startup the database can still be locked by another component:
+        // retry a few times rather than crash, and start empty as a last resort
+        for( attempt in 1..3 )
+            try {
+                downloadManager.downloadIndex.getDownloads().use { cursor ->
+                    while ( cursor.moveToNext() ) {
+                        results[cursor.download.request.id] = cursor.download
+                    }
+                }
+                break
+            } catch( err: SQLiteDatabaseLockedException ) {
+                Logger.w( err, "DownloadHelperImpl" ) { "Download index locked (attempt $attempt)" }
+                results.clear()
+                Thread.sleep( 200L * attempt )
+            }
         downloads = MutableStateFlow(results)
 
         // The index and the download cache are independent stores. Log how far apart they start

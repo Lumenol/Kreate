@@ -1,5 +1,8 @@
 package it.fast4x.rimusic
 
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.CoroutineScope
+import app.kreate.android.utils.AutoBackup
 import android.app.Application
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
@@ -7,6 +10,7 @@ import android.net.NetworkRequest
 import androidx.core.content.getSystemService
 import androidx.lifecycle.ProcessLifecycleOwner
 import app.kreate.android.Preferences
+import app.kreate.android.coil3.ThumbnailSizeInterceptor
 import app.kreate.android.drawable.AppIcon
 import app.kreate.android.service.innertube.InnertubeProvider
 import app.kreate.android.utils.ConnectivityUtils
@@ -71,6 +75,8 @@ class MainApplication : Application(), SingletonImageLoader.Factory {
         }
         // Register app lifecycle tracker
         ProcessLifecycleOwner.get().lifecycle.addObserver(AppLifecycleTracker)
+        // Automatic backup, when one is due
+        CoroutineScope( Dispatchers.IO ).launch { AutoBackup.runIfDue( this@MainApplication ) }
     }
 
     override fun onTerminate() {
@@ -103,6 +109,8 @@ class MainApplication : Application(), SingletonImageLoader.Factory {
                                   null
                           }
                           .components {
+                              // Before the fetcher, so the smaller image is what's downloaded
+                              add( ThumbnailSizeInterceptor() )
                               add(
                                   KtorNetworkFetcherFactory(client)
                               )

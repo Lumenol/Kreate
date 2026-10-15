@@ -16,6 +16,7 @@ import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import app.kreate.android.Preferences
@@ -156,6 +157,15 @@ val playerModule = module {
                 .setWakeMode( C.WAKE_MODE_NETWORK )
                 .setAudioAttributes( audioAttributes, handleAudioFocus )
                 .setUsePlatformDiagnostics( false )
+                // Up to 5 min of audio ahead instead of 50 s (about 6 MB at 160 kbps):
+                // on a weak network, the end of a song and the start of the next one
+                // are loaded well before they're needed, so playback doesn't cut
+                .setLoadControl(
+                    DefaultLoadControl.Builder()
+                                      .setBufferDurationsMs( 120_000, 300_000, 1_000, 2_000 )
+                                      .setPrioritizeTimeOverSizeThresholds( true )
+                                      .build()
+                )
                 .build()
                 .apply {
                     // Nothing renders this player's video, but the progressive

@@ -4,6 +4,7 @@
 package app.kreate.di
 
 import android.content.Context
+import android.database.sqlite.SQLiteConstraintException
 import android.net.ConnectivityManager
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.util.fastFilter
@@ -151,17 +152,26 @@ private fun upsertSongFormat( videoId: String, format: PlayerResponse.StreamingD
         databaseWorker.join()
 
         Database.asyncTransaction {
-            formatTable.upsert(
-                Format(
-                    videoId,
-                    format.itag.toInt(),
-                    format.mimeType,
-                    format.bitrate.toLong(),
-                    format.contentLength?.toLong(),
-                    format.lastModified.toLong(),
-                    format.loudnessDb
+            // The format references its song: when the song's info couldn't be
+            // fetched (shared link, offline...) the song isn't there and the
+            // insert fails. It runs on the database executor, so an escaping
+            // exception would crash the app.
+            try {
+                formatTable.upsert(
+                    Format(
+                        videoId,
+                        format.itag.toInt(),
+                        format.mimeType,
+                        format.bitrate.toLong(),
+                        format.contentLength?.toLong(),
+                        format.lastModified.toLong(),
+                        format.loudnessDb
+                    )
                 )
-            )
+            } catch( err: SQLiteConstraintException ) {
+                logger.w( err ) { "$videoId isn't in the database, its format isn't saved" }
+                return@asyncTransaction
+            }
 
             logger.d { "$videoId is successfully upserted to the database" }
 

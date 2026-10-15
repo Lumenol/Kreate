@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.app.NotificationManager
 import android.content.Context
 import android.content.SharedPreferences
+import android.media.audiofx.AudioEffect
 import android.media.audiofx.BassBoost
 import android.media.audiofx.LoudnessEnhancer
 import android.media.audiofx.PresetReverb
@@ -30,6 +31,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.offline.Download
 import app.kreate.android.Preferences
+import app.kreate.android.utils.BlockedArtists
 import app.kreate.android.R
 import app.kreate.android.service.PlayerEventUpdateDiscord
 import app.kreate.android.utils.innertube.CURRENT_LOCALE
@@ -54,6 +56,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -113,8 +116,10 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
     private var bassBoostJob: Job? = null
     //</editor-fold>
     //<editor-fold desc="AudioFX">
-    private lateinit var loudnessEnhancer: LoudnessEnhancer
-    private lateinit var bassBoost: BassBoost
+    // Null until the first audio session, and after an effect failed to be created
+    // (some devices refuse it): a released effect must never be touched again
+    private var loudnessEnhancer: LoudnessEnhancer? = null
+    private var bassBoost: BassBoost? = null
     private var reverb: PresetReverb? = null
     //</editor-fold>
 
@@ -140,6 +145,13 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
 
         loadPersistentQueue()
     }
+
+    /**
+     * Volume to fade back to. Read from [volume] only while no fade runs: during
+     * one it's somewhere between 0 and the real volume, and a play() pressed in
+     * the middle of a pause fade used to fade up to almost nothing (#1867).
+     */
+    private var steadyVolume = 1f
 
     private fun stopFadingEffect() {
         volumeAnimator?.cancel()
@@ -292,10 +304,12 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
                     player.mediaItems.fastMap( MediaItem::mediaId )
                 }
 
-                // Songs with the same id as provided [Song] should be removed.
-                // The song usually lives at the the first index, but this
-                // way is safer to implement, as it can live through changes in position.
-                relatedSongs.dropWhile { it.id == mediaItem.mediaId || it.id in currentQueue }
+                val skipped = withContext( Dispatchers.IO ) { songsKeptOutOfRadio( relatedSongs ) }
+
+                // Leave out the song itself, songs already queued (anywhere in
+                // the list, not only at its start), disliked songs and, with
+                // Discover on, the ones already liked or in a playlist
+                relatedSongs.filterNot { it.id == mediaItem.mediaId || it.id in currentQueue || it.id in skipped }
                             .fastMap( InnertubeSong::toMediaItem )
                             .also {
                                 // Any call to [player] must happen on Main thread
@@ -314,8 +328,10 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
                                     val curIndex = player.currentMediaItemIndex
                                     val endIndex = player.mediaItemCount
                                     if( !append && player.mediaItemCount > 1 ) {
+                                        // Everything but the current song goes, including the
+                                        // songs played before it, which used to come back next
                                         player.moveMediaItem( curIndex, 0 )
-                                        player.removeMediaItems( curIndex + 1, endIndex )
+                                        player.removeMediaItems( 1, endIndex )
                                     }
 
                                     player.addMediaItems(it)
@@ -423,9 +439,10 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             return
         }
 
+        if( volumeAnimator?.isRunning != true ) steadyVolume = volume
         startFade(
             start = 0f,
-            end = volume,
+            end = steadyVolume,
             durationInMillis = duration,
             doOnStart = {
                 volume = 0f
@@ -441,14 +458,14 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             return
         }
 
-        val originalVolume = volume
+        if( volumeAnimator?.isRunning != true ) steadyVolume = volume
         startFade(
             start = volume,
             end = 0f,
             durationInMillis = duration,
             doOnEnd = {
                 player.pause()
-                volume = originalVolume
+                volume = steadyVolume
             }
         )
     }
@@ -485,10 +502,10 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         player.removeListener( this )
 
         // Effects are created on the first audio session, which may never have happened
-        if( ::loudnessEnhancer.isInitialized )
-            loudnessEnhancer.release()      // Must release after listener is removed to prevent race condition
-        if( ::bassBoost.isInitialized )
-            bassBoost.release()
+        loudnessEnhancer?.release()      // Must release after listener is removed to prevent race condition
+        loudnessEnhancer = null
+        bassBoost?.release()
+        bassBoost = null
         reverb?.release()
         reverb = null
         clearAuxEffectInfo()
@@ -508,7 +525,8 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         // so an early return would leave the previous song's collector alive.
         loudnessNormalizationJob?.cancel()
 
-        if( !::loudnessEnhancer.isInitialized || !loudnessEnhancer.enabled )
+        val loudnessEnhancer = loudnessEnhancer
+        if( loudnessEnhancer == null || !loudnessEnhancer.isOn() )
             return
         else
             logger.v { "Normalizing loudness..." }
@@ -530,8 +548,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
                             val targetGain = mediaLoudness?.let { (targetLoudness - it) * 100f } ?: 0f
 
                             // [onAudioSessionIdChanged] can release the effect while this job
-                            // is still collecting, and a released lateinit still reports itself
-                            // as initialized. The resulting exception must not escape the
+                            // is still collecting. The resulting exception must not escape the
                             // coroutine, it has no handler to catch it.
                             try {
                                 loudnessEnhancer.setTargetGain( targetGain.toInt() )
@@ -550,7 +567,8 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
     }
 
     private fun boostLowFrequencies() {
-        if( !::bassBoost.isInitialized || !bassBoost.enabled )
+        val bassBoost = bassBoost
+        if( bassBoost == null || !bassBoost.isOn() )
             return
         else
             logger.v { "Boosting low frequency..." }
@@ -561,7 +579,12 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             bassBoostJob = coroutineScope.launch {
                 val setting by Preferences.AUDIO_BASS_BOOST_LEVEL
                 val target = (setting * 1000f).coerceIn( 0f, 1000f ).toInt().toShort()
-                bassBoost.setStrength( target )
+                try {
+                    bassBoost.setStrength( target )
+                } catch( err: RuntimeException ) {
+                    logger.e( err ) { "Failed to apply bass boost, effect is gone" }
+                    return@launch
+                }
 
                 logger.d { "Bass boost strength: $target" }
             }
@@ -640,11 +663,12 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
 
         //<editor-fold desc="Loudness enhancer">
         try {
-            if( ::loudnessEnhancer.isInitialized )
-                loudnessEnhancer.release()
+            loudnessEnhancer?.release()
+            loudnessEnhancer = null
 
-            loudnessEnhancer = LoudnessEnhancer(audioSessionId)
-            loudnessEnhancer.enabled = Preferences.AUDIO_VOLUME_NORMALIZATION.value
+            loudnessEnhancer = LoudnessEnhancer(audioSessionId).apply {
+                enabled = Preferences.AUDIO_VOLUME_NORMALIZATION.value
+            }
 
             normalizeLoudness()
         } catch( err: Exception ) {
@@ -653,11 +677,12 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         //</editor-fold>
         //<editor-fold desc="Bass boost">
         try {
-            if( ::bassBoost.isInitialized )
-                bassBoost.release()
+            bassBoost?.release()
+            bassBoost = null
 
-            bassBoost = BassBoost(0, audioSessionId)
-            bassBoost.enabled = Preferences.AUDIO_BASS_BOOSTED.value
+            bassBoost = BassBoost(0, audioSessionId).apply {
+                enabled = Preferences.AUDIO_BASS_BOOSTED.value
+            }
 
             boostLowFrequencies()
         } catch( err: Exception ) {
@@ -678,8 +703,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
     override fun onSharedPreferenceChanged( pref: SharedPreferences, key: String? ) {
         when( key ) {
             Preferences.Key.AUDIO_VOLUME_NORMALIZATION -> {
-                if( ::loudnessEnhancer.isInitialized )
-                    loudnessEnhancer.enabled = pref.getBoolean(key, false)
+                loudnessEnhancer?.setEnabledSafely( pref.getBoolean(key, false) )
                 normalizeLoudness()
             }
             Preferences.Key.AUDIO_VOLUME_NORMALIZATION_TARGET -> normalizeLoudness()
@@ -687,13 +711,52 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             Preferences.Key.AUDIO_SKIP_SILENCE ->  skipSilenceEnabled = pref.getBoolean( key, false )
 
             Preferences.Key.AUDIO_BASS_BOOSTED -> {
-                if( ::bassBoost.isInitialized )
-                    bassBoost.enabled = pref.getBoolean(key, false)
+                bassBoost?.setEnabledSafely( pref.getBoolean(key, false) )
                 boostLowFrequencies()
             }
             Preferences.Key.AUDIO_BASS_BOOST_LEVEL -> boostLowFrequencies()
 
             Preferences.Key.AUDIO_REVERB_PRESET -> updateReverb()
+
+            // Read only when the player was built: apply it now, not after a restart
+            Preferences.Key.AUDIO_SMART_PAUSE_DURING_CALLS ->
+                player.setAudioAttributes( player.audioAttributes, pref.getBoolean( key, true ) )
+        }
+    }
+
+    /**
+     * Ids among [songs] that radio must not queue: disliked songs, songs by a
+     * blocked artist, and with Discover on, songs already liked or in a playlist.
+     */
+    private suspend fun songsKeptOutOfRadio( songs: List<InnertubeSong> ): Set<String> {
+        val disliked = Database.songTable.allDisliked().first().mapTo( HashSet() ) { it.id }
+
+        // Songs by a blocked artist
+        val blockedArtists = BlockedArtists.ids
+        if( blockedArtists.isNotEmpty() )
+            songs.filterTo( ArrayList() ) { song ->
+                song.artists.any { it.navigationEndpoint?.browseEndpoint?.browseId in blockedArtists }
+            }.mapTo( disliked ) { it.id }
+
+        if( !Preferences.ENABLE_DISCOVER.value ) return disliked
+
+        return songs.mapNotNullTo( disliked ) { song ->
+            song.id.takeIf {
+                Database.songTable.isLiked( it ).first()
+                        || Database.songPlaylistMapTable.isMapped( it ).first()
+            }
+        }
+    }
+
+    /** `enabled` of an effect whose engine died throws instead of returning false */
+    private fun AudioEffect.isOn(): Boolean =
+        runCatching { enabled }.getOrDefault( false )
+
+    private fun AudioEffect.setEnabledSafely( on: Boolean ) {
+        try {
+            enabled = on
+        } catch( err: RuntimeException ) {
+            logger.e( err ) { "Failed to switch ${javaClass.simpleName}" }
         }
     }
 }

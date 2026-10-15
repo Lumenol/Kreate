@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,7 +49,7 @@ const val DURATION_INDICATOR_HEIGHT = 20
 @Composable
 fun GetSeekBar(
     mediaItem: MediaItem,
-    positionAndDuration: Pair<Long, Long>,
+    positionAndDuration: State<Pair<Long, Long>>,
     player: StatefulPlayer = koinInject()
 ) {
     val playerTimelineType by Preferences.PLAYER_TIMELINE_TYPE
@@ -57,7 +58,8 @@ fun GetSeekBar(
     }
     var transparentbar by Preferences.TRANSPARENT_TIMELINE
     val scope = rememberCoroutineScope()
-    val (position, duration) = positionAndDuration
+    // Read here so a position tick only recomposes the seek bar
+    val (position, duration) = positionAndDuration.value
     val animatedPosition = remember { Animatable(position.toFloat()) }
     var isSeeking by remember { mutableStateOf(false) }
 

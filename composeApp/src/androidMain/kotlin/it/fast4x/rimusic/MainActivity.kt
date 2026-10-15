@@ -136,6 +136,9 @@ import it.fast4x.rimusic.ui.styling.typographyOf
 import it.fast4x.rimusic.utils.LocalMonetCompat
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.forcePlay
+import app.kreate.android.utils.warnIfYouTubeLoginExpired
+import app.kreate.android.utils.LauncherShortcuts
+import app.kreate.android.utils.playYouTubePlaylistLink
 import it.fast4x.rimusic.utils.getEnum
 import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.invokeOnReady
@@ -182,6 +185,8 @@ MainActivity :
     }
 
     private var intentUriData by mutableStateOf<Uri?>(null)
+    /** Launcher shortcut to run once the player is there, see [LauncherShortcuts] */
+    private var shortcutAction by mutableStateOf<String?>(null)
 
     private var sensorManager: SensorManager? = null
     private var acceleration = 0f
@@ -338,6 +343,14 @@ MainActivity :
         println("MainActivity.onCreate launchedFromNotification: $launchedFromNotification intent $intent.action")
 
         intentUriData = intent.data ?: intent.getStringExtra(Intent.EXTRA_TEXT)?.toUri()
+        shortcutAction = intent.action?.takeIf { it in LauncherShortcuts.actions }
+        LauncherShortcuts.register( this )
+
+        // Once per process, not on every rotation
+        if( !youTubeLoginChecked ) {
+            youTubeLoginChecked = true
+            lifecycleScope.launch( Dispatchers.IO ) { warnIfYouTubeLoginExpired( this@MainActivity ) }
+        }
 
         if ( Preferences.KEEP_SCREEN_ON.value )
             window.addFlags( WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON )
@@ -908,6 +921,12 @@ MainActivity :
 
             }
 
+            LaunchedEffect(shortcutAction) {
+                val action = shortcutAction ?: return@LaunchedEffect
+                LauncherShortcuts.run( action, player )
+                shortcutAction = null
+            }
+
             LaunchedEffect(intentUriData) {
                 val uri = intentUriData ?: return@LaunchedEffect
 
@@ -940,6 +959,14 @@ MainActivity :
                         "search" -> uri.getQueryParameter("q")?.let { query ->
                             NavRoutes.searchResults.navigateHere( navController, query )
                         }
+
+                        // A song of a playlist: play the playlist (#422)
+                        "watch" if uri.getQueryParameter("list") != null && playYouTubePlaylistLink(
+                            player,
+                            uri.getQueryParameter("list")!!,
+                            uri.getQueryParameter("v"),
+                            shuffle = uri.getQueryParameter("shuffle") == "1"
+                        ) -> Unit
 
                         else -> when {
                             path == "watch" -> uri.getQueryParameter("v")
@@ -1024,7 +1051,7 @@ MainActivity :
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         intentUriData = intent.data ?: intent.getStringExtra(Intent.EXTRA_TEXT)?.toUri()
-
+        shortcutAction = intent.action?.takeIf { it in LauncherShortcuts.actions }
     }
 
     @UnstableApi
@@ -1085,6 +1112,8 @@ MainActivity :
     }
 
     companion object {
+        private var youTubeLoginChecked = false
+
         const val action_search = "it.fast4x.rimusic.action.search"
         const val action_songs = "it.fast4x.rimusic.action.songs"
         const val action_albums = "it.fast4x.rimusic.action.albums"

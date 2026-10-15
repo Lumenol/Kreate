@@ -325,7 +325,6 @@ class PlayerServiceModern:
 
             val scheduler = Executors.newScheduledThreadPool(1)
             scheduler.scheduleWithFixedDelay({
-                println("PlayerServiceModern onCreate savePersistentQueue")
                 listener.saveQueueToDatabase()
             }, 0, 30, TimeUnit.SECONDS)
 

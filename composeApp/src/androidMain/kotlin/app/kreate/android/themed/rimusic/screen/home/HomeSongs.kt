@@ -1,5 +1,9 @@
 package app.kreate.android.themed.rimusic.screen.home
 
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Box
+import app.kreate.android.themed.common.component.initialOf
+import app.kreate.android.themed.common.component.FastScroller
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.PaddingValues
@@ -246,106 +250,118 @@ fun HomeSongs(
         SongItem.Values.from( colorPalette, typography )
     }
 
-    LazyColumn(
-        state = lazyListState,
-        userScrollEnabled = !isLoading,
-        contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer )
-    ) {
-        if( isLoading )
-            items( 20, null ) { SongItem.Placeholder() }
+    Box( Modifier.fillMaxSize() ) {
+        LazyColumn(
+            state = lazyListState,
+            userScrollEnabled = !isLoading,
+            contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer )
+        ) {
+            if( isLoading )
+                items( 20, null ) { SongItem.Placeholder() }
 
-        itemsIndexed(
-            items = itemsOnDisplay,
-            key = { _, song -> song.id }
-        ) { index, song ->
-            val mediaItem = song.asMediaItem
+            itemsIndexed(
+                items = itemsOnDisplay,
+                key = { _, song -> song.id }
+            ) { index, song ->
+                val mediaItem = song.asMediaItem
 
-            val isLocal by remember { derivedStateOf { mediaItem.isLocal } }
-            val isDownloaded = isLocal || isDownloadedSong( mediaItem.mediaId )
+                val isLocal by remember { derivedStateOf { mediaItem.isLocal } }
+                val isDownloaded = isLocal || isDownloadedSong( mediaItem.mediaId )
 
-            SwipeablePlaylistItem(
-                mediaItem = mediaItem,
-                onPlayNext = { player.addNext( mediaItem ) },
-                onDownload = {
-                    if( builtInPlaylist != BuiltInPlaylist.OnDevice ) {
-                        cache.removeResource(mediaItem.mediaId)
-                        Database.asyncTransaction {
-                            formatTable.updateContentLengthOf( mediaItem.mediaId )
-                        }
-                        if ( !isLocal )
-                            manageDownload(
-                                context = context,
-                                mediaItem = mediaItem,
-                                downloadState = isDownloaded
-                            )
-                    }
-                },
-                onEnqueue = {
-                    player.enqueue(mediaItem)
-                }
-            ) {
-                SongItem.Render(
-                    song = song,
-                    hapticFeedback = hapticFeedback,
-                    isPlaying = song.shallowCompare( currentMediaItem ),
-                    values = songItemValues,
-                    itemSelector = itemSelector,
-                    modifier = Modifier.animateItem(),
-                    thumbnailOverlay = {
-                        if ( songSort.sortBy == SongSortBy.TOTAL_PLAY_TIME || builtInPlaylist == BuiltInPlaylist.Top ) {
-                            var text = song.formattedTotalPlayTime
-                            var typography = typography().xxs
-                            var alignment = Alignment.BottomCenter
-
-                            if( builtInPlaylist == BuiltInPlaylist.Top ) {
-                                text = (index + 1).toString()
-                                typography = typography().m
-                                alignment = Alignment.Center
+                SwipeablePlaylistItem(
+                    mediaItem = mediaItem,
+                    onPlayNext = { player.addNext( mediaItem ) },
+                    onDownload = {
+                        if( builtInPlaylist != BuiltInPlaylist.OnDevice ) {
+                            cache.removeResource(mediaItem.mediaId)
+                            Database.asyncTransaction {
+                                formatTable.updateContentLengthOf( mediaItem.mediaId )
                             }
-
-                            BasicText(
-                                text = text,
-                                style = typography.semiBold.center.color(colorPalette().onOverlay),
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 8.dp, vertical = 4.dp)
-                                    .align(alignment)
-                                    .background(
-                                        brush = Brush.verticalGradient(
-                                            colors = listOf(
-                                                Color.Transparent,
-                                                colorPalette().overlay
-                                            )
-                                        ),
-                                        shape = thumbnailShape()
-                                    )
-                            )
+                            if ( !isLocal )
+                                manageDownload(
+                                    context = context,
+                                    mediaItem = mediaItem,
+                                    downloadState = isDownloaded
+                                )
                         }
                     },
-                    onClick = {
-                        search.hideIfEmpty()
-
-                        player.stopRadio()
-
-                        val selectedSongs = getSongs()
-                        if( song in selectedSongs )
-                            player.forcePlayAtIndex(
-                                selectedSongs.fastMap( Song::asMediaItem ),
-                                selectedSongs.indexOf( song )
-                            )
-                        else
-                            player.forcePlayAtIndex(
-                                itemsOnDisplay.fastMap( Song::asMediaItem ),
-                                index
-                            )
-                    },
-                    onLongClick = {
-                        val page = if( song.isLocal ) MenuPage.LocalSong(mediaItem) else MenuPage.Song(mediaItem)
-                        menu.show( page, true )
+                    onEnqueue = {
+                        player.enqueue(mediaItem)
                     }
-                )
+                ) {
+                    SongItem.Render(
+                        song = song,
+                        hapticFeedback = hapticFeedback,
+                        isPlaying = song.shallowCompare( currentMediaItem ),
+                        values = songItemValues,
+                        itemSelector = itemSelector,
+                        modifier = Modifier.animateItem(),
+                        thumbnailOverlay = {
+                            if ( songSort.sortBy == SongSortBy.TOTAL_PLAY_TIME || builtInPlaylist == BuiltInPlaylist.Top ) {
+                                var text = song.formattedTotalPlayTime
+                                var typography = typography().xxs
+                                var alignment = Alignment.BottomCenter
+
+                                if( builtInPlaylist == BuiltInPlaylist.Top ) {
+                                    text = (index + 1).toString()
+                                    typography = typography().m
+                                    alignment = Alignment.Center
+                                }
+
+                                BasicText(
+                                    text = text,
+                                    style = typography.semiBold.center.color(colorPalette().onOverlay),
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
+                                        .align(alignment)
+                                        .background(
+                                            brush = Brush.verticalGradient(
+                                                colors = listOf(
+                                                    Color.Transparent,
+                                                    colorPalette().overlay
+                                                )
+                                            ),
+                                            shape = thumbnailShape()
+                                        )
+                                )
+                            }
+                        },
+                        onClick = {
+                            search.hideIfEmpty()
+
+                            player.stopRadio()
+
+                            val selectedSongs = getSongs()
+                            if( song in selectedSongs )
+                                player.forcePlayAtIndex(
+                                    selectedSongs.fastMap( Song::asMediaItem ),
+                                    selectedSongs.indexOf( song )
+                                )
+                            else
+                                player.forcePlayAtIndex(
+                                    itemsOnDisplay.fastMap( Song::asMediaItem ),
+                                    index
+                                )
+                        },
+                        onLongClick = {
+                            val page = if( song.isLocal ) MenuPage.LocalSong(mediaItem) else MenuPage.Song(mediaItem)
+                            menu.show( page, true )
+                        }
+                    )
+                }
+            }
+        }
+
+        // Letter bubble only when sorted by a name
+        FastScroller( lazyListState ) { index ->
+            val song = itemsOnDisplay.getOrNull( index ) ?: return@FastScroller null
+            when( songSort.sortBy ) {
+                SongSortBy.TITLE -> initialOf( song.cleanTitle() )
+                SongSortBy.ARTIST -> initialOf( song.cleanArtistsText() )
+                else -> null
             }
         }
     }

@@ -13,6 +13,7 @@ import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
+import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.cache.Cache
 import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
 import androidx.media3.session.CommandButton
@@ -152,8 +153,9 @@ class ExoPlayerListener(
         val positionToLast = player.mediaItemCount - player.currentMediaItemIndex
         // Make sure only add when about 10 songs to the last song in queue
         // TODO: Add slider in settings to let user change number of songs
+        // Append: the songs still queued must stay, only the radio's go after them
         if( positionToLast <= 10 && !player.isLoadingRadio() )
-            player.startRadio()
+            player.currentMediaItem?.let { player.startRadio( it, append = true ) }
     }
 
     @MainThread
@@ -243,6 +245,33 @@ class ExoPlayerListener(
             Toaster.e( errMsg, Toast.LENGTH_LONG )
     }
 
+    /**
+     * What went wrong, in words: YouTube's own reason when it gives one, otherwise
+     * a sentence for the kind of error. The code stays in brackets for bug reports.
+     */
+    private fun readableMessage( error: PlaybackException, rootCause: Throwable ): String {
+        val reason = when {
+            rootCause is PlayableFormatNotFoundException -> context.getString( R.string.error_couldn_t_find_a_playable_audio_format )
+            rootCause is NoInternetException -> context.getString( R.string.no_connection )
+            rootCause is MissingDecipherKeyException -> context.getString( R.string.error_failed_to_decipher_signature )
+
+            else -> {
+                val httpCode = generateSequence<Throwable>( error, Throwable::cause )
+                    .filterIsInstance<HttpDataSource.InvalidResponseCodeException>()
+                    .firstOrNull()
+                    ?.responseCode
+                when {
+                    httpCode != null -> context.getString( R.string.error_youtube_refused_stream, httpCode )
+                    error.errorCode in PlaybackException.ERROR_CODE_DECODER_INIT_FAILED..PlaybackException.ERROR_CODE_AUDIO_TRACK_OFFLOAD_INIT_FAILED ->
+                        context.getString( R.string.error_audio_format_unsupported )
+                    // YouTube's reason ("This video is unavailable"...) when it sent one
+                    else -> rootCause.message?.takeIf { it.isNotBlank() } ?: context.getString( R.string.error_unknown )
+                }
+            }
+        }
+        return context.getString( R.string.error_playback_failed, reason ) + " [${error.errorCodeName}]"
+    }
+
     override fun onPlayWhenReadyChanged( playWhenReady: Boolean, reason: Int ) = saveQueueToDatabase()
 
     override fun onRepeatModeChanged( repeatMode: Int ) {
@@ -301,13 +330,7 @@ class ExoPlayerListener(
 
         if( tryRecoverCorruptedCache( error ) || tryRecover( error ) ) return
 
-        when( rootCause ) {
-            is PlayableFormatNotFoundException -> context.getString( R.string.error_couldn_t_find_a_playable_audio_format )
-            is NoInternetException -> context.getString( R.string.no_connection )
-            is MissingDecipherKeyException -> context.getString( R.string.error_failed_to_decipher_signature )
-
-            else -> rootCause.message ?: context.getString( R.string.error_unknown )
-        }.also( ::printErrorMessage )
+        readableMessage( error, rootCause ).also( ::printErrorMessage )
 
         if ( Preferences.PLAYBACK_SKIP_ON_ERROR.value && player.hasNextMediaItem() )
             player.playNext()

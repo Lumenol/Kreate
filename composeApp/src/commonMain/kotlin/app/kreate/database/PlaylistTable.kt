@@ -77,6 +77,12 @@ interface PlaylistTable: DatabaseTable<Playlist> {
     """)
     fun allMonthlySongs( limit: Int = Int.MAX_VALUE ): Flow<List<Song>>
 
+    @Query("SELECT * FROM playlists WHERE is_monthly")
+    fun allMonthly(): List<Playlist>
+
+    @Query("UPDATE playlists SET name = :name WHERE id = :playlistId")
+    fun rename( playlistId: Long, name: String ): Int
+
     /**
      * @return all playlists from this table with number of songs they carry
      */

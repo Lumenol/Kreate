@@ -1,5 +1,7 @@
 package it.fast4x.rimusic.ui.screens.localplaylist
 
+import app.kreate.android.themed.common.component.initialOf
+import app.kreate.android.themed.common.component.FastScroller
 import app.kreate.android.themed.rimusic.component.playlist.displayName
 import app.kreate.android.themed.common.component.DetailHeader
 import app.kreate.android.themed.common.component.DetailMenu
@@ -93,6 +95,8 @@ import it.fast4x.rimusic.ui.components.MenuState
 import it.fast4x.rimusic.ui.components.SwipeableQueueItem
 import it.fast4x.rimusic.ui.components.tab.toolbar.Dialog
 import it.fast4x.rimusic.ui.components.themed.Enqueue
+import it.fast4x.rimusic.ui.components.themed.ShareLinks
+import app.kreate.android.utils.shareSongLinks
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.ListenOnYouTube
@@ -246,6 +250,10 @@ fun LocalPlaylistSongs(
         // Turn of selector clears the selected list
         itemSelector.isActive = false
     }
+    val shareLinks = ShareLinks {
+        if( context.shareSongLinks( getSongs(), itemSelector.isActive ) )
+            itemSelector.isActive = false
+    }
     val addToFavorite = LikeComponent( ::getSongs )
 
     val addToPlaylist = PlaylistsMenu.init(
@@ -397,6 +405,7 @@ fun LocalPlaylistSongs(
                         add( positionLock )
                     add( playNext )
                     add( enqueue )
+                    add( shareLinks )
                     add( addToPlaylist )
                     add( addToFavorite )
                     add( itemSelector )
@@ -646,6 +655,18 @@ fun LocalPlaylistSongs(
                         }
                     }
 
+                }
+            }
+
+            // Below the floating buttons; not while songs can be reordered, their
+            // drag handles are on the right edge too. Letter bubble only when sorted
+            // by a name; the list starts with the header.
+            if( positionLock.isLocked() ) FastScroller( reorderingState.lazyListState ) { index ->
+                val song = itemsOnDisplay.getOrNull( index - 1 ) ?: return@FastScroller null
+                when( viewModel.sort.sortBy ) {
+                    PlaylistSongSortBy.TITLE -> initialOf( song.cleanTitle() )
+                    PlaylistSongSortBy.ARTIST -> initialOf( song.cleanArtistsText() )
+                    else -> null
                 }
             }
 

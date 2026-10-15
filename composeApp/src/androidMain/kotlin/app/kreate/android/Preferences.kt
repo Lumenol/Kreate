@@ -718,6 +718,10 @@ sealed class Preferences<T>(
         val PROXY_SCHEME by lazy {
             Enum( preferences, Key.PROXY_SCHEME, "ProxyMode", Proxy.Type.HTTP )
         }
+        /** Ids of the artists radio never plays, comma separated */
+        val BLOCKED_ARTISTS by lazy {
+            String( preferences, Key.BLOCKED_ARTISTS, "", "" )
+        }
         val PROXY_HOST by lazy {
             String( preferences, Key.PROXY_HOST, "proxyHostnameKey", "" )
         }
@@ -994,6 +998,33 @@ sealed class Preferences<T>(
         val ZOOM_OUT_ANIMATION by lazy {
             Boolean( preferences, Key.ZOOM_OUT_ANIMATION, "buttonzoomout", false )
         }
+        //<editor-fold desc="Automatic backup">
+        val AUTO_BACKUP by lazy {
+            Boolean( preferences, Key.AUTO_BACKUP, "", false )
+        }
+        /** SAF tree uri of the folder backups go to, "" until one is picked */
+        val AUTO_BACKUP_FOLDER by lazy {
+            String( preferences, Key.AUTO_BACKUP_FOLDER, "", "" )
+        }
+        val AUTO_BACKUP_INTERVAL by lazy {
+            Enum( preferences, Key.AUTO_BACKUP_INTERVAL, "", app.kreate.android.utils.BackupInterval.WEEKLY )
+        }
+        val AUTO_BACKUP_KEEP by lazy {
+            Int( preferences, Key.AUTO_BACKUP_KEEP, "", 5 )
+        }
+        val AUTO_BACKUP_DATABASE by lazy {
+            Boolean( preferences, Key.AUTO_BACKUP_DATABASE, "", true )
+        }
+        val AUTO_BACKUP_HISTORY by lazy {
+            Boolean( preferences, Key.AUTO_BACKUP_HISTORY, "", true )
+        }
+        val AUTO_BACKUP_SETTINGS by lazy {
+            Boolean( preferences, Key.AUTO_BACKUP_SETTINGS, "", true )
+        }
+        val AUTO_BACKUP_LAST by lazy {
+            Long( preferences, Key.AUTO_BACKUP_LAST, "", 0L )
+        }
+        //</editor-fold>
         val ENABLE_DISCOVER by lazy {
             Boolean( preferences, Key.ENABLE_DISCOVER, "discover", false )
         }
@@ -1010,7 +1041,7 @@ sealed class Preferences<T>(
             Boolean( preferences, Key.CLOSE_APP_ON_BACK, "closeWithBackButton", true )
         }
         val PLAYBACK_SKIP_ON_ERROR by lazy {
-            Boolean( preferences, Key.PLAYBACK_SKIP_ON_ERROR, "skipMediaOnError", false )
+            Boolean( preferences, Key.PLAYBACK_SKIP_ON_ERROR, "skipMediaOnError", true )
         }
         val USE_SYSTEM_FONT by lazy {
             Boolean( preferences, Key.USE_SYSTEM_FONT, "useSystemFont", false )
@@ -1047,6 +1078,10 @@ sealed class Preferences<T>(
         }
         val HOME_SONGS_INCLUDE_ON_DEVICE_IN_ALL by lazy {
             Boolean( preferences, Key.HOME_SONGS_INCLUDE_ON_DEVICE_IN_ALL, "includeLocalSongs", false )
+        }
+        /** Monthly playlists renamed to the month their songs were played in, see MonthlyPlaylists.kt */
+        val MONTHLY_PLAYLISTS_RENAMED by lazy {
+            Boolean( preferences, Key.MONTHLY_PLAYLISTS_RENAMED, "", false )
         }
         val MONTHLY_PLAYLIST_COMPILATION by lazy {
             Boolean( preferences, Key.MONTHLY_PLAYLIST_COMPILATION, "enableCreateMonthlyPlaylists", true )
@@ -1926,6 +1961,7 @@ sealed class Preferences<T>(
         const val DISCORD_ACCESS_TOKEN = "DiscordPersonalAccessToken"
         const val IS_PROXY_ENABLED = "IsProxyEnabled"
         const val PROXY_SCHEME = "ProxyScheme"
+        const val BLOCKED_ARTISTS = "BlockedArtists"
         const val PROXY_HOST = "ProxyHost"
         const val PROXY_PORT  = "ProxyPort"
         const val DOH_SERVER = "DnsOverHttpsServer"
@@ -2007,6 +2043,14 @@ sealed class Preferences<T>(
         const val MULTI_FLOATING_ICON_X_OFFSET = "MultiFloatingIconXOffset"
         const val MULTI_FLOATING_ICON_Y_OFFSET = "MultiFloatingIconYOffset"
         const val ZOOM_OUT_ANIMATION = "ZoomOutAnimation"
+        const val AUTO_BACKUP = "AutoBackup"
+        const val AUTO_BACKUP_FOLDER = "AutoBackupFolder"
+        const val AUTO_BACKUP_INTERVAL = "AutoBackupInterval"
+        const val AUTO_BACKUP_KEEP = "AutoBackupKeep"
+        const val AUTO_BACKUP_DATABASE = "AutoBackupDatabase"
+        const val AUTO_BACKUP_HISTORY = "AutoBackupHistory"
+        const val AUTO_BACKUP_SETTINGS = "AutoBackupSettings"
+        const val AUTO_BACKUP_LAST = "AutoBackupLast"
         const val ENABLE_DISCOVER = "EnableDiscover"
         const val ENABLE_PERSISTENT_QUEUE = "EnablePersistentQueue"
         const val RESUME_PLAYBACK_ON_STARTUP = "ResumePlaybackOnStartup"
@@ -2026,6 +2070,7 @@ sealed class Preferences<T>(
         const val HOME_SONGS_ON_DEVICE_SHOW_FOLDERS = "HomeSongsOnDeviceShowFolders"
         const val HOME_SONGS_INCLUDE_ON_DEVICE_IN_ALL = "HomeSongsIncludeOnDeviceInAll"
         const val MONTHLY_PLAYLIST_COMPILATION = "MonthlyPlaylistCompilation"
+        const val MONTHLY_PLAYLISTS_RENAMED = "MonthlyPlaylistsRenamed"
         const val SHOW_MONTHLY_PLAYLISTS = "ShowMonthlyPlaylists"
         const val SHOW_PINNED_PLAYLISTS = "ShowPinnedPlaylists"
         const val SHOW_PLAYLIST_INDICATOR = "ShowPlaylistIndicator"

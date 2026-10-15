@@ -54,6 +54,25 @@ object YouTubeSync {
     }
 
     /**
+     * Dislikes [mediaItem], or brings it back to neutral when it's already
+     * disliked (long press on the heart). Disliked songs are left out of radio.
+     *
+     * This function must not be called on **main thread**
+     */
+    suspend fun toggleSongDislike( context: Context, mediaItem: MediaItem ) {
+        assert( Looper.myLooper() != Looper.getMainLooper() ) {
+            "Cannot run YouTubeSync.toggleSongDislike on main thread"
+        }
+
+        Database.insertIgnore( mediaItem )
+        val wasDisliked = Database.songTable.likeState( mediaItem.mediaId ).first() == false
+        val likeState = if( wasDisliked ) null else false
+        Database.songTable.likeState( mediaItem.mediaId, likeState )
+
+        syncLikeState( context, mediaItem, likeState )
+    }
+
+    /**
      * Cycles the like state of a song through like, dislike and neutral
      * (as the notification and Android Auto like button do), then syncs it with YouTube.
      *
@@ -68,6 +87,7 @@ object YouTubeSync {
         Database.songTable.rotateLikeState( mediaItem.mediaId )
 
         val likeState = Database.songTable.likeState( mediaItem.mediaId ).first()
+        MyDownloadHelper.downloadOnLike( mediaItem, likeState )
         syncLikeState( context, mediaItem, likeState )
     }
 

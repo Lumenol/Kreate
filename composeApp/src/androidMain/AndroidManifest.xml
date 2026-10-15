@@ -141,8 +141,7 @@
             </intent-filter>
             <!-- NEW PLAYER SERVICE -->
 
-            <meta-data android:name="android.app.shortcuts"
-                android:resource="@xml/shortcuts" />
+            <!-- Launcher shortcuts are registered at runtime: LauncherShortcuts -->
         </activity>
         <activity
                 android:name=".CopyCrashlogActivity"
@@ -212,6 +211,11 @@
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
         </service>
+        <!-- Runs MyDownloadService's PlatformScheduler jobs (downloads waiting for the network) -->
+        <service
+            android:name="androidx.media3.exoplayer.scheduler.PlatformScheduler$PlatformSchedulerService"
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:exported="true" />
 
         <service
             android:name="androidx.appcompat.app.AppLocalesMetadataHolderService"
