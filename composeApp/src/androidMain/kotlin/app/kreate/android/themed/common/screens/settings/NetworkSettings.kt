@@ -1,5 +1,7 @@
 package app.kreate.android.themed.common.screens.settings
 
+import app.kreate.di.verifyDoH
+import app.kreate.android.utils.ProxyManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -62,10 +64,7 @@ fun NetworkSettings( paddingValues: PaddingValues ) {
             state = scrollState,
             contentPadding = PaddingValues(bottom = Dimensions.bottomSpacer)
         ) {
-            header(
-                titleId = R.string.proxy,
-                subtitle = { stringResource( R.string.restarting_rimusic_is_required ) }
-            )
+            header( titleId = R.string.proxy )
             entry( search, R.string.enable_proxy ) {
                 SettingComponents.BooleanEntry(
                     Preferences.IS_PROXY_ENABLED,
@@ -113,10 +112,10 @@ fun NetworkSettings( paddingValues: PaddingValues ) {
                             title = stringResource( R.string.setting_entry_test_proxy ),
                             onClick = {
                                 CoroutineScope( Dispatchers.IO ).launch {
-                                    val proxy: Proxy by inject(Proxy::class.java)
-                                    if( proxy !== Proxy.NO_PROXY )
+                                    if( ProxyManager.test() )
                                         Toaster.s( R.string.success_proxy_verified )
-                                    // Failed proxy message will be displayed automatically
+                                    else
+                                        Toaster.w( R.string.error_failed_to_verify_proxy )
                                 }
                             }
                         )
@@ -143,10 +142,9 @@ fun NetworkSettings( paddingValues: PaddingValues ) {
                     title = stringResource( R.string.setting_entry_test_doh ),
                     onClick = {
                         CoroutineScope( Dispatchers.IO ).launch {
-                            val dns: Dns by inject(Dns::class.java)
-                            if( dns !== Dns.SYSTEM )
+                            if( verifyDoH() )
                                 Toaster.s( R.string.success_doh_verified )
-                            // Failed dns message will be displayed automatically
+                            // Failed dns message is displayed by verifyDoH
                         }
                     }
                 )
