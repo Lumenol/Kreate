@@ -1,5 +1,7 @@
 package it.fast4x.rimusic.ui.screens.localplaylist
 
+import app.kreate.android.themed.common.component.initialOf
+import app.kreate.android.themed.common.component.FastScroller
 import app.kreate.android.themed.rimusic.component.playlist.displayName
 import app.kreate.android.themed.common.component.DetailHeader
 import app.kreate.android.themed.common.component.DetailMenu
@@ -653,6 +655,18 @@ fun LocalPlaylistSongs(
                         }
                     }
 
+                }
+            }
+
+            // Below the floating buttons; not while songs can be reordered, their
+            // drag handles are on the right edge too. Letter bubble only when sorted
+            // by a name; the list starts with the header.
+            if( positionLock.isLocked() ) FastScroller( reorderingState.lazyListState ) { index ->
+                val song = itemsOnDisplay.getOrNull( index - 1 ) ?: return@FastScroller null
+                when( viewModel.sort.sortBy ) {
+                    PlaylistSongSortBy.TITLE -> initialOf( song.cleanTitle() )
+                    PlaylistSongSortBy.ARTIST -> initialOf( song.cleanArtistsText() )
+                    else -> null
                 }
             }
 

@@ -1,5 +1,8 @@
 package it.fast4x.rimusic.ui.screens.home
 
+import app.kreate.constant.AlbumSortBy
+import app.kreate.android.themed.common.component.initialOf
+import app.kreate.android.themed.common.component.FastScroller
 import android.annotation.SuppressLint
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -287,157 +290,170 @@ fun HomeAlbums(
                     AlbumItem.Values.from( colorPalette, typography )
                 }
 
-                LazyVerticalGrid(
-                    state = lazyGridState,
-                    columns = GridCells.Adaptive( itemSize.size.dp ),
-                    //contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
-                    modifier = Modifier.background( colorPalette().background0 )
-                                       .fillMaxSize(),
-                    contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer ),
-                    verticalArrangement = Arrangement.spacedBy(AlbumItem.ROW_SPACING.dp )
-                ) {
-                    if( itemsOnDisplay.isEmpty() )
-                        item( key = "empty", span = { GridItemSpan( maxLineSpan ) } ) {
-                            BasicText(
-                                text = stringResource( R.string.no_albums_yet ),
-                                style = typography.s.secondary.center,
-                                modifier = Modifier.fillMaxWidth()
-                                                   .padding( horizontal = 32.dp, vertical = 48.dp )
-                            )
-                        }
+                Box( Modifier.fillMaxSize() ) {
+                    LazyVerticalGrid(
+                        state = lazyGridState,
+                        columns = GridCells.Adaptive( itemSize.size.dp ),
+                        //contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
+                        modifier = Modifier.background( colorPalette().background0 )
+                                           .fillMaxSize(),
+                        contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer ),
+                        verticalArrangement = Arrangement.spacedBy(AlbumItem.ROW_SPACING.dp )
+                    ) {
+                        if( itemsOnDisplay.isEmpty() )
+                            item( key = "empty", span = { GridItemSpan( maxLineSpan ) } ) {
+                                BasicText(
+                                    text = stringResource( R.string.no_albums_yet ),
+                                    style = typography.s.secondary.center,
+                                    modifier = Modifier.fillMaxWidth()
+                                                       .padding( horizontal = 32.dp, vertical = 48.dp )
+                                )
+                            }
 
-                    items(
-                        items = itemsOnDisplay,
-                        key = Album::id
-                    ) { album ->
-                        val songs by remember {
-                            Database.songAlbumMapTable
-                                    .allSongsOf( album.id )
-                                    .distinctUntilChanged()
-                        }.collectAsState( emptyList(), Dispatchers.IO )
+                        items(
+                            items = itemsOnDisplay,
+                            key = Album::id
+                        ) { album ->
+                            val songs by remember {
+                                Database.songAlbumMapTable
+                                        .allSongsOf( album.id )
+                                        .distinctUntilChanged()
+                            }.collectAsState( emptyList(), Dispatchers.IO )
 
-                        var showDialogChangeAlbumTitle by remember {
-                            mutableStateOf(false)
-                        }
-                        var showDialogChangeAlbumAuthors by remember {
-                            mutableStateOf(false)
-                        }
-                        var showDialogChangeAlbumCover by remember {
-                            mutableStateOf(false)
-                        }
+                            var showDialogChangeAlbumTitle by remember {
+                                mutableStateOf(false)
+                            }
+                            var showDialogChangeAlbumAuthors by remember {
+                                mutableStateOf(false)
+                            }
+                            var showDialogChangeAlbumCover by remember {
+                                mutableStateOf(false)
+                            }
 
-                        var onDismiss: () -> Unit = {}
-                        var titleId = 0
-                        var defValue = ""
-                        var placeholderTextId: Int = 0
-                        var queryBlock: (AlbumTable, String, String) -> Int = { _, _, _ -> 0}
+                            var onDismiss: () -> Unit = {}
+                            var titleId = 0
+                            var defValue = ""
+                            var placeholderTextId: Int = 0
+                            var queryBlock: (AlbumTable, String, String) -> Int = { _, _, _ -> 0}
 
-                        if( showDialogChangeAlbumCover ) {
-                            onDismiss = { showDialogChangeAlbumCover = false }
-                            titleId = R.string.update_cover
-                            defValue = album.thumbnailUrl.toString()
-                            placeholderTextId = R.string.cover
-                            queryBlock = AlbumTable::updateCover
-                        } else if( showDialogChangeAlbumTitle ) {
-                            onDismiss = { showDialogChangeAlbumTitle = false }
-                            titleId = R.string.update_title
-                            defValue = album.title.toString()
-                            placeholderTextId = R.string.title
-                            queryBlock = AlbumTable::updateTitle
-                        } else if( showDialogChangeAlbumAuthors ) {
-                            onDismiss = { showDialogChangeAlbumAuthors = false }
-                            titleId = R.string.update_authors
-                            defValue = album.authorsText.toString()
-                            placeholderTextId = R.string.authors
-                            queryBlock = AlbumTable::updateAuthors
-                        }
+                            if( showDialogChangeAlbumCover ) {
+                                onDismiss = { showDialogChangeAlbumCover = false }
+                                titleId = R.string.update_cover
+                                defValue = album.thumbnailUrl.toString()
+                                placeholderTextId = R.string.cover
+                                queryBlock = AlbumTable::updateCover
+                            } else if( showDialogChangeAlbumTitle ) {
+                                onDismiss = { showDialogChangeAlbumTitle = false }
+                                titleId = R.string.update_title
+                                defValue = album.title.toString()
+                                placeholderTextId = R.string.title
+                                queryBlock = AlbumTable::updateTitle
+                            } else if( showDialogChangeAlbumAuthors ) {
+                                onDismiss = { showDialogChangeAlbumAuthors = false }
+                                titleId = R.string.update_authors
+                                defValue = album.authorsText.toString()
+                                placeholderTextId = R.string.authors
+                                queryBlock = AlbumTable::updateAuthors
+                            }
 
-                        if( showDialogChangeAlbumTitle || showDialogChangeAlbumAuthors || showDialogChangeAlbumCover )
-                            InputTextDialog(
-                                onDismiss = onDismiss,
-                                title = stringResource( titleId ),
-                                value = defValue,
-                                placeholder = stringResource( placeholderTextId ),
-                                setValue = {
-                                    if (it.isNotEmpty())
-                                        Database.asyncTransaction { queryBlock( albumTable, album.id, it ) }
-                                },
-                                prefix = MODIFIED_PREFIX
-                            )
+                            if( showDialogChangeAlbumTitle || showDialogChangeAlbumAuthors || showDialogChangeAlbumCover )
+                                InputTextDialog(
+                                    onDismiss = onDismiss,
+                                    title = stringResource( titleId ),
+                                    value = defValue,
+                                    placeholder = stringResource( placeholderTextId ),
+                                    setValue = {
+                                        if (it.isNotEmpty())
+                                            Database.asyncTransaction { queryBlock( albumTable, album.id, it ) }
+                                    },
+                                    prefix = MODIFIED_PREFIX
+                                )
 
-                        var position by remember {
-                            mutableIntStateOf(0)
-                        }
+                            var position by remember {
+                                mutableIntStateOf(0)
+                            }
 
-                        AlbumItem.Vertical(
-                            album = album,
-                            values = albumItemValues,
-                            navController = navController,
-                            sizeDp = sizeDp,
-                            onLongClick = {
-                                menuState.display {
-                                    AlbumsItemMenu(
-                                        navController = navController,
-                                        onDismiss = menuState::hide,
-                                        album = album,
-                                        onChangeAlbumTitle = {
-                                            showDialogChangeAlbumTitle = true
-                                        },
-                                        onChangeAlbumAuthors = {
-                                            showDialogChangeAlbumAuthors = true
-                                        },
-                                        onChangeAlbumCover = {
-                                            showDialogChangeAlbumCover = true
-                                        },
-                                        onPlayNext = {
-                                            println("mediaItem ${songs}")
-                                            player.addNext(
-                                                songs.map(Song::asMediaItem), context
-                                            )
+                            AlbumItem.Vertical(
+                                album = album,
+                                values = albumItemValues,
+                                navController = navController,
+                                sizeDp = sizeDp,
+                                onLongClick = {
+                                    menuState.display {
+                                        AlbumsItemMenu(
+                                            navController = navController,
+                                            onDismiss = menuState::hide,
+                                            album = album,
+                                            onChangeAlbumTitle = {
+                                                showDialogChangeAlbumTitle = true
+                                            },
+                                            onChangeAlbumAuthors = {
+                                                showDialogChangeAlbumAuthors = true
+                                            },
+                                            onChangeAlbumCover = {
+                                                showDialogChangeAlbumCover = true
+                                            },
+                                            onPlayNext = {
+                                                println("mediaItem ${songs}")
+                                                player.addNext(
+                                                    songs.map(Song::asMediaItem), context
+                                                )
 
-                                        },
-                                        onEnqueue = {
-                                            println("mediaItem ${songs}")
-                                            player.enqueue(
-                                                songs.map(Song::asMediaItem), context
-                                            )
+                                            },
+                                            onEnqueue = {
+                                                println("mediaItem ${songs}")
+                                                player.enqueue(
+                                                    songs.map(Song::asMediaItem), context
+                                                )
 
-                                        },
-                                        onAddToPlaylist = { playlistPreview ->
-                                            position =
-                                                playlistPreview.songCount.minus(1) ?: 0
-                                            //Log.d("mediaItem", " maxPos in Playlist $it ${position}")
-                                            if (position > 0) position++ else position =
-                                                0
+                                            },
+                                            onAddToPlaylist = { playlistPreview ->
+                                                position =
+                                                    playlistPreview.songCount.minus(1) ?: 0
+                                                //Log.d("mediaItem", " maxPos in Playlist $it ${position}")
+                                                if (position > 0) position++ else position =
+                                                    0
 
-                                            if (!isYouTubeSyncEnabled() || !playlistPreview.playlist.isYoutubePlaylist) {
-                                                songs.forEachIndexed { index, song ->
-                                                    Database.asyncTransaction {
-                                                        mapIgnore( playlistPreview.playlist, song )
+                                                if (!isYouTubeSyncEnabled() || !playlistPreview.playlist.isYoutubePlaylist) {
+                                                    songs.forEachIndexed { index, song ->
+                                                        Database.asyncTransaction {
+                                                            mapIgnore( playlistPreview.playlist, song )
+                                                        }
+                                                    }
+                                                } else {
+                                                    CoroutineScope(Dispatchers.IO).launch {
+                                                        addToYtPlaylist(
+                                                            context,
+                                                            playlistPreview.playlist.id,
+                                                            position,
+                                                            playlistPreview.playlist.browseId ?: "",
+                                                            songs.map{it.asMediaItem}
+                                                        )
                                                     }
                                                 }
-                                            } else {
-                                                CoroutineScope(Dispatchers.IO).launch {
-                                                    addToYtPlaylist(
-                                                        context,
-                                                        playlistPreview.playlist.id,
-                                                        position,
-                                                        playlistPreview.playlist.browseId ?: "",
-                                                        songs.map{it.asMediaItem}
-                                                    )
-                                                }
+
+
+                                            },
+                                            onGoToPlaylist = {
+                                                NavRoutes.localPlaylist.navigateHere( navController, it.toString() )
                                             }
+                                        )
+                                    }
+                                },
+                                onClick = search::hideIfEmpty
+                            )
+                        }
+                    }
 
-
-                                        },
-                                        onGoToPlaylist = {
-                                            NavRoutes.localPlaylist.navigateHere( navController, it.toString() )
-                                        }
-                                    )
-                                }
-                            },
-                            onClick = search::hideIfEmpty
-                        )
+                    // Bubble: first letter when sorted by name, the year when sorted by year
+                    FastScroller( lazyGridState ) { index ->
+                        val album = itemsOnDisplay.getOrNull( index ) ?: return@FastScroller null
+                        when( sort.sortBy ) {
+                            AlbumSortBy.TITLE -> initialOf( album.cleanTitle() )
+                            AlbumSortBy.ARTIST -> initialOf( album.cleanAuthorsText() )
+                            AlbumSortBy.YEAR -> album.year
+                            else -> null
+                        }
                     }
                 }
             }
