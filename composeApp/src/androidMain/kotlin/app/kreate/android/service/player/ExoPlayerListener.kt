@@ -152,8 +152,9 @@ class ExoPlayerListener(
         val positionToLast = player.mediaItemCount - player.currentMediaItemIndex
         // Make sure only add when about 10 songs to the last song in queue
         // TODO: Add slider in settings to let user change number of songs
+        // Append: the songs still queued must stay, only the radio's go after them
         if( positionToLast <= 10 && !player.isLoadingRadio() )
-            player.startRadio()
+            player.currentMediaItem?.let { player.startRadio( it, append = true ) }
     }
 
     @MainThread

@@ -75,6 +75,7 @@ import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.NowPlayingSongIndicator
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.favoritesIcon
+import it.fast4x.rimusic.utils.getLikeState
 import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.isExplicit
@@ -410,15 +411,16 @@ fun MiniPlayer(
                         .size(24.dp)
                 )
                 if (miniPlayerType == MiniPlayerType.Modern) {
-                    val iconId by remember {derivedStateOf {
-                        with( Preferences.LIKE_ICON.value ) {
-                            if( isSongLiked ) likedIconId else neutralIconId
-                        }
-                    }}
                     it.fast4x.rimusic.ui.components.themed.IconButton(
-                        icon = iconId,
+                        icon = getLikeState( mediaItem.mediaId ),
                         color = colorPalette().favoritesIcon,
                         onClick = ::toggleLike,
+                        // Long press: dislike, so radio leaves the song out
+                        onLongClick = {
+                            CoroutineScope( Dispatchers.IO ).launch {
+                                YouTubeSync.toggleSongDislike( context, mediaItem )
+                            }
+                        },
                         modifier = Modifier
                             .rotate(rotationAngle)
                             .padding(horizontal = 2.dp, vertical = 8.dp)
