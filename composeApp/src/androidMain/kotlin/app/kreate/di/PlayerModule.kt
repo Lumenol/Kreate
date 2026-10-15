@@ -153,6 +153,14 @@ val playerModule = module {
                 .setAudioAttributes( audioAttributes, handleAudioFocus )
                 .setUsePlatformDiagnostics( false )
                 .build()
+                .apply {
+                    // Nothing renders this player's video, but the progressive
+                    // fallback streams are muxed H.264 + AAC: without this a video
+                    // decoder runs for nothing (from Craeckie/Kreate ad6df5e6)
+                    trackSelectionParameters = trackSelectionParameters.buildUpon()
+                                                                       .setTrackTypeDisabled( C.TRACK_TYPE_VIDEO, true )
+                                                                       .build()
+                }
         )
     }
 
