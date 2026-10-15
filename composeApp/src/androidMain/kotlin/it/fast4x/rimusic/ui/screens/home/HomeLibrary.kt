@@ -43,6 +43,8 @@ import app.kreate.android.themed.rimusic.component.tab.Sort
 import app.kreate.android.viewmodel.home.HomeLibraryViewModel
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PlaylistsType
 import it.fast4x.rimusic.enums.UiType
@@ -224,6 +226,16 @@ fun HomeLibrary(
                             }
                         )
                     }
+
+                    // An empty filter said nothing: tell how to fill it
+                    if( itemsOnDisplay.isEmpty() && playlistType == PlaylistsType.PinnedPlaylist )
+                        item( key = "empty", span = { GridItemSpan( maxLineSpan ) } ) {
+                            androidx.compose.foundation.text.BasicText(
+                                text = stringResource( R.string.no_pinned_playlists ),
+                                style = typography().s.color( colorPalette().textSecondary ),
+                                modifier = Modifier.padding( horizontal = 24.dp, vertical = 32.dp )
+                            )
+                        }
                 }
             }
 

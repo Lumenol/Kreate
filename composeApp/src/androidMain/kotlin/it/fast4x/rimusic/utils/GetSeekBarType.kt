@@ -56,6 +56,7 @@ fun GetSeekBar(
     var scrubbingPosition by remember( mediaItem.mediaId ) {
         mutableStateOf<Long?>(null)
     }
+    // "Transparent" keeps a faint track: fully transparent hid how much is left
     var transparentbar by Preferences.TRANSPARENT_TIMELINE
     val scope = rememberCoroutineScope()
     // Read here so a position tick only recomposes the seek bar
@@ -117,7 +118,7 @@ fun GetSeekBar(
                     scrubbingPosition = null
                 },
                 color = colorPalette().collapsedPlayerProgressBar,
-                backgroundColor = if (transparentbar) Color.Transparent else colorPalette().textSecondary,
+                backgroundColor = if (transparentbar) colorPalette().textSecondary.copy( alpha = .2f ) else colorPalette().textSecondary,
                 shape = RoundedCornerShape(8.dp),
                 //modifier = Modifier.pulsatingEffect(currentValue = scrubbingPosition?.toFloat() ?: position.toFloat(), isVisible = true)
             )
@@ -142,7 +143,7 @@ fun GetSeekBar(
                     scrubbingPosition = null
                 },
                 color = colorPalette().collapsedPlayerProgressBar,
-                backgroundColor = if (transparentbar) Color.Transparent else colorPalette().textSecondary,
+                backgroundColor = if (transparentbar) colorPalette().textSecondary.copy( alpha = .2f ) else colorPalette().textSecondary,
                 shape = RoundedCornerShape(8.dp),
                 //modifier = Modifier.pulsatingEffect(currentValue = scrubbingPosition?.toFloat() ?: position.toFloat(), isVisible = true)
             )
@@ -167,7 +168,7 @@ fun GetSeekBar(
                     scrubbingPosition = null
                 },
                 color = colorPalette().collapsedPlayerProgressBar,
-                backgroundColor = if (transparentbar) Color.Transparent else colorPalette().textSecondary,
+                backgroundColor = if (transparentbar) colorPalette().textSecondary.copy( alpha = .2f ) else colorPalette().textSecondary,
                 shape = RoundedCornerShape(8.dp),
                 //modifier = Modifier.pulsatingEffect(currentValue = scrubbingPosition?.toFloat() ?: position.toFloat(), isVisible = true)
             )
@@ -216,7 +217,7 @@ fun GetSeekBar(
                 },
                 color = colorPalette().collapsedPlayerProgressBar,
                 isActive = player.isPlaying,
-                backgroundColor = if (transparentbar) Color.Transparent else colorPalette().textSecondary,
+                backgroundColor = if (transparentbar) colorPalette().textSecondary.copy( alpha = .2f ) else colorPalette().textSecondary,
                 shape = RoundedCornerShape(8.dp),
                 //modifier = Modifier.pulsatingEffect(currentValue = scrubbingPosition?.toFloat() ?: position.toFloat(), isVisible = true)
             )
@@ -226,7 +227,7 @@ fun GetSeekBar(
             SeekBarAudioWaves(
                 progressPercentage = ProgressPercentage((position.toFloat() / duration.toFloat()).coerceIn(0f,1f)),
                 playedColor = colorPalette().accent,
-                notPlayedColor = if (transparentbar) Color.Transparent else colorPalette().textSecondary,
+                notPlayedColor = if (transparentbar) colorPalette().textSecondary.copy( alpha = .2f ) else colorPalette().textSecondary,
                 waveInteraction = {
                     scrubbingPosition = (it.value * duration.toFloat()).toLong()
                     player.seekTo(scrubbingPosition!!)
