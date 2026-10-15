@@ -171,7 +171,8 @@ internal class InnertubeImpl: Innertube {
 
         InnertubePlaylistImpl.from(
             browseResponse.responseContext.visitorData,
-            browseResponse.contents!!.twoColumnBrowseResultsRenderer!!
+            browseResponse.contents!!.twoColumnBrowseResultsRenderer!!,
+            playlistId
         )
     }
 
