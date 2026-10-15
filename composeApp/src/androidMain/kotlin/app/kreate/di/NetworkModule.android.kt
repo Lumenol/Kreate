@@ -1,5 +1,7 @@
 package app.kreate.di
 
+import java.net.UnknownHostException
+import app.kreate.android.utils.ProxyManager
 import app.kreate.android.BuildConfig
 import app.kreate.android.Preferences
 import app.kreate.android.R
@@ -17,8 +19,6 @@ import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import io.ktor.serialization.kotlinx.protobuf.protobuf
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.ClassDiscriminatorMode
 import kotlinx.serialization.json.Json
@@ -26,15 +26,11 @@ import me.knighthat.innertube.Constants
 import me.knighthat.utils.Toaster
 import okhttp3.Dns
 import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
 import okhttp3.dnsoverhttps.DnsOverHttps
 import okhttp3.logging.HttpLoggingInterceptor
 import org.koin.core.module.Module
 import org.koin.dsl.module
 import java.net.InetAddress
-import java.net.InetSocketAddress
-import java.net.Proxy
 import java.util.concurrent.TimeUnit
 
 
@@ -55,25 +51,25 @@ private val JSON: Json = Json {
     classDiscriminatorMode = ClassDiscriminatorMode.NONE
 }
 
-private fun verifyProxy( proxy: Proxy, url: String = "https://httpbin.org/ip" ): Boolean =
-    runCatching {
-        OkHttpClient.Builder()
-                    .proxy( proxy )
-                    .connectTimeout( 3, TimeUnit.SECONDS )
-                    .callTimeout( 5, TimeUnit.SECONDS )
-                    .build()
-                    .newCall(
-                        Request.Builder()
-                               .head()
+/** Blocking: call it off the main thread ("Test DoH" setting) */
+fun verifyDoH(): Boolean {
+    val (resolver, addresses) = buildDoH() ?: return false
+    return verifyDoH( resolver, addresses )
+}
+
+private fun buildDoH(): Pair<DnsOverHttps, List<InetAddress>>? {
+    if( Preferences.DOH_SERVER.value == DohServer.NONE ) return null
+
+    val url = Preferences.DOH_SERVER.value.url!!        // Cannot be null if other than NONE
+    // IP literals: no lookup happens here
+    val addresses = Preferences.DOH_SERVER.value.address.map( InetAddress::getByName )
+    val resolver = DnsOverHttps.Builder()
+                               .client( OkHttpClient.Builder().build() )
                                .url( url )
+                               .bootstrapDnsHosts( addresses )
                                .build()
-                    )
-                    .execute()
-                    .use( Response::isSuccessful )
-    }.onFailure { err ->
-        Logger.e( err, LOGGING_TAG ) { "Failed to connect to $url via proxy $proxy" }
-        Toaster.w( R.string.error_failed_to_verify_proxy )
-    }.getOrDefault( false )
+    return resolver to addresses
+}
 
 private fun verifyDoH( resolver: DnsOverHttps, addresses: List<InetAddress>, domain: String = "google.com" ): Boolean =
     runCatching {
@@ -88,38 +84,20 @@ private fun verifyDoH( resolver: DnsOverHttps, addresses: List<InetAddress>, dom
     }.getOrDefault( false )
 
 actual val networkModule: Module = module {
-    factory<Proxy> {       // Recreate proxy instance every time it's called
-        if( !Preferences.IS_PROXY_ENABLED.value ) {
-            Logger.d( tag = LOGGING_TAG ) { "Proxy is not enabled" }
-            return@factory Proxy.NO_PROXY
-        }
-
-        val proxy = Proxy(
-            Preferences.PROXY_SCHEME.value,
-            InetSocketAddress(Preferences.PROXY_HOST.value, Preferences.PROXY_PORT.value)
-        )
-        // Must verify to prevent network failure
-        runBlocking( Dispatchers.IO ) { proxy.takeIf( ::verifyProxy ) ?: Proxy.NO_PROXY }
-    }
     factory<Dns> {
-        if( Preferences.DOH_SERVER.value == DohServer.NONE ) {
+        val (resolver, _) = buildDoH() ?: run {
             Logger.d( tag = LOGGING_TAG ) { "DoH is not enabled. Using system's DNS" }
             return@factory Dns.SYSTEM
         }
-
-        val client = OkHttpClient.Builder().build()
-        val url = Preferences.DOH_SERVER.value.url!!        // Cannot be null if other than NONE
-        val addresses = Preferences.DOH_SERVER.value.address.map( InetAddress::getByName )
-
-        val dns = DnsOverHttps
-            .Builder()
-            .client( client )
-            .url( url )
-            .bootstrapDnsHosts( addresses )
-            .build()
-        // Must verify to prevent network failure
-        runBlocking( Dispatchers.IO ) {
-            dns.takeIf { verifyDoH(it, addresses) } ?: Dns.SYSTEM
+        // No check up front (it blocked the main thread at startup): when the
+        // DoH server fails, the system's DNS answers instead
+        Dns { hostname ->
+            try {
+                resolver.lookup( hostname )
+            } catch( err: UnknownHostException ) {
+                Logger.w( err, LOGGING_TAG ) { "DoH failed for $hostname, using the system's DNS" }
+                Dns.SYSTEM.lookup( hostname )
+            }
         }
     }
 
@@ -136,7 +114,7 @@ actual val networkModule: Module = module {
         )
 
         OkHttpClient.Builder()
-                    .proxy( get() )
+                    .proxySelector( ProxyManager.proxySelector )
                     .dns( get() )
                     .addInterceptor( interceptor )
                     .build()
