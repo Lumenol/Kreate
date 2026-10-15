@@ -20,6 +20,10 @@ interface EventTable: DatabaseTable<Event> {
     override val tableName: String
         get() = "playback_history"
 
+    /** Time listened between [from] and [to], in milliseconds */
+    @Query("SELECT COALESCE(SUM(time_spent), 0) FROM playback_history WHERE created_at BETWEEN :from AND :to")
+    fun totalTimeSpentBetween( from: Long, to: Long = System.currentTimeMillis() ): Flow<Long>
+
     @Query("SELECT COUNT(*) FROM playback_history")
     fun countAll(): Flow<Long>
 

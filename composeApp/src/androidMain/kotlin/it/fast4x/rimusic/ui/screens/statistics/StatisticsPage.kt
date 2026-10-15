@@ -134,7 +134,14 @@ fun StatisticsPage(
                 )
                 .distinctUntilChanged()
     }.collectAsState( emptyList(), Dispatchers.IO )
-    var totalDuration by remember { mutableStateOf(Duration.ZERO) }
+    // Time listened in the period: it was the all-time play time of the songs
+    // in the list, whatever the period
+    val totalDuration by remember {
+        Database.eventTable
+                .totalTimeSpentBetween( from )
+                .distinctUntilChanged()
+                .map { (it / 1000).toDuration( DurationUnit.SECONDS ) }       // "6m 4s", not "6m 4.026s"
+    }.collectAsState( Duration.ZERO, Dispatchers.IO )
     val songs by remember {
         Database.eventTable
                 .findSongsMostPlayedBetween(
@@ -142,9 +149,6 @@ fun StatisticsPage(
                     limit = maxStatisticsItems.toInt()
                 )
                 .distinctUntilChanged()
-                .onEach {
-                    totalDuration = it.sumOf( Song::totalPlayTimeMs ).toDuration( DurationUnit.MILLISECONDS )
-                }
                 .map { it.take( maxStatisticsItems.toInt() ) }
     }.collectAsState( emptyList(), Dispatchers.IO )
 
