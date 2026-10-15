@@ -31,6 +31,25 @@ fun PlayNext(
 
 @SuppressLint("ComposableNaming")
 @Composable
+fun ShareLinks(
+    onClick: () -> Unit
+): MenuIcon = object : MenuIcon, Descriptive {
+
+    val menuState: MenuState = LocalMenuState.current
+    override val iconId: Int = R.drawable.share_social
+    override val messageId: Int = R.string.share_links
+    override val menuIconTitle: String
+        @Composable
+        get() = stringResource( messageId )
+
+    override fun onShortClick() {
+        onClick()
+        menuState.hide()
+    }
+}
+
+@SuppressLint("ComposableNaming")
+@Composable
 fun Enqueue(
     onClick: () -> Unit
 ): MenuIcon = object : MenuIcon, Descriptive {

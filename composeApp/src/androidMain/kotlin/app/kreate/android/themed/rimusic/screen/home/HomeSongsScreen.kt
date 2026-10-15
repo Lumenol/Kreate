@@ -47,6 +47,8 @@ import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
 import it.fast4x.rimusic.ui.components.tab.TabHeader
 import it.fast4x.rimusic.ui.components.tab.toolbar.Button
 import it.fast4x.rimusic.ui.components.themed.Enqueue
+import it.fast4x.rimusic.ui.components.themed.ShareLinks
+import app.kreate.android.utils.shareSongLinks
 import it.fast4x.rimusic.ui.components.themed.FloatingActionsContainerWithScrollToTop
 import it.fast4x.rimusic.ui.components.themed.HeaderInfo
 import it.fast4x.rimusic.ui.components.themed.MultiFloatingActionsContainer
@@ -106,6 +108,10 @@ fun HomeSongsScreen(
         // Turn of selector clears the selected list
         itemSelector.isActive = false
     }
+    val shareLinks = ShareLinks {
+        if( context.shareSongLinks( getSongs(), itemSelector.isActive ) )
+            itemSelector.isActive = false
+    }
     val addToFavorite = LikeComponent(::getSongs)
     val addToPlaylist = PlaylistsMenu.init(
         navController = navController,
@@ -132,6 +138,7 @@ fun HomeSongsScreen(
             this.add( itemSelector )
             this.add( playNext )
             this.add( enqueue )
+            this.add( shareLinks )
             this.add( addToFavorite )
             this.add( addToPlaylist )
             this.add( import )
