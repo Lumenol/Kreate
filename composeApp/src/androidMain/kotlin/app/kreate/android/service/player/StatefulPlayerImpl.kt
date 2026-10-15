@@ -5,6 +5,7 @@ import android.animation.ValueAnimator
 import android.app.NotificationManager
 import android.content.Context
 import android.content.SharedPreferences
+import android.media.audiofx.AudioEffect
 import android.media.audiofx.BassBoost
 import android.media.audiofx.LoudnessEnhancer
 import android.media.audiofx.PresetReverb
@@ -114,8 +115,10 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
     private var bassBoostJob: Job? = null
     //</editor-fold>
     //<editor-fold desc="AudioFX">
-    private lateinit var loudnessEnhancer: LoudnessEnhancer
-    private lateinit var bassBoost: BassBoost
+    // Null until the first audio session, and after an effect failed to be created
+    // (some devices refuse it): a released effect must never be touched again
+    private var loudnessEnhancer: LoudnessEnhancer? = null
+    private var bassBoost: BassBoost? = null
     private var reverb: PresetReverb? = null
     //</editor-fold>
 
@@ -490,10 +493,10 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         player.removeListener( this )
 
         // Effects are created on the first audio session, which may never have happened
-        if( ::loudnessEnhancer.isInitialized )
-            loudnessEnhancer.release()      // Must release after listener is removed to prevent race condition
-        if( ::bassBoost.isInitialized )
-            bassBoost.release()
+        loudnessEnhancer?.release()      // Must release after listener is removed to prevent race condition
+        loudnessEnhancer = null
+        bassBoost?.release()
+        bassBoost = null
         reverb?.release()
         reverb = null
         clearAuxEffectInfo()
@@ -513,7 +516,8 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         // so an early return would leave the previous song's collector alive.
         loudnessNormalizationJob?.cancel()
 
-        if( !::loudnessEnhancer.isInitialized || !loudnessEnhancer.enabled )
+        val loudnessEnhancer = loudnessEnhancer
+        if( loudnessEnhancer == null || !loudnessEnhancer.isOn() )
             return
         else
             logger.v { "Normalizing loudness..." }
@@ -535,8 +539,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
                             val targetGain = mediaLoudness?.let { (targetLoudness - it) * 100f } ?: 0f
 
                             // [onAudioSessionIdChanged] can release the effect while this job
-                            // is still collecting, and a released lateinit still reports itself
-                            // as initialized. The resulting exception must not escape the
+                            // is still collecting. The resulting exception must not escape the
                             // coroutine, it has no handler to catch it.
                             try {
                                 loudnessEnhancer.setTargetGain( targetGain.toInt() )
@@ -555,7 +558,8 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
     }
 
     private fun boostLowFrequencies() {
-        if( !::bassBoost.isInitialized || !bassBoost.enabled )
+        val bassBoost = bassBoost
+        if( bassBoost == null || !bassBoost.isOn() )
             return
         else
             logger.v { "Boosting low frequency..." }
@@ -566,7 +570,12 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             bassBoostJob = coroutineScope.launch {
                 val setting by Preferences.AUDIO_BASS_BOOST_LEVEL
                 val target = (setting * 1000f).coerceIn( 0f, 1000f ).toInt().toShort()
-                bassBoost.setStrength( target )
+                try {
+                    bassBoost.setStrength( target )
+                } catch( err: RuntimeException ) {
+                    logger.e( err ) { "Failed to apply bass boost, effect is gone" }
+                    return@launch
+                }
 
                 logger.d { "Bass boost strength: $target" }
             }
@@ -645,11 +654,12 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
 
         //<editor-fold desc="Loudness enhancer">
         try {
-            if( ::loudnessEnhancer.isInitialized )
-                loudnessEnhancer.release()
+            loudnessEnhancer?.release()
+            loudnessEnhancer = null
 
-            loudnessEnhancer = LoudnessEnhancer(audioSessionId)
-            loudnessEnhancer.enabled = Preferences.AUDIO_VOLUME_NORMALIZATION.value
+            loudnessEnhancer = LoudnessEnhancer(audioSessionId).apply {
+                enabled = Preferences.AUDIO_VOLUME_NORMALIZATION.value
+            }
 
             normalizeLoudness()
         } catch( err: Exception ) {
@@ -658,11 +668,12 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         //</editor-fold>
         //<editor-fold desc="Bass boost">
         try {
-            if( ::bassBoost.isInitialized )
-                bassBoost.release()
+            bassBoost?.release()
+            bassBoost = null
 
-            bassBoost = BassBoost(0, audioSessionId)
-            bassBoost.enabled = Preferences.AUDIO_BASS_BOOSTED.value
+            bassBoost = BassBoost(0, audioSessionId).apply {
+                enabled = Preferences.AUDIO_BASS_BOOSTED.value
+            }
 
             boostLowFrequencies()
         } catch( err: Exception ) {
@@ -683,8 +694,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
     override fun onSharedPreferenceChanged( pref: SharedPreferences, key: String? ) {
         when( key ) {
             Preferences.Key.AUDIO_VOLUME_NORMALIZATION -> {
-                if( ::loudnessEnhancer.isInitialized )
-                    loudnessEnhancer.enabled = pref.getBoolean(key, false)
+                loudnessEnhancer?.setEnabledSafely( pref.getBoolean(key, false) )
                 normalizeLoudness()
             }
             Preferences.Key.AUDIO_VOLUME_NORMALIZATION_TARGET -> normalizeLoudness()
@@ -692,8 +702,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             Preferences.Key.AUDIO_SKIP_SILENCE ->  skipSilenceEnabled = pref.getBoolean( key, false )
 
             Preferences.Key.AUDIO_BASS_BOOSTED -> {
-                if( ::bassBoost.isInitialized )
-                    bassBoost.enabled = pref.getBoolean(key, false)
+                bassBoost?.setEnabledSafely( pref.getBoolean(key, false) )
                 boostLowFrequencies()
             }
             Preferences.Key.AUDIO_BASS_BOOST_LEVEL -> boostLowFrequencies()
@@ -715,6 +724,18 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
                 Database.songTable.isLiked( it ).first()
                         || Database.songPlaylistMapTable.isMapped( it ).first()
             }
+        }
+    }
+
+    /** `enabled` of an effect whose engine died throws instead of returning false */
+    private fun AudioEffect.isOn(): Boolean =
+        runCatching { enabled }.getOrDefault( false )
+
+    private fun AudioEffect.setEnabledSafely( on: Boolean ) {
+        try {
+            enabled = on
+        } catch( err: RuntimeException ) {
+            logger.e( err ) { "Failed to switch ${javaClass.simpleName}" }
         }
     }
 }
