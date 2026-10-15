@@ -426,7 +426,7 @@ object SongItem: Visual() {
                 Thumbnail(
                     showThumbnail = showThumbnail,
                     thumbnailUrl = song.cleanThumbnailUrl(),
-                    isLiked = song.likedAt != null,
+                    isLiked = (song.likedAt ?: 0) > 0,      // A disliked song has a negative likedAt
                     isPlaying = isPlaying,
                     values = values,
                     thumbnailOverlay = thumbnailOverlay

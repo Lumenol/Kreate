@@ -326,6 +326,7 @@
     <string name="history">Historique</string>
     <string name="yesterday">Hier</string>
     <string name="last_week">Semaine dernière</string>
+    <string name="this_week">Cette semaine</string>
     <string name="by_casual_played_song">En mode aléatoire</string>
     <string name="theme_material_you">Material You</string>
     <string name="show_statistics_in_navigation_bar">Afficher les statistiques dans la barre de navigation.

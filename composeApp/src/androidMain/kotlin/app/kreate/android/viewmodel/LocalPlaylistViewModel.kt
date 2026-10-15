@@ -15,14 +15,18 @@ import it.fast4x.innertube.requests.relatedSongs
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.ui.components.MenuState
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -30,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class LocalPlaylistViewModel(
     savedStateHandle: SavedStateHandle,
     menuState: MenuState
@@ -60,18 +65,10 @@ class LocalPlaylistViewModel(
                 if( !enabled )
                     return@combine emptyMap()
 
-                val items = items.value
-
-                /*
-                    This process will be run before [items]
-                       most of the time.
-                    When it does, an exception will
-                       be thrown because [items] is not ready yet.
-                    To make sure that it is ready to use, a
-                       delay is set to suspend the thread.
-                */
-                while( items.isEmpty() )
-                    delay( 100L )
+                // Usually runs before the songs are loaded: wait for them. The
+                // value must be read again each time, a captured empty list
+                // looped forever (and an empty playlist never gets songs).
+                val items = _items.first { it.isNotEmpty() }
 
                 withContext( Dispatchers.IO ) {
                     val requestBody = NextBody( videoId =  items.random().id )
@@ -85,12 +82,11 @@ class LocalPlaylistViewModel(
                                  items.map( Song::id )
                                      .any{ songItem.info?.endpoint?.videoId == it }
                              }
+                             ?.filter { it.info?.endpoint?.videoId != null && it.info?.name != null }
                              ?.take( count.toInt() )
                              ?.associate { songItem ->
                                  with( songItem ) {
                                      Song(
-                                         // Song's ID & title must not be "null". If they are,
-                                         // Something is wrong with Innertube.
                                          id = info!!.endpoint!!.videoId!!,
                                          title = info!!.name!!,
                                          artistsText = authors?.joinToString { author -> author.name ?: "" },
@@ -107,19 +103,21 @@ class LocalPlaylistViewModel(
             }
         }
         viewModelScope.launch {
-            try {
-                Database.songPlaylistMapTable
-                        .sortSongs( playlistId, sort.sortBy, sort.sortOrder )
-            } catch( err: Exception ) {
-                Logger.e( "", err, "LocalPlaylist" )
+            // Follow the sort: it used to be read once, when the page opened (#1903)
+            snapshotFlow { sort.sortBy to sort.sortOrder }
+                .flatMapLatest { (sortBy, sortOrder) ->
+                    Database.songPlaylistMapTable
+                            .sortSongs( playlistId, sortBy, sortOrder )
+                            .catch { err ->
+                                Logger.e( "", err, "LocalPlaylist" )
 
-                // This steps fails mostly because a ghost map lingers
-                // after a failed deletion or failed attempt of insertion
-                Database.songPlaylistMapTable.clearGhostMaps()
+                                // This steps fails mostly because a ghost map lingers
+                                // after a failed deletion or failed attempt of insertion
+                                Database.songPlaylistMapTable.clearGhostMaps()
 
-                Database.songPlaylistMapTable
-                        .sortSongs( playlistId, sort.sortBy, sort.sortOrder )
-            }
+                                emitAll( Database.songPlaylistMapTable.sortSongs( playlistId, sortBy, sortOrder ) )
+                            }
+                }
                 .flowOn( Dispatchers.IO )
                 .distinctUntilChanged()
                 .collectLatest { newList ->
