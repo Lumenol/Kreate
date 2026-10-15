@@ -63,9 +63,12 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import org.koin.compose.koinInject
 import java.text.SimpleDateFormat
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.util.Date
 import java.util.Locale
-import java.util.concurrent.TimeUnit
 
 @kotlin.OptIn(ExperimentalTextApi::class)
 @OptIn(UnstableApi::class)
@@ -101,22 +104,27 @@ fun HistoryList(
      * and **remember** it.
      */
     val events by remember {
-        val currentMillis = System.currentTimeMillis()
+        val today = LocalDate.now()
 
         Database.eventTable
                 .allWithSong()
                 .distinctUntilChanged()
                 .map { list ->
-                    list.filter { !parentalControlEnabled || it.song.isExplicit }
-                        .reversed()
+                    // Parental control hides explicit songs (it used to keep only them)
+                    list.filter { !parentalControlEnabled || !it.song.isExplicit }
+                        // The query has no order: newest first, explicitly
+                        .sortedByDescending { it.event.timestamp }
                         .groupBy {
-                            val diffMillis = currentMillis - it.event.timestamp
-                            val daysAgo = TimeUnit.MILLISECONDS.toDays( diffMillis )
+                            // Calendar days, not periods of 24 hours
+                            val day = Instant.ofEpochMilli( it.event.timestamp )
+                                             .atZone( ZoneId.systemDefault() )
+                                             .toLocalDate()
+                            val daysAgo = ChronoUnit.DAYS.between( day, today )
 
                             when (daysAgo) {
                                 0L -> context.getString( R.string.today )
                                 1L -> context.getString( R.string.yesterday )
-                                in 2..6 -> context.getString( R.string.last_week )
+                                in 2..6 -> context.getString( R.string.this_week )
                                 in 7..13 -> context.getString( R.string.last_week )
                                 else -> SimpleDateFormat( "MMM yyyy", Locale.getDefault() ).format( Date(it.event.timestamp) )
                             }

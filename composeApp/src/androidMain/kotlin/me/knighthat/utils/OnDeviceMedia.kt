@@ -68,9 +68,26 @@ val ALBUM_URI = "content://media/external/audio/albumart".toUri()
 private fun blacklistedPaths( context: Context ): Set<String> {
     val file = File(context.filesDir, "Blacklisted_paths.txt")
     return  if( file.exists() )
-        file.readLines().toSet()
+        file.readLines().map( ::normalizeFolder ).filter( String::isNotEmpty ).toSet()
     else
         emptySet()
+}
+
+/**
+ * Folder as "Music/Foo", whatever the way it's written: Android 10+ gives
+ * "Music/Foo/" (relative, trailing slash), older ones "/storage/emulated/0/Music/Foo",
+ * and people type either. Comparing them as is made the blacklist match nothing.
+ */
+private fun normalizeFolder( path: String ): String =
+    path.trim()
+        .removePrefix( "/storage/emulated/0" )
+        .removePrefix( "/sdcard" )
+        .trim( '/' )
+
+/** [folder] is blacklisted itself, or lives inside a blacklisted folder */
+private fun Set<String>.containsFolder( folder: String ): Boolean {
+    val normalized = normalizeFolder( folder )
+    return any { normalized.equals( it, ignoreCase = true ) || normalized.startsWith( "$it/", ignoreCase = true ) }
 }
 
 fun Context.getLocalSongs(
@@ -116,7 +133,7 @@ fun Context.getLocalSongs(
                 else
                     this
             }
-            if( blacklistedPaths.contains( relPath ) ) continue
+            if( blacklistedPaths.containsFolder( relPath ) ) continue
 
             // Nullable so SongItem can display "--:--"
             // TODO apply some non-null method
