@@ -64,7 +64,14 @@ private fun buildDoH(): Pair<DnsOverHttps, List<InetAddress>>? {
     // IP literals: no lookup happens here
     val addresses = Preferences.DOH_SERVER.value.address.map( InetAddress::getByName )
     val resolver = DnsOverHttps.Builder()
-                               .client( OkHttpClient.Builder().build() )
+                               // Short: a lookup that fails falls back to the system's DNS,
+                               // and an unreachable server mustn't hold every connection 10 s
+                               .client(
+                                   OkHttpClient.Builder()
+                                               .connectTimeout( 2, TimeUnit.SECONDS )
+                                               .readTimeout( 2, TimeUnit.SECONDS )
+                                               .build()
+                               )
                                .url( url )
                                .bootstrapDnsHosts( addresses )
                                .build()

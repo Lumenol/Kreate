@@ -25,10 +25,16 @@ object ProxyManager {
 
     private const val TAG = "ProxyManager"
 
+    /** `null` when off, or when the settings can't make a proxy ("Direct" mode, port out of range...) */
     private fun configuredProxy(): Proxy? {
         if( !Preferences.IS_PROXY_ENABLED.value ) return null
+        val type = Preferences.PROXY_SCHEME.value
+        if( type == Proxy.Type.DIRECT ) return null
         val host = Preferences.PROXY_HOST.value.takeIf( String::isNotBlank ) ?: return null
-        return Proxy( Preferences.PROXY_SCHEME.value, InetSocketAddress.createUnresolved( host, Preferences.PROXY_PORT.value ) )
+        return runCatching {
+            Proxy( type, InetSocketAddress.createUnresolved( host, Preferences.PROXY_PORT.value ) )
+        }.onFailure { Logger.e( it, TAG ) { "invalid proxy settings" } }
+         .getOrNull()
     }
 
     val proxySelector: ProxySelector = object : ProxySelector() {
