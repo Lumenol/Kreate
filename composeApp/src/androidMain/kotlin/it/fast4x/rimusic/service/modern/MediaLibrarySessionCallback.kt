@@ -85,11 +85,12 @@ class MediaLibrarySessionCallback(
         val mediaItem = player.currentMediaItem ?: return
         val player: StatefulPlayer by inject()
         scope.launch( Dispatchers.IO ) {
+            // Also downloads the song when it becomes liked (if enabled). This used to
+            // run here before the like was saved, read "not liked" and remove the
+            // download instead (#1297)
             YouTubeSync.rotateSongLike( context, mediaItem )
             listener.updateMediaControl( context, player )
         }
-
-        MyDownloadHelper.autoDownloadWhenLiked( mediaItem )
     }
 
     fun onSearch() {

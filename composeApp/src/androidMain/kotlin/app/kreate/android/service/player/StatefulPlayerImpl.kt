@@ -145,6 +145,13 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         loadPersistentQueue()
     }
 
+    /**
+     * Volume to fade back to. Read from [volume] only while no fade runs: during
+     * one it's somewhere between 0 and the real volume, and a play() pressed in
+     * the middle of a pause fade used to fade up to almost nothing (#1867).
+     */
+    private var steadyVolume = 1f
+
     private fun stopFadingEffect() {
         volumeAnimator?.cancel()
         volumeAnimator = null
@@ -431,9 +438,10 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             return
         }
 
+        if( volumeAnimator?.isRunning != true ) steadyVolume = volume
         startFade(
             start = 0f,
-            end = volume,
+            end = steadyVolume,
             durationInMillis = duration,
             doOnStart = {
                 volume = 0f
@@ -449,14 +457,14 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             return
         }
 
-        val originalVolume = volume
+        if( volumeAnimator?.isRunning != true ) steadyVolume = volume
         startFade(
             start = volume,
             end = 0f,
             durationInMillis = duration,
             doOnEnd = {
                 player.pause()
-                volume = originalVolume
+                volume = steadyVolume
             }
         )
     }
@@ -708,6 +716,10 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             Preferences.Key.AUDIO_BASS_BOOST_LEVEL -> boostLowFrequencies()
 
             Preferences.Key.AUDIO_REVERB_PRESET -> updateReverb()
+
+            // Read only when the player was built: apply it now, not after a restart
+            Preferences.Key.AUDIO_SMART_PAUSE_DURING_CALLS ->
+                player.setAudioAttributes( player.audioAttributes, pref.getBoolean( key, true ) )
         }
     }
 

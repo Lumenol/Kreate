@@ -87,6 +87,7 @@ object YouTubeSync {
         Database.songTable.rotateLikeState( mediaItem.mediaId )
 
         val likeState = Database.songTable.likeState( mediaItem.mediaId ).first()
+        MyDownloadHelper.downloadOnLike( mediaItem, likeState )
         syncLikeState( context, mediaItem, likeState )
     }
 
