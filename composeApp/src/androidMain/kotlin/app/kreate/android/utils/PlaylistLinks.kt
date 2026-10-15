@@ -2,6 +2,7 @@ package app.kreate.android.utils
 
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
+import app.kreate.android.Preferences
 import app.kreate.android.utils.innertube.CURRENT_LOCALE
 import app.kreate.android.utils.innertube.toMediaItem
 import co.touchlab.kermit.Logger
@@ -31,6 +32,8 @@ suspend fun playYouTubePlaylistLink(
                          .getOrNull()
                          ?.songs
                          .orEmpty()
+                         // Like a single song link, parental control leaves explicit songs out
+                         .filterNot { Preferences.PARENTAL_CONTROL.value && it.isExplicit }
     if( songs.isEmpty() ) return false
 
     var items: List<MediaItem> = songs.map { it.toMediaItem }
