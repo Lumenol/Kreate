@@ -64,12 +64,20 @@ class HomeArtistsViewModel : ViewModel(), KoinComponent {
             val filterByFlow = snapshotFlow { Preferences.HOME_ARTIST_AND_ALBUM_FILTER.value }
 
             combine( _syncedArtists, _localArtists, filterByFlow ) { online, local, filterBy ->
-                val combined = online + local
+                // An item saved in the app and also in the YouTube library came twice,
+                // and the grid crashed on the repeated key (Lumenol/Kreate#43): keep the
+                // app's copy, marked as being in the YouTube library too
+                val onlineIds = online.mapTo( HashSet() ) { it.id }
+                val localIds = local.mapTo( HashSet() ) { it.id }
+                val combined = online.filterNot { it.id in localIds } +
+                        local.map { if( it.id in onlineIds ) it.copy( isYoutubeArtist = true ) else it }
+                // A key the grid sees twice crashes it, whatever the source
+                val unique = combined.distinctBy { it.id }
 
                 when( filterBy ) {
-                    FilterBy.All            -> combined
-                    FilterBy.YoutubeLibrary -> combined.filter { it.isYoutubeArtist }
-                    FilterBy.Local          -> combined.filterNot { it.isYoutubeArtist }
+                    FilterBy.All            -> unique
+                    FilterBy.YoutubeLibrary -> unique.filter { it.isYoutubeArtist }
+                    FilterBy.Local          -> unique.filterNot { it.isYoutubeArtist }
                 }
             }.collectLatest { artists -> _artists.update { artists } }
         }
