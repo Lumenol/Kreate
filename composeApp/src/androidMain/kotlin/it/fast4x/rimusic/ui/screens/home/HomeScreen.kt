@@ -83,12 +83,7 @@ fun HomeScreen(
             if( currentTabIndex in LIBRARY_TABS )
                 LibraryTabs(
                     currentTab = currentTabIndex,
-                    onTabChanged = onTabChanged,
-                    onHistory = { NavRoutes.history.navigateHere( navController ) },
-                    onDownloads = {
-                        Preferences.HOME_SONGS_TYPE.value = BuiltInPlaylist.Downloaded
-                        onTabChanged( 1 )
-                    }
+                    onTabChanged = onTabChanged
                 ) {
                     LibraryTab( currentTabIndex, navController )
                 }
@@ -135,8 +130,6 @@ private val LIBRARY_TABS = MainTabs.LIBRARY
 private fun LibraryTabs(
     currentTab: Int,
     onTabChanged: (Int) -> Unit,
-    onHistory: () -> Unit,
-    onDownloads: () -> Unit,
     content: @Composable () -> Unit
 ) {
     Column( Modifier.fillMaxSize() ) {
@@ -152,14 +145,8 @@ private fun LibraryTabs(
             modifier = Modifier.padding( vertical = 8.dp )
         )
 
-        // History and downloads used to hide in the avatar menu and a song filter
-        Row(
-            horizontalArrangement = Arrangement.spacedBy( 8.dp ),
-            modifier = Modifier.padding( horizontal = 16.dp ).padding( bottom = 4.dp )
-        ) {
-            LibraryShortcut( stringResource( R.string.history ), R.drawable.history, onHistory, Modifier.weight( 1f ) )
-            LibraryShortcut( stringResource( R.string.downloaded ), R.drawable.download, onDownloads, Modifier.weight( 1f ) )
-        }
+        // No History / Downloaded shortcuts here: History is in the ≡ menu and
+        // Downloaded is one of the songs filters, they only crowded the top
 
         Box( Modifier.weight( 1f ) ) { content() }
     }
@@ -208,31 +195,3 @@ private fun LibraryTab( tab: Int, navController: NavController ) {
                 )
             }
 }
-
-@Composable
-private fun LibraryShortcut(
-    text: String,
-    iconId: Int,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) =
-    Row(
-        horizontalArrangement = Arrangement.spacedBy( 10.dp ),
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier.clip( RoundedCornerShape( 10.dp ) )
-                           .background( colorPalette().background1 )
-                           .clickable( onClick = onClick )
-                           .padding( horizontal = 12.dp, vertical = 10.dp )
-    ) {
-        Icon(
-            painter = painterResource( iconId ),
-            contentDescription = null,
-            tint = colorPalette().text,
-            modifier = Modifier.size( 20.dp )
-        )
-        BasicText(
-            text = text,
-            style = typography().xs.semiBold.color( colorPalette().text ),
-            maxLines = 1
-        )
-    }

@@ -6,6 +6,8 @@ import android.content.Context
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +47,7 @@ import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
 import app.kreate.android.R
 import app.kreate.android.coil3.ImageFactory
+import app.kreate.android.service.DownloadFailures
 import app.kreate.android.themed.common.component.DetailSkeleton
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.colorPalette
@@ -85,9 +88,20 @@ fun DownloadsScreen( navController: NavController, miniPlayer: @Composable () ->
     DetailSkeleton(
         navController = navController,
         miniPlayer = miniPlayer,
+        // Up there, apart from the row: it empties the whole list
+        actions = {
+            if( downloads.isNotEmpty() )
+                BasicText(
+                    text = stringResource( R.string.downloads_cancel_all ),
+                    style = typography().xs.semiBold.color( colorPalette().textSecondary ),
+                    modifier = Modifier.clip( CircleShape )
+                                       .clickable { downloads.forEach { cancel( context, it ) } }
+                                       .padding( horizontal = 12.dp, vertical = 8.dp )
+                )
+        },
         title = {
             BasicText(
-                text = stringResource( R.string.downloads_in_progress_title ),
+                text = stringResource( R.string.downloads_page_title ),
                 style = typography().l.semiBold.color( colorPalette().text )
             )
         }
@@ -97,12 +111,16 @@ fun DownloadsScreen( navController: NavController, miniPlayer: @Composable () ->
             modifier = Modifier.fillMaxSize().background( colorPalette().background0 )
         ) {
             item( "actions" ) {
+                // Short labels on one line; "Retry" only when something failed
+                val failed = downloads.filter { it.state == Download.STATE_FAILED }
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy( 10.dp ),
-                    modifier = Modifier.fillMaxWidth().padding( horizontal = 16.dp, vertical = 8.dp )
+                    horizontalArrangement = Arrangement.spacedBy( 8.dp ),
+                    modifier = Modifier.fillMaxWidth()
+                                       .horizontalScroll( rememberScrollState() )      // Never on 2 lines
+                                       .padding( horizontal = 16.dp, vertical = 8.dp )
                 ) {
                     Pill(
-                        text = stringResource( if( paused ) R.string.downloads_resume else R.string.downloads_pause_all ),
+                        text = stringResource( if( paused ) R.string.downloads_resume else R.string.downloads_pause ),
                         iconId = if( paused ) R.drawable.play else R.drawable.pause,
                         enabled = downloads.isNotEmpty()
                     ) {
@@ -110,13 +128,16 @@ fun DownloadsScreen( navController: NavController, miniPlayer: @Composable () ->
                         else DownloadService.sendPauseDownloads( context, MyDownloadService::class.java, false )
                         paused = !paused
                     }
-                    Pill(
-                        text = stringResource( R.string.downloads_cancel_all ),
-                        iconId = R.drawable.close,
-                        enabled = downloads.isNotEmpty()
-                    ) {
-                        downloads.forEach { cancel( context, it ) }
-                    }
+                    if( failed.isNotEmpty() )
+                        Pill(
+                            text = stringResource( R.string.downloads_retry_failed, failed.size ),
+                            iconId = R.drawable.refresh_circle,
+                            enabled = true
+                        ) {
+                            failed.forEach {
+                                DownloadService.sendAddDownload( context, MyDownloadService::class.java, it.request, false )
+                            }
+                        }
                 }
             }
 
@@ -147,8 +168,11 @@ private fun DownloadRow( download: Download, paused: Boolean, context: Context )
     val failed = download.state == Download.STATE_FAILED
     val percent = download.percentDownloaded.takeIf { it >= 0f }
 
+    val reasons by DownloadFailures.reasons.collectAsState()
     val status = when {
-        failed -> stringResource( R.string.downloads_failed )
+        // YouTube's own reason when the download gave one ("Video unavailable"...)
+        failed -> reasons[songId]?.let { stringResource( R.string.downloads_failed_because, it ) }
+                  ?: stringResource( R.string.downloads_failed )
         paused || download.state == Download.STATE_STOPPED -> stringResource( R.string.downloads_paused )
         download.state == Download.STATE_QUEUED || download.state == Download.STATE_RESTARTING ->
             stringResource( R.string.downloads_waiting )
@@ -209,9 +233,9 @@ private fun Pill( text: String, iconId: Int, enabled: Boolean, onClick: () -> Un
         modifier = Modifier.clip( CircleShape )
                            .background( colorPalette().background2 )
                            .clickable( enabled = enabled, onClick = onClick )
-                           .padding( horizontal = 14.dp, vertical = 9.dp )
+                           .padding( horizontal = 12.dp, vertical = 8.dp )
     ) {
         val color = if( enabled ) colorPalette().text else colorPalette().textDisabled
-        Icon( painterResource( iconId ), null, tint = color, modifier = Modifier.size( 16.dp ) )
-        BasicText( text, style = typography().xs.semiBold.color( color ) )
+        Icon( painterResource( iconId ), null, tint = color, modifier = Modifier.size( 14.dp ) )
+        BasicText( text, style = typography().xs.semiBold.color( color ), maxLines = 1, softWrap = false )
     }
