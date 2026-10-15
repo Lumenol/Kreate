@@ -91,7 +91,7 @@ fun SettingsScreen(
                 chips = listOf(
                     0 to stringResource( R.string.tab_general ),
                     1 to stringResource( R.string.ui_tab ),
-                    2 to stringResource( R.string.player_appearance ),
+                    2 to stringResource( R.string.tab_player ),
                     3 to stringResource( if( isYouTubeLoggedIn() ) R.string.home else R.string.quick_picks ),
                     4 to stringResource( R.string.tab_data ),
                     5 to stringResource( R.string.tab_accounts ),

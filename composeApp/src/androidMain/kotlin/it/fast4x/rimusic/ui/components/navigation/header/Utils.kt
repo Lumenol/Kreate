@@ -20,12 +20,13 @@ internal fun HeaderIcon(
     iconId: Int,
     tint: Color = LocalContentColor.current,
     size: Dp = 24.dp,
+    description: String? = null,       // read aloud by accessibility
     onClick: () -> Unit
 ) {
     IconButton( onClick ) {
         Icon(
             imageVector = ImageVector.vectorResource( iconId ),
-            contentDescription = null,
+            contentDescription = description,
             modifier = Modifier.size( size ),
             tint = tint
         )

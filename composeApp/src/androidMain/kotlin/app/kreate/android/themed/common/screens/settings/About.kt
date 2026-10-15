@@ -142,7 +142,7 @@ fun About(
                                .wrapContentHeight()
         ) {
             BasicText(
-                text = "v${getVersionName()} by ",
+                text = stringResource( R.string.about_version_by, getVersionName() ),
                 style = typography().s.secondary,
             )
             Row(
@@ -180,7 +180,7 @@ fun About(
                     // Using [Image] to retain original color(s)
                     Image(
                         painter = painterResource( R.drawable.discord_logo ),
-                        contentDescription = "Discord server",
+                        contentDescription = "Discord",
                         modifier = Modifier.size( TabToolBar.TOOLBAR_ICON_SIZE )
                                            .clickable( null, ripple(false) ) {
                                                uriHandler.openUri( "https://discord.gg/WYr9ZgJzpx" )
@@ -191,7 +191,7 @@ fun About(
 
                     Image(
                         painter = painterResource( R.drawable.github_logo ),
-                        contentDescription = "Github discussion board",
+                        contentDescription = "GitHub",
                         modifier = Modifier.size( TabToolBar.TOOLBAR_ICON_SIZE )
                                            .clickable( null, ripple(false) ) {
                                                uriHandler.openUri( "${Repository.REPO_URL}/discussions" )

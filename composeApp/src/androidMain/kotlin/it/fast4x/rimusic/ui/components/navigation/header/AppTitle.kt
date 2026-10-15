@@ -82,7 +82,7 @@ private fun AppLogo(
 
     Image(
         bitmap = AppIcon.Round.imageBitmap( LocalContext.current ),
-        contentDescription = "App's icon",
+        contentDescription = "Kreate",
         modifier = modifier.size( 32.dp )
     )
 }
