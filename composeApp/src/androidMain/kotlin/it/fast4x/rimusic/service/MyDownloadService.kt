@@ -1,6 +1,8 @@
 package it.fast4x.rimusic.service
 
 import android.app.Notification
+import android.app.PendingIntent
+import android.content.Intent
 import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.util.NotificationUtil
@@ -52,32 +54,42 @@ class MyDownloadService : DownloadService(
     override fun getForegroundNotification(
         downloads: MutableList<Download>,
         notMetRequirements: Int
-    ) = NotificationCompat
-        .Builder(
-            /* context = */ this,
-            /* notification = */ MyDownloadHelper
-                .getDownloadNotificationHelper()
-                .buildProgressNotification(
-                /* context            = */ this,
-                /* smallIcon          = */ R.drawable.download_progress,
-                /* contentIntent      = */ null,
-                /* message            = */ "${downloads.size} in progress",
-                /* downloads          = */ downloads,
-                /* notMetRequirements = */ notMetRequirements
+    ): Notification {
+        fun serviceIntent( intent: Intent, requestCode: Int ) =
+            PendingIntent.getService( this, requestCode, intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT )
+
+        // Tapping it opens the app
+        val openApp = packageManager.getLaunchIntentForPackage( packageName )?.let {
+            PendingIntent.getActivity( this, 0, it, PendingIntent.FLAG_IMMUTABLE )
+        }
+
+        return NotificationCompat
+            .Builder(
+                /* context = */ this,
+                /* notification = */ MyDownloadHelper
+                    .getDownloadNotificationHelper()
+                    .buildProgressNotification(
+                    /* context            = */ this,
+                    /* smallIcon          = */ R.drawable.download_progress,
+                    /* contentIntent      = */ openApp,
+                    /* message            = */ getString( R.string.downloads_notification, downloads.size ),
+                    /* downloads          = */ downloads,
+                    /* notMetRequirements = */ notMetRequirements
+                )
             )
-        )
-        .setChannelId(DownloadHelper.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
-        /*
-        // Add action in notification
-        .addAction(
-            NotificationCompat.Action.Builder(
-                /* icon = */ R.drawable.close,
-                /* title = */ getString(R.string.cancel),
-                /* intent = */ null //TODO notificationActionReceiver.cancel.pendingIntent
-            ).build()
-        )
-        */
-        .build()
+            .setChannelId(DownloadHelper.DOWNLOAD_NOTIFICATION_CHANNEL_ID)
+            .addAction(
+                R.drawable.pause,
+                getString( R.string.downloads_pause_all ),
+                serviceIntent( buildPauseDownloadsIntent( this, MyDownloadService::class.java, false ), 1 )
+            )
+            .addAction(
+                R.drawable.close,
+                getString( R.string.downloads_cancel_all ),
+                serviceIntent( buildRemoveAllDownloadsIntent( this, MyDownloadService::class.java, false ), 2 )
+            )
+            .build()
+    }
 
     /**
      * Creates and displays notifications for downloads when they complete or fail.

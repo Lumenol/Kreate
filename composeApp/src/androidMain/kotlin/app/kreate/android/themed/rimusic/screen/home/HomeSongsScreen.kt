@@ -222,6 +222,18 @@ fun HomeSongsScreen(
                                         )
                                         .fillMaxWidth()
                             )
+                            // The finished ones are listed here, the others on their own page
+                            if( builtInPlaylist === BuiltInPlaylist.Downloaded )
+                                androidx.compose.foundation.layout.Row(
+                                    Modifier.padding( start = SettingComponents.HORIZONTAL_PADDING.dp, bottom = 8.dp )
+                                ) {
+                                    TabToolBar.PillButton(
+                                        text = stringResource( R.string.downloads_in_progress_title ),
+                                        iconId = R.drawable.download_progress,
+                                        filled = false,
+                                        onClick = { NavRoutes.DOWNLOADS.navigateHere( navController ) }
+                                    )
+                                }
                         }
                         else -> {}
                     }
