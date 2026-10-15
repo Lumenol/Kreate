@@ -13,8 +13,8 @@ import kotlin.math.max
  * download and decode the 900 px cover. A target without a size (full screen
  * player) keeps [ImageFactory.THUMBNAIL_SIZE]. From Craeckie/Kreate 42f2230b.
  *
- * Each size gets its own cache key so a row and a cover don't overwrite each
- * other. When the resized image can't be fetched (offline), the request goes on
+ * Each size gets its own disk cache key so a row and a cover don't overwrite
+ * each other (Coil's own memory key already includes size and transformations). When the resized image can't be fetched (offline), the request goes on
  * unchanged, so covers cached before keep showing.
  */
 class ThumbnailSizeInterceptor : Interceptor {
@@ -37,7 +37,6 @@ class ThumbnailSizeInterceptor : Interceptor {
         val request = chain.request
                            .newBuilder()
                            .data( resized )
-                           .memoryCacheKey( "$url@$px" )
                            .diskCacheKey( "$url@$px" )
                            .build()
         val result = chain.withRequest( request ).proceed()
