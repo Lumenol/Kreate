@@ -1,5 +1,10 @@
 package app.kreate.android.themed.common.screens.settings
 
+import androidx.compose.foundation.gestures.scrollBy
+import androidx.compose.runtime.withFrameNanos
+import androidx.compose.runtime.snapshotFlow
+import kotlinx.coroutines.flow.first
+import androidx.compose.runtime.LaunchedEffect
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.provider.Settings
@@ -45,9 +50,26 @@ import me.knighthat.utils.Toaster
 import java.io.File
 
 @Composable
-fun OtherSettings( paddingValues: PaddingValues ) {
+fun OtherSettings( paddingValues: PaddingValues, scrollToDebug: Boolean = false ) {
     val context = LocalContext.current
     val scrollState = rememberLazyListState()
+    // Debug is the last section
+    LaunchedEffect( scrollToDebug ) {
+        if( !scrollToDebug ) return@LaunchedEffect
+        // Wait for the list to be laid out, then go to its end
+        val count = snapshotFlow { scrollState.layoutInfo.totalItemsCount }.first { it > 0 }
+        // The settings search sends the list back to the top on its first layout
+        withFrameNanos {}
+        withFrameNanos {}
+        scrollState.scrollToItem( count - 1 )
+        // At the end, the sticky "Debug" header covers its first entry (crash
+        // log): go back by the header's height to reveal it
+        withFrameNanos {}
+        scrollState.layoutInfo
+                   .visibleItemsInfo
+                   .minByOrNull { it.offset }
+                   ?.let { scrollState.scrollBy( -it.size.toFloat() ) }
+    }
 
     val search = remember {
         SettingEntrySearch( scrollState, R.string.tab_miscellaneous, R.drawable.equalizer )

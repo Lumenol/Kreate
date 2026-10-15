@@ -61,7 +61,9 @@ fun SettingsScreen(
     miniPlayer: @Composable () -> Unit = {},
 ) {
     val saveableStateHolder = rememberSaveableStateHolder()
-    val (tabIndex, onTabChanged) = rememberSaveable { mutableIntStateOf(0) }
+    // The "Debug" badge of the header opens the debug options directly
+    val openDebug = remember { SettingsScreen.consumeOpenDebug() }
+    val (tabIndex, onTabChanged) = rememberSaveable { mutableIntStateOf( if( openDebug ) 6 else 0 ) }
 
     val topPadding =
         if( UiType.ViMusic.isCurrent() )
@@ -111,7 +113,7 @@ fun SettingsScreen(
                         3 -> QuickPicksSettings( paddingValues )
                         4 -> DataSettings( paddingValues )
                         5 -> AccountSettings( paddingValues )
-                        6 -> OtherSettings( paddingValues )
+                        6 -> OtherSettings( paddingValues, scrollToDebug = openDebug )
                         7 -> NetworkSettings( paddingValues )
                         8 -> About( navController, paddingValues )
                     }
@@ -121,6 +123,16 @@ fun SettingsScreen(
     }
 
     RestartAppDialog.Render()
+}
+
+object SettingsScreen {
+
+    private var openDebug = false
+
+    /** Next time settings open, show the "Miscellaneous" tab scrolled to "Debug" */
+    fun requestDebug() { openDebug = true }
+
+    fun consumeOpenDebug(): Boolean = openDebug.also { openDebug = false }
 }
 
 @Composable

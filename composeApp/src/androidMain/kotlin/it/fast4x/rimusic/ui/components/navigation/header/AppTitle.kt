@@ -1,5 +1,6 @@
 package it.fast4x.rimusic.ui.components.navigation.header
 
+import it.fast4x.rimusic.ui.screens.settings.SettingsScreen
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -103,8 +104,7 @@ private fun DebugBadge( navController: NavController ) {
         modifier = Modifier.clip( CircleShape )
                            .background( red.copy( alpha = .18f ) )
                            .clickable {
-                               Toaster.s( R.string.info_debug_mode_is_enabled )
-
+                               SettingsScreen.requestDebug()
                                NavRoutes.settings.navigateHere( navController )
                            }
                            .padding( horizontal = 8.dp, vertical = 4.dp )

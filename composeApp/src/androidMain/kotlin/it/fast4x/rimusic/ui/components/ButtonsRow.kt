@@ -1,5 +1,11 @@
 package it.fast4x.rimusic.ui.components
 
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,15 +33,28 @@ fun <E> ButtonsRow(
     modifier: Modifier = Modifier,
 ) {
     val colorPaletteMode by Preferences.THEME_MODE
+    // Keep the selected chip on screen when it starts off screen
+    // (e.g. settings opened straight on "Miscellaneous")
+    val scrollState = rememberScrollState()
+    val chipStarts = remember { mutableStateMapOf<E, Int>() }
+    val margin = with( LocalDensity.current ) { 12.dp.roundToPx() }
+    LaunchedEffect( currentValue, chipStarts[currentValue] ) {
+        val start = chipStarts[currentValue] ?: return@LaunchedEffect
+        if( start < scrollState.value || start > scrollState.value + scrollState.viewportSize / 2 )
+            scrollState.animateScrollTo( (start - margin).coerceAtLeast( 0 ) )
+    }
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
+            .horizontalScroll(scrollState)
     ) {
         Spacer(Modifier.width(12.dp))
 
         chips.forEach { (value, label) ->
             FilterChip(
+                modifier = Modifier.onGloballyPositioned {
+                    chipStarts[value] = it.positionInParent().x.toInt()
+                },
                 label = { Text(label) },
                 selected = currentValue == value,
                 // Filled pills, the selected one inverted (white on dark), like the
