@@ -223,22 +223,8 @@ fun HomeSongsScreen(
                     )
 
                     when (builtInPlaylist) {
+                        // No storage bar here: unlabelled, it read as a stray line (it's in Settings → Data)
                         BuiltInPlaylist.Downloaded, BuiltInPlaylist.Offline -> {
-                            val indicator = remember( builtInPlaylist, cache ) {
-                                val preference = if( builtInPlaylist === BuiltInPlaylist.Downloaded )
-                                    Preferences.EXO_DOWNLOAD_SIZE
-                                else
-                                    Preferences.EXO_CACHE_SIZE
-
-                                ExoCacheIndicator(preference, cache)
-                            }
-                            indicator.ProgressBar(
-                                Modifier.padding(
-                                            horizontal = SettingComponents.HORIZONTAL_PADDING.dp,
-                                            vertical = 12.dp
-                                        )
-                                        .fillMaxWidth()
-                            )
                             // The finished ones are listed here; one quiet line leads to the
                             // others, only when some are running or failed
                             if( builtInPlaylist === BuiltInPlaylist.Downloaded ) {

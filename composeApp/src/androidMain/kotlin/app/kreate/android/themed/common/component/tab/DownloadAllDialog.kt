@@ -39,7 +39,7 @@ class DownloadAllDialog(
 ) : AbstractMediaDownloadDialog(), MenuIcon, Descriptive {
 
     override val messageId: Int = R.string.info_download_all_songs
-    override val iconId: Int = R.drawable.downloaded
+    override val iconId: Int = R.drawable.download
     override val dialogTitle: String
         @Composable
         get() = stringResource( R.string.dialog_title_are_you_sure )

@@ -4,6 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.view.Gravity
 import android.widget.Toast
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
@@ -87,7 +88,11 @@ object Toaster : KoinComponent{
         CoroutineScope( Dispatchers.Main ).launch {
             Toasty.custom(
                 context, message, icon, background, foreground, duration, icon != Type.NORMAL.icon, true
-            ).show()
+            ).apply {
+                // Above the mini player and the bottom bar, not over them
+                val lift = (180 * context.resources.displayMetrics.density).toInt()
+                setGravity( Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL, 0, lift )
+            }.show()
         }
     }
 
