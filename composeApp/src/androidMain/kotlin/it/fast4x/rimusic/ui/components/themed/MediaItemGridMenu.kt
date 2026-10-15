@@ -274,7 +274,7 @@ fun MediaItemGridMenu (
     }
 
     var downloadState by remember {
-        mutableStateOf(Download.STATE_STOPPED)
+        mutableStateOf<Int?>(Download.STATE_STOPPED)
     }
 
     downloadState = getDownloadState(mediaItem.mediaId)

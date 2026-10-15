@@ -8,6 +8,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.media3.common.util.UnstableApi
 import app.kreate.android.R
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.ui.components.LocalMenuState
 import it.fast4x.rimusic.ui.components.MenuState
 
@@ -36,8 +37,7 @@ class HideSongDialog private constructor(
             Database.asyncTransaction {
                 menuState.hide()
                 cache.removeResource( it.id )
-                // FIXME: This is unsafe, use [DownloadService.sendRemoveDownload] instead
-                downloadCache.removeResource( it.id )
+                MyDownloadHelper.purgeDownload( it.id )
                 formatTable.updateContentLengthOf( it.id )
                 songTable.updateTotalPlayTime( it.id, 0 )
             }

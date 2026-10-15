@@ -12,6 +12,7 @@ import app.kreate.android.R
 import app.kreate.android.themed.common.component.BottomMenu
 import app.kreate.di.CacheType
 import it.fast4x.rimusic.Database
+import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.ui.components.tab.toolbar.ConfirmDialog
 import it.fast4x.rimusic.utils.asSong
 import me.knighthat.utils.Toaster
@@ -43,8 +44,7 @@ class DeleteSongButton : MenuButton<MediaItem>(), ConfirmDialog {
 
         Database.asyncTransaction {
             get<Cache>(Cache::class.java, CacheType.CACHE).removeResource( song.mediaId )
-            // FIXME: This is unsafe, use [DownloadService.sendRemoveDownload] instead
-            get<Cache>(Cache::class.java, CacheType.DOWNLOAD).removeResource( song.mediaId )
+            MyDownloadHelper.purgeDownload( song.mediaId )
             songPlaylistMapTable.deleteBySongId( song.mediaId )
             formatTable.deleteBySongId( song.mediaId )
             songTable.delete( song.asSong )

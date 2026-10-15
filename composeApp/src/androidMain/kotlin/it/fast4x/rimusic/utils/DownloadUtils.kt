@@ -10,15 +10,15 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.cache.Cache
-import androidx.media3.exoplayer.offline.Download
 import app.kreate.android.R
+import app.kreate.android.service.DownloadCacheState
+import it.fast4x.rimusic.service.modern.isLocal
 import app.kreate.di.CacheType
 import co.touchlab.kermit.Logger
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalDownloadHelper
 import it.fast4x.rimusic.enums.DownloadedStateMedia
 import it.fast4x.rimusic.service.MyDownloadHelper
-import it.fast4x.rimusic.service.modern.isLocal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.map
 import me.knighthat.utils.Toaster
@@ -29,11 +29,17 @@ import org.koin.compose.koinInject
 @Composable
 fun downloadedStateMedia(
     mediaId: String,
-    cache: Cache = koinInject(CacheType.CACHE)
+    cache: Cache = koinInject(CacheType.CACHE),
+    downloadCache: Cache = koinInject(CacheType.DOWNLOAD)
 ): DownloadedStateMedia {
-    val isDownloaded by remember {
+    // A COMPLETED index row is not proof the bytes are still there — the index and the
+    // download cache are independent stores. Require both, so a cache that was wiped or
+    // evicted behind DownloadManager's back stops claiming the song is downloaded.
+    // The predicate is shared with DownloadHelper's add/remove decision on purpose: a badge
+    // and a tap that disagree produce a button that visibly does nothing.
+    val isDownloaded by remember( mediaId, downloadCache ) {
         MyDownloadHelper.getDownload( mediaId )
-                        .map { it?.state == Download.STATE_COMPLETED }
+                        .map { DownloadCacheState.isDownloaded( it?.state, downloadCache, mediaId ) }
     }.collectAsState( false, Dispatchers.IO )
 
     // Return early so it doesn't create another remember function
@@ -93,14 +99,22 @@ fun manageDownload(
 }
 
 
+/**
+ * media3's `Download.state` for this song, or `null` when the download index has no row for
+ * it (never downloaded, removed, or the download hasn't been enqueued yet).
+ *
+ * Deliberately does NOT short-circuit on connectivity: `DownloadHelperImpl` sets
+ * `Requirements(Requirements.NETWORK)`, so an offline device leaves every pending download
+ * parked in [androidx.media3.exoplayer.offline.Download.STATE_QUEUED] — exactly the
+ * long-queue case [DownloadBadge] exists to surface. Reporting the literal
+ * `Download.STATE_COMPLETED` (`3`) sentinel while offline would draw the plain "not
+ * downloaded" icon over a queued download and reproduce that bug.
+ */
 @UnstableApi
 @Composable
-fun getDownloadState(mediaId: String): Int {
+fun getDownloadState(mediaId: String): Int? {
     val downloader = LocalDownloadHelper.current
-    if (!isNetworkAvailableComposable()) return 3
-
     return downloader.getDownload(mediaId).collectAsState(initial = null).value?.state
-        ?: 3
 }
 
 @OptIn(UnstableApi::class)

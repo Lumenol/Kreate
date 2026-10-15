@@ -246,10 +246,9 @@ fun NonQueuedMediaItemMenuLibrary(
                 onDismiss()
 
                 val cache: Cache by inject(Cache::class.java, CacheType.CACHE)
-                val downloadCache: Cache by inject(Cache::class.java, CacheType.DOWNLOAD)
 
                 cache.removeResource(mediaItem.mediaId)
-                downloadCache.removeResource(mediaItem.mediaId)
+                MyDownloadHelper.purgeDownload(mediaItem.mediaId)
                 Database.asyncTransaction {
                     songTable.updateTotalPlayTime( mediaItem.mediaId, 0 )
                 }
@@ -675,7 +674,7 @@ fun MediaItemMenu(
     }
 
     var downloadState by remember {
-        mutableStateOf(Download.STATE_STOPPED)
+        mutableStateOf<Int?>(Download.STATE_STOPPED)
     }
 
     downloadState = getDownloadState(mediaItem.mediaId)

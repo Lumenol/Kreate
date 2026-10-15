@@ -74,10 +74,9 @@ fun PlayerMenu(
                 onDismiss()
 
                 val cache: Cache by inject(Cache::class.java, CacheType.CACHE)
-                val downloadCache: Cache by inject(Cache::class.java, CacheType.DOWNLOAD)
 
                 cache.removeResource(mediaItem.mediaId)
-                downloadCache.removeResource(mediaItem.mediaId)
+                MyDownloadHelper.purgeDownload(mediaItem.mediaId)
                 Database.asyncTransaction {
                     songTable.updateTotalPlayTime( mediaItem.mediaId, 0 )
                 }

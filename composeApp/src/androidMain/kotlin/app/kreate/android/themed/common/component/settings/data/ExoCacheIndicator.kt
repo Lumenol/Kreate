@@ -8,7 +8,14 @@ import app.kreate.android.Preferences
 @UnstableApi
 class ExoCacheIndicator(
     private val preference: Preferences.Long,
-    private val cache: Cache
+    private val cache: Cache,
+    /**
+     * How to empty [cache]. Defaults to a direct eviction, which is correct for the stream
+     * cache. The **download** cache must instead pass `MyDownloadHelper::purgeAllDownloads`,
+     * because media3's `DownloadManager` owns it and a direct eviction would leave every
+     * index row claiming the song is still downloaded.
+     */
+    private val clearAll: () -> Unit = { cache.keys.forEach( cache::removeResource ) }
 ): CacheUsageIndicator() {
 
     override fun updateProgress() {
@@ -20,7 +27,7 @@ class ExoCacheIndicator(
     }
 
     override fun onConfirm() {
-        cache.keys.forEach( cache::removeResource )
+        clearAll()
         updateProgress()
         hideDialog()
     }
