@@ -54,6 +54,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -268,7 +269,7 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
         this.stopRadio()
 
         // Play song immediately while other songs are being loaded
-        if( player.currentMediaItem?.mediaId != mediaItem.mediaId )
+        if( !append && player.currentMediaItem?.mediaId != mediaItem.mediaId )
             player.forcePlay( mediaItem )
 
         // Prevent UI from freezing up while data is being fetched
@@ -292,10 +293,12 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
                     player.mediaItems.fastMap( MediaItem::mediaId )
                 }
 
-                // Songs with the same id as provided [Song] should be removed.
-                // The song usually lives at the the first index, but this
-                // way is safer to implement, as it can live through changes in position.
-                relatedSongs.dropWhile { it.id == mediaItem.mediaId || it.id in currentQueue }
+                val skipped = withContext( Dispatchers.IO ) { songsKeptOutOfRadio( relatedSongs ) }
+
+                // Leave out the song itself, songs already queued (anywhere in
+                // the list, not only at its start), disliked songs and, with
+                // Discover on, the ones already liked or in a playlist
+                relatedSongs.filterNot { it.id == mediaItem.mediaId || it.id in currentQueue || it.id in skipped }
                             .fastMap( InnertubeSong::toMediaItem )
                             .also {
                                 // Any call to [player] must happen on Main thread
@@ -314,8 +317,10 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
                                     val curIndex = player.currentMediaItemIndex
                                     val endIndex = player.mediaItemCount
                                     if( !append && player.mediaItemCount > 1 ) {
+                                        // Everything but the current song goes, including the
+                                        // songs played before it, which used to come back next
                                         player.moveMediaItem( curIndex, 0 )
-                                        player.removeMediaItems( curIndex + 1, endIndex )
+                                        player.removeMediaItems( 1, endIndex )
                                     }
 
                                     player.addMediaItems(it)
@@ -694,6 +699,22 @@ class StatefulPlayerImpl(private val player: ExoPlayer) :
             Preferences.Key.AUDIO_BASS_BOOST_LEVEL -> boostLowFrequencies()
 
             Preferences.Key.AUDIO_REVERB_PRESET -> updateReverb()
+        }
+    }
+
+    /**
+     * Ids among [songs] that radio must not queue: disliked songs, and with
+     * Discover on, songs already liked or saved in a playlist.
+     */
+    private suspend fun songsKeptOutOfRadio( songs: List<InnertubeSong> ): Set<String> {
+        val disliked = Database.songTable.allDisliked().first().mapTo( HashSet() ) { it.id }
+        if( !Preferences.ENABLE_DISCOVER.value ) return disliked
+
+        return songs.mapNotNullTo( disliked ) { song ->
+            song.id.takeIf {
+                Database.songTable.isLiked( it ).first()
+                        || Database.songPlaylistMapTable.isMapped( it ).first()
+            }
         }
     }
 }

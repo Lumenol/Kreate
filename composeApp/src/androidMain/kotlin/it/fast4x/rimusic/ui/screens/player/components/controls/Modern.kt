@@ -222,6 +222,12 @@ fun InfoAlbumAndArtistModern(
 
                             if (effectRotationEnabled) isRotated = !isRotated
                         },
+                        // Long press: dislike, so radio leaves the song out
+                        onLongClick = {
+                            CoroutineScope( Dispatchers.IO ).launch {
+                                YouTubeSync.toggleSongDislike( context, currentMediaItem ?: return@launch )
+                            }
+                        },
                         modifier = Modifier
                             .padding(start = 5.dp)
                             .size(24.dp)
