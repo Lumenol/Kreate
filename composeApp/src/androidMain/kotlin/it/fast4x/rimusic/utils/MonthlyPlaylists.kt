@@ -29,21 +29,6 @@ private fun monthOf( name: String ): LocalDate? {
     return LocalDate.of( digits.take( 4 ).toInt(), month, 1 )
 }
 
-private suspend fun addPlaylistOfMostPlayed( from: LocalDate, to: LocalDate, playlist: Playlist, limit: Int ) {
-    val songs = Database.eventTable
-                        .findSongsMostPlayedBetween(
-                            from = TimeDateUtils.toStartDateMillis( from ),
-                            to = TimeDateUtils.toStartDateMillis( to ),
-                            limit = limit
-                        )
-                        .first()
-    if( songs.isEmpty() ) return
-
-    Database.asyncTransaction {
-        mapIgnore( playlist = playlist, songs = songs.toTypedArray() )
-    }
-}
-
 /**
  * Monthly playlists used to be named after the month they were made in: on
  * October 1st, September's songs went into "October". Done once: each one is
@@ -62,35 +47,47 @@ private suspend fun renameOldMonthlyPlaylists() {
     withContext( Dispatchers.Main ) { Preferences.MONTHLY_PLAYLISTS_RENAMED.value = true }
 }
 
-/** [month]'s 50 most played songs into its playlist; an existing one is emptied first */
-private suspend fun fillMonth( month: LocalDate, existing: Playlist? ) {
+/**
+ * The [limit] most played songs between [from] and [to] into [existing], emptied
+ * first, or into [create] when there's none yet. Nothing played: left as is.
+ */
+private suspend fun refill( from: LocalDate, to: LocalDate, limit: Int, existing: Playlist?, create: () -> Playlist ) {
     val songs = Database.eventTable
                         .findSongsMostPlayedBetween(
-                            from = TimeDateUtils.toStartDateMillis( month ),
-                            to = TimeDateUtils.toStartDateMillis( month.plusMonths( 1 ) ),
-                            limit = MONTHLY_SIZE
+                            from = TimeDateUtils.toStartDateMillis( from ),
+                            to = TimeDateUtils.toStartDateMillis( to ),
+                            limit = limit
                         )
                         .first()
-    if( songs.isEmpty() ) return          // no history that month: leave things as they are
+    if( songs.isEmpty() ) return
 
     Database.asyncTransaction {
         existing?.let { songPlaylistMapTable.clear( it.id ) }
-        mapIgnore( playlist = existing ?: Playlist( name = monthlyName( month ), isMonthly = true ), songs = songs.toTypedArray() )
+        mapIgnore( playlist = existing ?: create(), songs = songs.toTypedArray() )
     }
 }
 
+private suspend fun refillMonth( month: LocalDate, existing: Playlist? ) =
+    refill( month, month.plusMonths( 1 ), MONTHLY_SIZE, existing ) {
+        Playlist( name = monthlyName( month ), isMonthly = true )
+    }
+
 /**
- * One playlist per past month with its 50 most played songs, named after that
- * month, and last year's 100 most played ("Top 2025").
+ * One playlist per month with its 50 most played songs, named after that month,
+ * plus a "Top" of the year: last year's 100 most played, made once, and this
+ * year's so far.
  *
- * Every month since the first song played gets its playlist, not just the last
- * one: a month without opening the library used to be skipped for good. Once,
- * the playlists made before the 50 limit are cut down to it.
+ * - Every month since the first song played gets its playlist: a month without
+ *   opening the library used to be skipped for good.
+ * - The current month and the current year are refilled each time, so they're
+ *   up to date; last month once more, to close it with its last days.
+ * - Once, the playlists made before the 50 limit are cut down to it.
  */
 private suspend fun updateRecapPlaylists( context: Context ) {
     renameOldMonthlyPlaylists()
 
     val firstOfThisMonth = LocalDate.now().withDayOfMonth( 1 )
+    val lastMonth = firstOfThisMonth.minusMonths( 1 )
     Database.eventTable.firstPlayedAt()?.let { first ->
         val byName = Database.playlistTable.allMonthly().associateBy { it.name }
         val trim = !Preferences.MONTHLY_PLAYLISTS_TRIMMED.value
@@ -98,9 +95,10 @@ private suspend fun updateRecapPlaylists( context: Context ) {
                                      .atZone( java.time.ZoneId.systemDefault() )
                                      .toLocalDate()
                                      .withDayOfMonth( 1 )
-        while( month < firstOfThisMonth ) {
+        while( month <= firstOfThisMonth ) {
             val existing = byName[monthlyName( month )]
-            if( existing == null || trim ) fillMonth( month, existing )
+            if( existing == null || trim || month >= lastMonth )
+                refillMonth( month, existing )
             month = month.plusMonths( 1 )
         }
         if( trim ) withContext( Dispatchers.Main ) { Preferences.MONTHLY_PLAYLISTS_TRIMMED.value = true }
@@ -108,9 +106,13 @@ private suspend fun updateRecapPlaylists( context: Context ) {
 
     val firstOfThisYear = firstOfThisMonth.withMonth( 1 )
     val lastYear = firstOfThisYear.minusYears( 1 )
-    val yearName = context.getString( R.string.top_of_year, lastYear.year.toString() )
-    if( !Database.playlistTable.exists( yearName ).first() )
-        addPlaylistOfMostPlayed( lastYear, firstOfThisYear, Playlist( name = yearName ), YEARLY_SIZE )
+    val lastYearName = context.getString( R.string.top_of_year, lastYear.year.toString() )
+    if( !Database.playlistTable.exists( lastYearName ).first() )
+        refill( lastYear, firstOfThisYear, YEARLY_SIZE, null ) { Playlist( name = lastYearName ) }
+
+    val thisYearName = context.getString( R.string.top_of_year, firstOfThisYear.year.toString() )
+    refill( firstOfThisYear, firstOfThisYear.plusYears( 1 ), YEARLY_SIZE,
+            Database.playlistTable.findByName( thisYearName ).first() ) { Playlist( name = thisYearName ) }
 }
 
 @Composable
