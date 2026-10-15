@@ -59,7 +59,14 @@ interface FormatTable: DatabaseTable<Format> {
      * @return number of rows affected by this operation
      */
     @Query("DELETE FROM formats WHERE song_id IN (:songIds)")
-    fun deleteBySongId( songIds: List<String> ): Int
+    fun deleteBySongIdChunk( songIds: List<String> ): Int
+
+    /**
+     * Older SQLite (Android 10 and below) refuses more than 999 values
+     * in one statement, so a big playlist is deleted in chunks.
+     */
+    fun deleteBySongId( songIds: List<String> ): Int =
+        songIds.chunked( 500 ).sumOf( ::deleteBySongIdChunk )
 
     fun deleteBySongId( vararg songIds: String ): Int = deleteBySongId( songIds.toList() )
 
