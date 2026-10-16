@@ -1123,4 +1123,28 @@ Volume BAS : titre précédent</string>
     <string name="library_filters_shortcuts">Raccourcis</string>
     <string name="library_filters_shortcuts_edit">Modifier</string>
     <string name="library_filters_shortcuts_done">Terminé</string>
+    <string name="library_filters_released">Première diffusion</string>
+    <string name="library_filters_released_first">%1$s et avant</string>
+    <string name="library_filters_released_in">en %1$s</string>
+    <string name="library_filters_released_since">depuis %1$s</string>
+    <string name="library_filters_released_until">jusqu\'à %1$s</string>
+    <string name="library_filters_released_between">de %1$s à %2$s</string>
+    <string name="library_filters_preset_decade">Années %1$s</string>
+    <string name="library_filters_preset_before">Avant %1$s</string>
+    <string name="library_filters_views">Popularité</string>
+    <string name="library_filters_views_billion">1 Md</string>
+    <string name="library_filters_views_less">moins de %1$s vues</string>
+    <string name="library_filters_views_more">plus de %1$s vues</string>
+    <string name="library_filters_views_between">%1$s à %2$s vues</string>
+    <string name="library_filters_youtube_progress">Infos YouTube : %1$d / %2$d titres, complétées en arrière-plan</string>
+    <string name="library_filters_youtube_paused">Infos YouTube : %1$d / %2$d titres (les autres se complètent quand ce panneau est ouvert, ou à leur lecture)</string>
+    <string name="library_filters_youtube_note">Diffusion = mise en ligne sur YouTube : pour les anciens titres, souvent plus tard que la vraie sortie. Les titres sans cette info sont exclus de ces deux filtres.</string>
+    <string name="library_filters_youtube_info">Infos YouTube des titres</string>
+    <string name="library_filters_refresh">Actualiser les vues après</string>
+    <string name="library_filters_refresh_days">%1$d jours</string>
+    <string name="library_filters_refresh_description">Date de diffusion et vues (filtres de la Bibliothèque) redemandées passé ce délai, à la lecture du titre ou en arrière-plan</string>
+    <string name="library_filters_refresh_now">Tout actualiser maintenant</string>
+    <string name="library_filters_refresh_now_description">Redemande à YouTube les infos des %1$d titres connus, un toutes les 1,5 s, en arrière-plan</string>
+    <string name="library_filters_refresh_running">Actualisation en arrière-plan…</string>
+    <string name="library_filters_refresh_never">Jamais</string>
 </resources>

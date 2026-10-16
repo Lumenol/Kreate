@@ -1,5 +1,6 @@
 package app.kreate.android.themed.rimusic.screen.home
 
+import app.kreate.database.models.SongYoutubeInfo
 import app.kreate.database.SongPlayStats
 import app.kreate.android.themed.rimusic.screen.home.filters.SongFiltersStore
 import app.kreate.android.R
@@ -242,6 +243,11 @@ fun HomeSongs(
         if( needsStats ) Database.eventTable.playStats().map { list -> list.associateBy( SongPlayStats::songId ) }
         else flowOf( emptyMap<String, SongPlayStats>() )
     }.collectAsState( null, Dispatchers.IO )
+    val needsInfo = useFilters && filters.needsYoutubeInfo
+    val youtubeInfo by remember( needsInfo ) {
+        if( needsInfo ) Database.songYoutubeInfoTable.all().map { list -> list.associateBy( SongYoutubeInfo::songId ) }
+        else flowOf( emptyMap<String, SongYoutubeInfo>() )
+    }.collectAsState( null, Dispatchers.IO )
     val needsDownloaded = useFilters && filters.downloaded
     val downloadedIds by remember( needsDownloaded ) {
         if( needsDownloaded )
@@ -265,11 +271,12 @@ fun HomeSongs(
     }.collectAsState( null, Dispatchers.IO )
     //</editor-fold>
 
-    LaunchedEffect( items, search.input, useFilters, filters, playStats, downloadedIds, cachedIds ) {
+    LaunchedEffect( items, search.input, useFilters, filters, playStats, youtubeInfo, downloadedIds, cachedIds ) {
     val stats = playStats
+    val info = youtubeInfo
     val downloaded = downloadedIds
     val cached = cachedIds
-    if( stats == null || downloaded == null || cached == null ) {
+    if( stats == null || info == null || downloaded == null || cached == null ) {
         isLoading = true
         return@LaunchedEffect
     }
@@ -277,7 +284,7 @@ fun HomeSongs(
     val allowed = items.filter { !parentalControlEnabled || !it.isExplicit }
     // "12 / 51" only against the usual list, not against every song known
     SongFiltersStore.totalCount = if( everySong ) -1 else allowed.size
-    allowed.filter { !useFilters || filters.matches( it, stats[it.id], downloaded, cached, now ) }
+    allowed.filter { !useFilters || filters.matches( it, stats[it.id], info[it.id], downloaded, cached, now ) }
          .also { SongFiltersStore.resultCount = it.size }
          .filter {
              // Without cleaning, user can search explicit songs with "e:"

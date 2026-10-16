@@ -3,6 +3,7 @@
 
 package app.kreate.di
 
+import app.kreate.android.service.YoutubeInfo
 import app.kreate.android.service.player.PreviewPlayer
 import android.content.Context
 import android.database.sqlite.SQLiteConstraintException
@@ -388,7 +389,11 @@ fun Scope.resolveInnertubeMedia( dataSpec: DataSpec ): DataSpec {
     // A song only previewed (thumbnail tap) stays out of the database, so it doesn't
     // show up in the Library
     val previewOnly = songId == PreviewPlayer.previewOnlyId
-    if( !previewOnly ) upsertSongInfo( get(), songId )
+    if( !previewOnly ) {
+        upsertSongInfo( get(), songId )
+        // Release date and views, for the library filters
+        YoutubeInfo.refreshOnPlay( songId )
+    }
 
     // Downloads with a quality of their own ask for it in their uri
     val quality = runCatching {

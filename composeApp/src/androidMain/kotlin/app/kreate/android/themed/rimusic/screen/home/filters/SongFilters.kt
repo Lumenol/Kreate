@@ -1,5 +1,6 @@
 package app.kreate.android.themed.rimusic.screen.home.filters
 
+import app.kreate.database.models.SongYoutubeInfo
 import android.content.Context
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -34,16 +35,23 @@ data class SongFilters(
     val explicit: Int = 0,
     val plays: Span = Span( 0, Scales.PLAYS.lastIndex ),
     val lastPlayed: Span = Span( 0, Scales.AGO_DAYS.lastIndex ),
-    val firstPlayed: Span = Span( 0, Scales.AGO_DAYS.lastIndex )
+    val firstPlayed: Span = Span( 0, Scales.AGO_DAYS.lastIndex ),
+    /** Year put online on YouTube; the default spans every year, whatever the current one */
+    val released: Span = Span( 0, Int.MAX_VALUE ),
+    val views: Span = Span( 0, Scales.VIEWS.lastIndex )
 ) {
     val playsActive get() = !plays.isAll( Scales.PLAYS.lastIndex )
     /** "Never listened": the dates of listening mean nothing then */
     val neverPlayed get() = plays == Span( 0, 0 )
     val lastPlayedActive get() = !neverPlayed && !lastPlayed.isAll( Scales.AGO_DAYS.lastIndex )
     val firstPlayedActive get() = !neverPlayed && !firstPlayed.isAll( Scales.AGO_DAYS.lastIndex )
+    val releasedActive get() = released.from > 0 || released.to < Scales.yearsLast
+    val viewsActive get() = !views.isAll( Scales.VIEWS.lastIndex )
+    /** These read what YouTube said of the songs */
+    val needsYoutubeInfo get() = releasedActive || viewsActive
 
     val activeCount: Int get() =
-        listOf( downloaded, cached, liked, explicit != 0, playsActive, lastPlayedActive, firstPlayedActive ).count { it }
+        listOf( downloaded, cached, liked, explicit != 0, playsActive, lastPlayedActive, firstPlayedActive, releasedActive, viewsActive ).count { it }
     val isActive get() = activeCount > 0
     /** Downloaded or cached ones are looked up only when asked for */
     val needsSources get() = downloaded || cached
@@ -64,13 +72,18 @@ data class SongFilters(
             explicit = explicit.coerceIn( 0, 2 ),
             plays = plays.fit( Scales.PLAYS.lastIndex ),
             lastPlayed = lastPlayed.fit( Scales.AGO_DAYS.lastIndex ),
-            firstPlayed = firstPlayed.fit( Scales.AGO_DAYS.lastIndex )
+            firstPlayed = firstPlayed.fit( Scales.AGO_DAYS.lastIndex ),
+            // Open at the top: "up to this year" stays so next year
+            released = if( released.to >= Scales.yearsLast ) Span( released.from.coerceIn( 0, Scales.yearsLast ), Int.MAX_VALUE )
+                       else released.fit( Scales.yearsLast ),
+            views = views.fit( Scales.VIEWS.lastIndex )
         )
     }
 
     fun matches(
         song: Song,
         stats: SongPlayStats?,
+        info: SongYoutubeInfo?,
         downloadedIds: Set<String>,
         cachedIds: Set<String>,
         now: Long
@@ -91,6 +104,15 @@ data class SongFilters(
             val at = stats?.firstPlayed ?: return false
             if( !Scales.inAgo( firstPlayed, Scales.daysAgo( at, now ) ) ) return false
         }
+        // Songs YouTube said nothing of yet are left out of these two
+        if( releasedActive ) {
+            val at = info?.publishedAt ?: return false
+            if( !Scales.inYears( released, Scales.yearOf( at ) ) ) return false
+        }
+        if( viewsActive ) {
+            val count = info?.viewCount ?: return false
+            if( !Scales.inViews( views, count ) ) return false
+        }
         return true
     }
 }
@@ -102,6 +124,27 @@ object Scales {
     val AGO_DAYS = intArrayOf( 0, 7, 14, 30, 60, 90, 120, 150, 180, 270, 365, 730, 1095 )
 
     fun daysAgo( at: Long, now: Long ): Int = ((now - at) / 86_400_000L).toInt().coerceAtLeast( 0 )
+
+    /** Years from 1960 ("1960 and before") to this one */
+    const val FIRST_YEAR = 1960
+    val yearsLast: Int get() = java.time.Year.now().value - FIRST_YEAR
+    fun year( index: Int ): Int = FIRST_YEAR + index.coerceAtMost( yearsLast )
+    fun yearOf( epochMillis: Long ): Int =
+        java.time.Instant.ofEpochMilli( epochMillis ).atZone( java.time.ZoneOffset.UTC ).year
+
+    /** Both ends included; the first step takes everything before it */
+    fun inYears( span: Span, year: Int ): Boolean =
+        (span.from == 0 || year >= year( span.from )) && (span.to >= yearsLast || year <= year( span.to ))
+
+    val VIEWS = longArrayOf( 0, 10_000, 100_000, 1_000_000, 10_000_000, 100_000_000, 1_000_000_000 )
+
+    /** Like durations: end excluded, one step = that whole step, the last one open */
+    fun inViews( span: Span, count: Long ): Boolean {
+        if( count < VIEWS[span.from] ) return false
+        if( span.to == VIEWS.lastIndex ) return true
+        val end = if( span.from == span.to ) span.to + 1 else span.to
+        return count < VIEWS[end]
+    }
 
     /** Counts, both ends included ("5 to 20 plays"); the last step is open ("100 and more") */
     fun inPlays( span: Span, plays: Int ): Boolean =

@@ -1,5 +1,6 @@
 package app.kreate.android
 
+import it.fast4x.rimusic.enums.YoutubeInfoRefresh
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.SharedPreferences
@@ -687,6 +688,10 @@ sealed class Preferences<T>(
         /** How long a song's preview plays */
         val PREVIEW_LENGTH by lazy {
             Enum( preferences, Key.PREVIEW_LENGTH, "", PreviewLength.`30s` )
+        }
+        /** When a song's release date and views are asked to YouTube again */
+        val YOUTUBE_INFO_REFRESH by lazy {
+            Enum( preferences, Key.YOUTUBE_INFO_REFRESH, "", YoutubeInfoRefresh.Days90 )
         }
         val QUICK_PICKS_MIN_DURATION by lazy {
             Enum( preferences, Key.QUICK_PICKS_MIN_DURATION, "exoPlayerMinTimeForEvent", ExoPlayerMinTimeForEvent.`20s` )
@@ -1941,6 +1946,7 @@ sealed class Preferences<T>(
         const val HOME_ALBUM_TYPE = "HomeAlbumType"
         const val HOME_SONGS_TYPE = "HomeSongsType"
         const val LIBRARY_SONG_FILTERS = "LibrarySongFilters"
+        const val YOUTUBE_INFO_REFRESH = "YoutubeInfoRefresh"
         const val LIBRARY_FILTER_SHORTCUTS = "LibraryFilterShortcuts"
         const val HISTORY_PAGE_TYPE = "HistoryPageType"
         const val HOME_LIBRARY_TYPE = "HomePlaylistType"

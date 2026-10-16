@@ -19,6 +19,7 @@ import app.kreate.database.models.PersistentQueue
 import app.kreate.database.models.Playlist
 import app.kreate.database.models.SearchQuery
 import app.kreate.database.models.Song
+import app.kreate.database.models.SongYoutubeInfo
 import app.kreate.database.models.SongAlbumMap
 import app.kreate.database.models.SongArtistMap
 import app.kreate.database.models.SongPlaylistMap
@@ -38,8 +39,9 @@ import app.kreate.database.models.SongPlaylistMap
         Format::class,
         Event::class,
         Lyrics::class,
+        SongYoutubeInfo::class,
     ],
-    version = 36,
+    version = 37,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -63,6 +65,7 @@ import app.kreate.database.models.SongPlaylistMap
         AutoMigration(from = 31, to = 32, spec = From31To32Migration::class),
         AutoMigration(from = 32, to = 33, spec = From32To33Migration::class),
         AutoMigration(from = 33, to = 34),       // Adding `onUpdate = ForeignKey.CASCADE` to several tables
+        AutoMigration(from = 36, to = 37),       // song_youtube_info: release date and views, for the library filters
     ],
 )
 @TypeConverters(Converters::class)
@@ -86,4 +89,5 @@ abstract class AppDatabase : RoomDatabase() {
     abstract val songArtistMapTable: SongArtistMapTable
     abstract val songPlaylistMapTable: SongPlaylistMapTable
     abstract val songTable: SongTable
+    abstract val songYoutubeInfoTable: SongYoutubeInfoTable
 }

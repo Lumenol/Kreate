@@ -1120,4 +1120,28 @@
     <string name="library_filters_shortcuts">Shortcuts</string>
     <string name="library_filters_shortcuts_edit">Edit</string>
     <string name="library_filters_shortcuts_done">Done</string>
+    <string name="library_filters_released">First released</string>
+    <string name="library_filters_released_first">%1$s and before</string>
+    <string name="library_filters_released_in">in %1$s</string>
+    <string name="library_filters_released_since">since %1$s</string>
+    <string name="library_filters_released_until">up to %1$s</string>
+    <string name="library_filters_released_between">%1$s to %2$s</string>
+    <string name="library_filters_preset_decade">%1$ss</string>
+    <string name="library_filters_preset_before">Before %1$s</string>
+    <string name="library_filters_views">Popularity</string>
+    <string name="library_filters_views_billion">1 B</string>
+    <string name="library_filters_views_less">under %1$s views</string>
+    <string name="library_filters_views_more">over %1$s views</string>
+    <string name="library_filters_views_between">%1$s to %2$s views</string>
+    <string name="library_filters_youtube_progress">YouTube info: %1$d / %2$d songs, being filled in the background</string>
+    <string name="library_filters_youtube_paused">YouTube info: %1$d / %2$d songs (the others are filled in when this panel is open, or when they\'re played)</string>
+    <string name="library_filters_youtube_note">Release = date put online on YouTube: for older songs it\'s often later than the real release. Songs without this info are left out of these two filters.</string>
+    <string name="library_filters_youtube_info">YouTube info of songs</string>
+    <string name="library_filters_refresh">Refresh views after</string>
+    <string name="library_filters_refresh_days">%1$d days</string>
+    <string name="library_filters_refresh_description">Release date and views (library filters) are asked again past this, when the song is played or in the background</string>
+    <string name="library_filters_refresh_now">Refresh everything now</string>
+    <string name="library_filters_refresh_now_description">Asks YouTube again for the %1$d songs known, one every 1.5 s, in the background</string>
+    <string name="library_filters_refresh_running">Refreshing in the background…</string>
+    <string name="library_filters_refresh_never">Never</string>
 </resources>
