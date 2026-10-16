@@ -657,14 +657,6 @@ fun ActiveFilters( modifier: Modifier = Modifier ) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.horizontalScroll( rememberScrollState() ).padding( horizontal = 12.dp ).padding( bottom = 8.dp )
     ) {
-        // "of 1,800": the count in the toolbar is what the filters leave
-        val total = SongFiltersStore.totalCount
-        if( total >= 0 )
-            BasicText(
-                stringResource( R.string.library_filters_of_total, java.text.NumberFormat.getIntegerInstance().format( total ) ),
-                style = typography().xs.semiBold.color( colorPalette().textSecondary ),
-                modifier = Modifier.padding( start = 4.dp )
-            )
         pills.forEach { (label, without) ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,

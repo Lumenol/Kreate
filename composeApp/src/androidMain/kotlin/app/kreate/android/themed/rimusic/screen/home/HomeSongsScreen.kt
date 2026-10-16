@@ -226,7 +226,7 @@ fun HomeSongsScreen(
                 }
             ) {
                 // The count, like on the other Library tabs. Only what's shown: "1234 / 1800"
-                // made this part too long, it scrolled sideways (the total is with the filters)
+                // made this part too long, it scrolled sideways
                 HeaderInfo( itemsOnDisplayState.size.toString(), R.drawable.musical_notes )
                 if( chips.size > 1 )
                 TabToolBar.FilterPill(

@@ -1117,7 +1117,6 @@
     <string name="library_filters_shortcut_forgotten_likes">Forgotten likes</string>
     <string name="library_filters_shortcut_rediscover">Rediscover</string>
     <string name="library_filters_empty">No song matches the filters</string>
-    <string name="library_filters_of_total">of %1$s</string>
     <string name="library_filters_shortcuts">Shortcuts</string>
     <string name="library_filters_shortcuts_edit">Edit</string>
     <string name="library_filters_shortcuts_done">Done</string>
