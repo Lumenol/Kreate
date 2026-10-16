@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -1022,7 +1021,7 @@ fun HomeQuickPicks(
                                     label = { item -> item.countryDisplayName },
                                     onSelect = { item -> countryCode = item.countryCode },
                                     // A long name ("République dominicaine") doesn't push the title out
-                                    modifier = Modifier.widthIn( max = 150.dp )
+                                    labelMaxWidth = 106.dp
                                 )
                         }
 
