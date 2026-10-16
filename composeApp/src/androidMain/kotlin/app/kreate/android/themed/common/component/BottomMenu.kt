@@ -112,6 +112,9 @@ class BottomMenu {
     var isVisible by mutableStateOf( false )
         private set
 
+    /** Sleep timer dialog asked by the player's menu */
+    var isShowingSleepTimer by mutableStateOf( false )
+
     @Suppress("UNCHECKED_CAST")
     private fun onButtonClick( button: MenuButton<*>, screen: MenuPage ) {
         if( screen is MenuPage.SongMenu )
@@ -154,6 +157,12 @@ class BottomMenu {
     ) {
         val (colorPalette, typography) = LocalAppearance.current
         val currentScreen = backStack.lastOrNull() ?: MenuPage.Empty
+
+        if( isShowingSleepTimer )
+            it.fast4x.rimusic.ui.components.themed.SleepTimerDialog(
+                onClose = { isShowingSleepTimer = false },
+                onDone = { isShowingSleepTimer = false; hide() }
+            )
 
         ModalBottomSheet(
             onDismissRequest = ::hide,
@@ -221,19 +230,27 @@ class BottomMenu {
                             )
 
                             // The 3 most used actions as big buttons, like YouTube Music
-                            if( currentScreen !is MenuPage.AddToPlaylist )
+                            if( currentScreen !is MenuPage.AddToPlaylist && currentScreen !is MenuPage.EditSong )
                                 Row(
                                     horizontalArrangement = Arrangement.spacedBy( 8.dp ),
                                     modifier = Modifier.padding( start = 16.dp, end = 16.dp, bottom = 12.dp )
                                 ) {
-                                    QuickAction(
-                                        text = stringResource( R.string.quick_play_next ),
-                                        iconId = R.drawable.play_skip_forward,
-                                        modifier = Modifier.weight( 1f )
-                                    ) {
-                                        SongPlayNextButton().onClick( this@BottomMenu, currentScreen.song )
-                                        hide()
-                                    }
+                                    // From the player, the playing song needs no "play next": the sleep timer instead
+                                    if( currentScreen is MenuPage.PlayerSong )
+                                        QuickAction(
+                                            text = stringResource( R.string.quick_sleep_timer ),
+                                            iconId = R.drawable.sleep,
+                                            modifier = Modifier.weight( 1f )
+                                        ) { isShowingSleepTimer = true }
+                                    else
+                                        QuickAction(
+                                            text = stringResource( R.string.quick_play_next ),
+                                            iconId = R.drawable.play_skip_forward,
+                                            modifier = Modifier.weight( 1f )
+                                        ) {
+                                            SongPlayNextButton().onClick( this@BottomMenu, currentScreen.song )
+                                            hide()
+                                        }
                                     QuickAction(
                                         text = stringResource( R.string.quick_add_to_playlist ),
                                         iconId = R.drawable.add_in_playlist,

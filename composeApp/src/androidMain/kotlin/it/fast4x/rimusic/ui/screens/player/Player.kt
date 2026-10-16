@@ -1,5 +1,7 @@
 package it.fast4x.rimusic.ui.screens.player
 
+import app.kreate.android.LocalBottomMenu
+import app.kreate.android.constant.MenuPage
 import it.fast4x.rimusic.service.modern.isLocal
 import android.annotation.SuppressLint
 import android.graphics.RenderEffect
@@ -216,6 +218,7 @@ fun Player(
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
     val menuState = LocalMenuState.current
+    val bottomMenu = LocalBottomMenu.current
     val player: StatefulPlayer = koinInject()
     // Settings
     val disablePlayerHorizontalSwipe by Preferences.PLAYER_THUMBNAIL_HORIZONTAL_SWIPE_DISABLED
@@ -1795,16 +1798,7 @@ fun Player(
                                     colorFilter = ColorFilter.tint(colorPalette().collapsedPlayerProgressBar),
                                     modifier = Modifier
                                         .clickable {
-                                            menuState.display {
-                                                PlayerMenu(
-                                                    navController = navController,
-                                                    onDismiss = menuState::hide,
-                                                    mediaItem = mediaItem,
-                                                    onClosePlayer = {
-                                                        onDismiss()
-                                                    }
-                                                )
-                                            }
+                                            bottomMenu.show( MenuPage.PlayerSong( mediaItem ), true )
                                         }
                                         .rotate(rotationAngle)
                                         //.padding(10.dp)
