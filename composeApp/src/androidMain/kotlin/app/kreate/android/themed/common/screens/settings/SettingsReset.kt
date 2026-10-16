@@ -265,6 +265,7 @@ object SettingsReset {
 
     val DATA: List<Preferences<*>> by lazy {
         listOf(
+            Preferences.YOUTUBE_INFO_REFRESH,
             Preferences.IMAGE_CACHE_SIZE,
             Preferences.EXO_CACHE_SIZE,
             Preferences.EXO_DOWNLOAD_SIZE,

@@ -1,8 +1,10 @@
 package me.knighthat.internal.response
 
+import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import kotlinx.serialization.json.JsonNames
 import me.knighthat.innertube.response.PrimaryResults
 import me.knighthat.internal.util.SkipInvalidListSerializer
 
@@ -35,9 +37,13 @@ internal data class PrimaryResultsImpl(
                     override val videoViewCountRenderer: RendererImpl
                 ): PrimaryResults.Results.Content.VideoPrimaryInfoRenderer.ViewCount {
 
+                    @OptIn(ExperimentalSerializationApi::class)
                     @Serializable
                     data class RendererImpl(
                         override val viewCount: SimpleTextImpl,
+                        // Renamed by YouTube in 2026: with the old name only, the whole
+                        // primary info was skipped and the details page stayed empty
+                        @JsonNames("extraShortViewCount")
                         override val shortViewCount: SimpleTextImpl,
                         override val originalViewCount: String?
                     ): PrimaryResults.Results.Content.VideoPrimaryInfoRenderer.ViewCount.Renderer

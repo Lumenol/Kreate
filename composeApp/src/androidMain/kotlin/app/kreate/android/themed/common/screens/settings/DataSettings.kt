@@ -1,5 +1,6 @@
 package app.kreate.android.themed.common.screens.settings
 
+import app.kreate.android.service.YoutubeInfo
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
 import androidx.compose.ui.text.input.KeyboardType
@@ -383,6 +384,32 @@ fun DataSettings( paddingValues: PaddingValues ) {
                         }
                     )
                 }
+            }
+
+            header( R.string.library_filters_youtube_info )
+            entry( search, R.string.library_filters_refresh ) {
+                // The value chosen first: the entry doesn't show it otherwise
+                val refresh by Preferences.YOUTUBE_INFO_REFRESH
+                SettingComponents.EnumEntry(
+                    Preferences.YOUTUBE_INFO_REFRESH,
+                    stringResource( R.string.library_filters_refresh ),
+                    subtitle = "${refresh.text} — ${stringResource( R.string.library_filters_refresh_description )}"
+                )
+            }
+            entry( search, R.string.library_filters_refresh_now ) {
+                val known by remember { Database.songYoutubeInfoTable.knownCount() }.collectAsState( 0, Dispatchers.IO )
+                val total by remember { Database.songYoutubeInfoTable.libraryCount() }.collectAsState( 0, Dispatchers.IO )
+                SettingComponents.Text(
+                    title = stringResource( R.string.library_filters_refresh_now ),
+                    subtitle = stringResource(
+                        if( YoutubeInfo.isFilling ) R.string.library_filters_refresh_running_count else R.string.library_filters_refresh_now_description,
+                        known.coerceAtMost( total ), total
+                    ),
+                    onClick = {
+                        YoutubeInfo.fillLibrary( context, everything = true )
+                        Toaster.i( R.string.library_filters_refresh_running )
+                    }
+                )
             }
 
             header( R.string.search_history )

@@ -19,6 +19,7 @@ import app.kreate.database.SongAlbumMapTable
 import app.kreate.database.SongArtistMapTable
 import app.kreate.database.SongPlaylistMapTable
 import app.kreate.database.SongTable
+import app.kreate.database.SongYoutubeInfoTable
 import app.kreate.database.models.Album
 import app.kreate.database.models.Artist
 import app.kreate.database.models.Playlist
@@ -64,6 +65,8 @@ object Database : KoinComponent {
         get() = _internal.songArtistMapTable
     val songPlaylistMapTable: SongPlaylistMapTable
         get() = _internal.songPlaylistMapTable
+    val songYoutubeInfoTable: SongYoutubeInfoTable
+        get() = _internal.songYoutubeInfoTable
 
     //**********************************************
 

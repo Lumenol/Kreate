@@ -1,5 +1,8 @@
 package it.fast4x.rimusic
 
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.DefaultLifecycleObserver
+import app.kreate.android.service.YoutubeInfo
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.CoroutineScope
 import app.kreate.android.utils.AutoBackup
@@ -77,6 +80,12 @@ class MainApplication : Application(), SingletonImageLoader.Factory {
         ProcessLifecycleOwner.get().lifecycle.addObserver(AppLifecycleTracker)
         // Automatic backup, when one is due
         CoroutineScope( Dispatchers.IO ).launch { AutoBackup.runIfDue( this@MainApplication ) }
+        // Release dates and views of the library's songs, for its filters: daily, on Wi-Fi.
+        // Checked each time the app comes to the front: Android keeps it alive for days
+        // (music playing), a check at startup only would hardly ever run
+        ProcessLifecycleOwner.get().lifecycle.addObserver( object : DefaultLifecycleObserver {
+            override fun onStart( owner: LifecycleOwner ) = YoutubeInfo.runIfDue( this@MainApplication )
+        } )
     }
 
     override fun onTerminate() {

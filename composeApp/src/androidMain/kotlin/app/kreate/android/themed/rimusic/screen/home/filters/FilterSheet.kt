@@ -1,5 +1,8 @@
 package app.kreate.android.themed.rimusic.screen.home.filters
 
+import kotlinx.coroutines.Dispatchers
+import it.fast4x.rimusic.Database
+import androidx.compose.runtime.collectAsState
 import android.content.Context
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -104,6 +107,36 @@ object FilterTexts {
         }
     }
 
+    fun viewsLabel( context: Context, index: Int ): String = when( val v = Scales.VIEWS[index] ) {
+        0L                  -> "0"
+        in 1 until 1_000_000            -> "${v / 1_000} k"
+        in 1_000_000 until 1_000_000_000 -> "${v / 1_000_000} M"
+        else                -> context.getString( R.string.library_filters_views_billion )
+    }
+
+    fun releasedRange( context: Context, span: Span ): String {
+        val last = Scales.yearsLast
+        val to = span.to.coerceAtMost( last )
+        return when {
+            // The first step is open at the bottom: "1960 and before"
+            span.from == 0 && to == 0  -> context.getString( R.string.library_filters_released_first, Scales.year( 0 ).toString() )
+            span.from == 0             -> context.getString( R.string.library_filters_released_until, Scales.year( to ).toString() )
+            span.from == to            -> context.getString( R.string.library_filters_released_in, Scales.year( to ).toString() )
+            to >= last                 -> context.getString( R.string.library_filters_released_since, Scales.year( span.from ).toString() )
+            else                       -> context.getString( R.string.library_filters_released_between, Scales.year( span.from ).toString(), Scales.year( to ).toString() )
+        }
+    }
+
+    fun viewsRange( context: Context, span: Span ): String {
+        val last = Scales.VIEWS.lastIndex
+        return when {
+            span.to == last && span.from > 0 -> context.getString( R.string.library_filters_views_more, viewsLabel( context, span.from ) )
+            span.from == span.to             -> context.getString( R.string.library_filters_views_between, viewsLabel( context, span.from ), viewsLabel( context, span.from + 1 ) )
+            span.from == 0                   -> context.getString( R.string.library_filters_views_less, viewsLabel( context, span.to ) )
+            else                             -> context.getString( R.string.library_filters_views_between, viewsLabel( context, span.from ), viewsLabel( context, span.to ) )
+        }
+    }
+
     /** One pill per active filter, under the toolbar: its text and how to remove it */
     fun activePills( context: Context, f: SongFilters ): List<Pair<String, SongFilters>> = buildList {
         if( f.downloaded ) add( context.getString( R.string.downloaded ) to f.copy( downloaded = false ) )
@@ -119,6 +152,11 @@ object FilterTexts {
         if( f.firstPlayedActive )
             add( context.getString( R.string.library_filters_pill, context.getString( R.string.library_filters_first_played ), agoRange( context, f.firstPlayed ) )
                          to f.copy( firstPlayed = SongFilters().firstPlayed ) )
+        if( f.releasedActive )
+            add( context.getString( R.string.library_filters_pill, context.getString( R.string.library_filters_released ), releasedRange( context, f.released ) )
+                         to f.copy( released = SongFilters().released ) )
+        if( f.viewsActive )
+            add( viewsRange( context, f.views ) to f.copy( views = SongFilters().views ) )
     }
 }
 
@@ -275,6 +313,8 @@ fun FilterSheet( onDone: () -> Unit ) {
     // Rarely used sections start folded, unless they filter
     var lastOpen by rememberSaveable { mutableStateOf( true ) }
     var firstOpen by rememberSaveable { mutableStateOf( f.firstPlayedActive ) }
+    var releasedOpen by rememberSaveable { mutableStateOf( f.releasedActive ) }
+    var viewsOpen by rememberSaveable { mutableStateOf( f.viewsActive ) }
 
     Column(
         Modifier.padding( top = 48.dp )
@@ -432,6 +472,64 @@ fun FilterSheet( onDone: () -> Unit ) {
                     onExpand = { firstOpen = !firstOpen },
                     onChange = { set( f.copy( firstPlayed = it ) ) }
                 )
+
+                val yearsLast = Scales.yearsLast
+                val now = Scales.year( yearsLast )
+                fun years( from: Int, to: Int ) = Span( from - Scales.FIRST_YEAR, to - Scales.FIRST_YEAR )
+                RangeSection(
+                    title = stringResource( R.string.library_filters_released ),
+                    span = Span( f.released.from, f.released.to.coerceAtMost( yearsLast ) ),
+                    last = yearsLast,
+                    // This year, the last three decades (from the current one), and before them
+                    presets = buildList {
+                        val decade = now / 10 * 10
+                        add( now.toString() to years( now, now ) )
+                        for( d in decade downTo decade - 20 step 10 )
+                            add( context.getString( R.string.library_filters_preset_decade, d.toString() ) to years( d, minOf( d + 9, now ) ) )
+                        add( context.getString( R.string.library_filters_preset_before, (decade - 20).toString() ) to years( Scales.FIRST_YEAR, decade - 21 ) )
+                    },
+                    summary = FilterTexts.releasedRange( context, f.released ),
+                    lowLabel = stringResource( R.string.library_filters_released_first, Scales.FIRST_YEAR.toString() ),
+                    highLabel = now.toString(),
+                    enabled = true,
+                    expanded = releasedOpen,
+                    onExpand = { releasedOpen = !releasedOpen },
+                    // Years as picked ("in 2026" stays so next year); only the whole range
+                    // goes back to "all", open at the top for the years to come
+                    onChange = { set( f.copy( released = if( it == Span( 0, yearsLast ) ) SongFilters().released else it ) ) }
+                )
+                val viewsLast = Scales.VIEWS.lastIndex
+                RangeSection(
+                    title = stringResource( R.string.library_filters_views ),
+                    span = f.views,
+                    last = viewsLast,
+                    presets = listOf(
+                        context.getString( R.string.library_filters_views_less, FilterTexts.viewsLabel( context, 3 ) ) to Span( 0, 3 ),
+                        context.getString( R.string.library_filters_views_more, FilterTexts.viewsLabel( context, 4 ) ) to Span( 4, viewsLast ),
+                        context.getString( R.string.library_filters_views_more, FilterTexts.viewsLabel( context, 5 ) ) to Span( 5, viewsLast )
+                    ),
+                    summary = FilterTexts.viewsRange( context, f.views ),
+                    lowLabel = "0",
+                    highLabel = FilterTexts.viewsLabel( context, viewsLast ) + " +",
+                    enabled = true,
+                    expanded = viewsOpen,
+                    onExpand = { viewsOpen = !viewsOpen },
+                    onChange = { set( f.copy( views = it ) ) }
+                )
+                // The info is filled in the background (daily on Wi-Fi, or from Settings →
+                // Data): only say what these two filters can't see yet
+                if( releasedOpen || viewsOpen || f.needsYoutubeInfo ) {
+                    val known by remember { Database.songYoutubeInfoTable.knownCount() }.collectAsState( 0, Dispatchers.IO )
+                    val total by remember { Database.songYoutubeInfoTable.libraryCount() }.collectAsState( 0, Dispatchers.IO )
+                    BasicText(
+                        text = buildString {
+                            if( known < total )
+                                append( stringResource( R.string.library_filters_youtube_missing, total - known ) ).append( "\n" )
+                            append( stringResource( R.string.library_filters_youtube_note ) )
+                        },
+                        style = typography().xxs.color( colorPalette().textSecondary )
+                    )
+                }
             }
             // The list fades out above the button
             Box(
