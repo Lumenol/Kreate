@@ -72,8 +72,8 @@
     <string name="add_spacing_around_texts">Ajouter un espace autour des textes</string>
     <string name="cache">Cache</string>
     <string name="cache_cleared">Lorsque le cache manque d\'espace, les ressources qui n\'ont pas été consultées depuis le plus longtemps sont effacées</string>
-    <string name="reset_quick_picks">Réinitialiser la sélection rapide</string>
-    <string name="quick_picks_are_cleared">La sélection rapide a été effacée avec succès</string>
+    <string name="reset_quick_picks">Effacer l\'historique d\'écoute</string>
+    <string name="quick_picks_are_cleared">Historique d\'écoute vide</string>
     <string name="export_the_database">Exporter la base de données vers le stockage externe </string>
     <string name="import_the_database">Importer la base de données à partir du stockage externe </string>
     <string name="search_history">HISTORIQUE DE RECHERCHE</string>
@@ -107,7 +107,7 @@
     <string name="unsynchronized_lyrics">Paroles non synchronisées</string>
     <string name="synchronized_lyrics">Paroles synchronisées</string>
     <string name="provided_by">Fournies par</string>
-    <string name="delete_playback_events">Supprimer %1$s événements de la lecture</string>
+    <string name="delete_playback_events">Écoutes enregistrées : %1$s. La sélection rapide, les statistiques et l\'historique repartent de zéro</string>
     <string name="existing_data_will_be_overwritten">Les données existantes seront écrasées. %1$s se fermera automatiquement après la restauration de la base de données.</string>
     <string name="used">" utilisé"</string>
     <string name="close_background_player">Effacer le lecteur en arrière-plan</string>
@@ -285,7 +285,7 @@
     <string name="end_of_song">fin du titre</string>
     <string name="do_you_really_want_to_renumbering_positions_in_this_playlist">Renuméroter vraiment les positions de cette playlist ?</string>
     <string name="renumber_songs_positions">Renuméroter les positions</string>
-    <string name="do_you_really_want_to_delete_all_playback_events">Supprimer vraiment tout l\'historique d\'écoute ?</string>
+    <string name="do_you_really_want_to_delete_all_playback_events">Effacer tout l\'historique d\'écoute ? La sélection rapide, les statistiques et l\'historique repartent de zéro. La playlist du mois en cours et le Top de l\'année seront recalculés à partir des nouvelles écoutes ; les playlists des mois passés sont conservées. C\'est irréversible : fais d\'abord une sauvegarde (Paramètres → Données) si tu veux pouvoir revenir en arrière.</string>
     <string name="update_available">Une mise à jour est disponible</string>
     <string name="open_the_github_releases_web_page_and_download_latest_version">Ouvre la page des versions sur GitHub et télécharge la dernière</string>
     <string name="download_latest_version_from_github_you_will_find_the_file_in_the_notification_area_and_you_can_install_by_clicking_on_it">Télécharge la dernière version sur GitHub : le fichier arrive dans les notifications, touche-le pour l\'installer</string>
