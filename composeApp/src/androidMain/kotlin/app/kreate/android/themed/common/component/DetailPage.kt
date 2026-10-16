@@ -82,6 +82,7 @@ fun DetailSkeleton(
     miniPlayer: @Composable () -> Unit,
     actions: @Composable RowScope.() -> Unit = {},
     title: (@Composable () -> Unit)? = null,
+    onBack: (() -> Unit)? = null,
     content: @Composable AnimatedVisibilityScope.(Int) -> Unit
 ) {
     // Read once: the scaffold animates its content when the index changes, and
@@ -100,6 +101,7 @@ fun DetailSkeleton(
         navBarContent = { MainTabs.Items( it, libraryTab ) },
         detailActions = actions,
         detailTitle = title,
+        detailOnBack = onBack,
         content = content
     )
 }
@@ -109,13 +111,14 @@ fun DetailSkeleton(
 fun DetailTopBar(
     navController: NavController,
     actions: @Composable RowScope.() -> Unit,
-    title: @Composable () -> Unit = {}
+    title: @Composable () -> Unit = {},
+    onBack: (() -> Unit)? = null
 ) =
     TopAppBar(
         title = title,
         navigationIcon = {
-            if( navController.previousBackStackEntry != null )
-                IconButton( onClick = navController::navigateUp ) {
+            if( onBack != null || navController.previousBackStackEntry != null )
+                IconButton( onClick = { if( onBack != null ) onBack() else navController.navigateUp() } ) {
                     Icon(
                         painter = painterResource( R.drawable.chevron_back ),
                         contentDescription = null,

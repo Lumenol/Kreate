@@ -1,7 +1,15 @@
 package it.fast4x.rimusic.ui.screens.settings
 
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material3.Icon
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextOverflow
+import it.fast4x.rimusic.ui.styling.Dimensions
 import app.kreate.android.themed.common.component.DetailSkeleton
-import it.fast4x.rimusic.ui.components.ButtonsRow
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import it.fast4x.rimusic.utils.color
@@ -63,7 +71,8 @@ fun SettingsScreen(
     val saveableStateHolder = rememberSaveableStateHolder()
     // The "Debug" badge of the header opens the debug options directly
     val openDebug = remember { SettingsScreen.consumeOpenDebug() }
-    val (tabIndex, onTabChanged) = rememberSaveable { mutableIntStateOf( if( openDebug ) 6 else 0 ) }
+    // -1: the list of sections; otherwise the open section
+    var tabIndex by rememberSaveable { mutableIntStateOf( if( openDebug ) 6 else -1 ) }
 
     val topPadding =
         if( UiType.ViMusic.isCurrent() )
@@ -74,37 +83,27 @@ fun SettingsScreen(
         PaddingValues( 6.dp, topPadding, 6.dp )
     }
 
-    // Nine tabs did not fit in a bottom bar (names cut, some off screen):
-    // they become chips under the title, the main tabs stay at the bottom
+    val sections = SettingsSection.all()
+    // In a section, "back" (top bar or system) goes up to the list
+    BackHandler( enabled = tabIndex >= 0 ) { tabIndex = -1 }
+
+    // Nine chips didn't fit (names cut, some off screen): the page opens on a list
+    // of sections, each with what it holds, and a section opens on tap
     DetailSkeleton(
         navController = navController,
         miniPlayer = miniPlayer,
         title = {
             BasicText(
-                text = stringResource( R.string.settings ),
+                text = sections.getOrNull( tabIndex )?.title ?: stringResource( R.string.settings ),
                 style = typography().l.semiBold.color( colorPalette().text )
             )
-        }
+        },
+        onBack = if( tabIndex >= 0 ) {{ tabIndex = -1 }} else null
     ) {
-        Column( Modifier.fillMaxSize() ) {
-            ButtonsRow(
-                chips = listOf(
-                    0 to stringResource( R.string.tab_general ),
-                    1 to stringResource( R.string.ui_tab ),
-                    2 to stringResource( R.string.tab_player ),
-                    3 to stringResource( if( isYouTubeLoggedIn() ) R.string.home else R.string.quick_picks ),
-                    4 to stringResource( R.string.tab_data ),
-                    5 to stringResource( R.string.tab_accounts ),
-                    6 to stringResource( R.string.tab_miscellaneous ),
-                    7 to stringResource( R.string.tab_network ),
-                    8 to stringResource( R.string.about )
-                ),
-                currentValue = tabIndex,
-                onValueUpdate = onTabChanged,
-                modifier = Modifier.padding( bottom = 4.dp )
-            )
-
-            Box( Modifier.weight( 1f ) ) {
+        Box( Modifier.fillMaxSize() ) {
+            if( tabIndex < 0 )
+                SettingsSectionList( sections, paddingValues ) { tabIndex = it }
+            else
                 saveableStateHolder.SaveableStateProvider(tabIndex) {
                     when (tabIndex) {
                         0 -> GeneralSettings( paddingValues )
@@ -118,12 +117,75 @@ fun SettingsScreen(
                         8 -> About( navController, paddingValues )
                     }
                 }
-            }
         }
     }
 
     RestartAppDialog.Render()
 }
+
+/** One line of the settings list: its tab, icon, name and what it holds */
+class SettingsSection( val title: String, val description: String, val iconId: Int ) {
+    companion object {
+        @Composable
+        fun all() = listOf(
+            SettingsSection( stringResource( R.string.tab_general ), stringResource( R.string.settings_section_general ), R.drawable.settings ),
+            SettingsSection( stringResource( R.string.ui_tab ), stringResource( R.string.settings_section_ui ), R.drawable.ui ),
+            SettingsSection( stringResource( R.string.tab_player ), stringResource( R.string.settings_section_player ), R.drawable.play ),
+            SettingsSection(
+                stringResource( if( isYouTubeLoggedIn() ) R.string.home else R.string.quick_picks ),
+                stringResource( R.string.settings_section_home ),
+                R.drawable.sparkles
+            ),
+            SettingsSection( stringResource( R.string.tab_data ), stringResource( R.string.settings_section_data ), R.drawable.server ),
+            SettingsSection( stringResource( R.string.tab_accounts ), stringResource( R.string.settings_section_accounts ), R.drawable.person ),
+            SettingsSection( stringResource( R.string.tab_miscellaneous ), stringResource( R.string.settings_section_other ), R.drawable.equalizer ),
+            SettingsSection( stringResource( R.string.tab_network ), stringResource( R.string.settings_section_network ), R.drawable.globe ),
+            SettingsSection( stringResource( R.string.about ), stringResource( R.string.settings_section_about ), R.drawable.information )
+        )
+    }
+}
+
+@Composable
+private fun SettingsSectionList(
+    sections: List<SettingsSection>,
+    paddingValues: PaddingValues,
+    onOpen: (Int) -> Unit
+) =
+    LazyColumn(
+        contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer ),
+        modifier = Modifier.fillMaxSize()
+                           .background( colorPalette().background0 )
+                           .padding( paddingValues )
+    ) {
+        itemsIndexed( sections ) { index, section ->
+            Row(
+                horizontalArrangement = Arrangement.spacedBy( 18.dp ),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+                                   .clickable { onOpen( index ) }
+                                   .padding( horizontal = 16.dp, vertical = 14.dp )
+            ) {
+                Icon(
+                    painter = painterResource( section.iconId ),
+                    contentDescription = null,
+                    tint = colorPalette().text,
+                    modifier = Modifier.size( 24.dp )
+                )
+                Column( Modifier.weight( 1f ) ) {
+                    BasicText(
+                        text = section.title,
+                        style = typography().s.semiBold.color( colorPalette().text )
+                    )
+                    BasicText(
+                        text = section.description,
+                        style = typography().xs.secondary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+        }
+    }
 
 object SettingsScreen {
 

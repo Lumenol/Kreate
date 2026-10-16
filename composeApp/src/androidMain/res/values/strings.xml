@@ -895,6 +895,15 @@
     <string name="setting_entry_reset_all">Reset everything</string>
     <string name="setting_description_reset_all">Puts the settings of every Settings page back to their defaults. Kreate restarts afterwards.</string>
     <string name="setting_confirm_reset_all">Put the %1$d settings of the Settings pages back to their defaults?\n\nYour account, language, parental control, playlists, history and downloads don\'t change.\n\nKreate will restart.</string>
+    <string name="settings_section_general">Updates, language, playback, automatic downloads</string>
+    <string name="settings_section_ui">Theme, colors, navigation bar, menus, gestures</string>
+    <string name="settings_section_player">Player look, queue, cover, notification</string>
+    <string name="settings_section_home">Sections shown on Home</string>
+    <string name="settings_section_data">Cache, backup and restore, settings export</string>
+    <string name="settings_section_accounts">YouTube, Discord, sync</string>
+    <string name="settings_section_other">Device folders, battery, parental control, debug</string>
+    <string name="settings_section_network">Proxy, secure DNS</string>
+    <string name="settings_section_about">Version, changelog, contributors</string>
     <string name="setting_entry_player_tabs">Up next · Lyrics · Related tabs</string>
     <string name="setting_description_player_tabs">Show these three tabs at the bottom of the player instead of the row of icons</string>
     <string name="player_tab_up_next">Up next</string>
