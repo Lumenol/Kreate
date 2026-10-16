@@ -654,6 +654,7 @@ fun ActiveFilters( modifier: Modifier = Modifier ) {
     if( pills.isEmpty() ) return
     Row(
         horizontalArrangement = Arrangement.spacedBy( 8.dp ),
+        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier.horizontalScroll( rememberScrollState() ).padding( horizontal = 12.dp ).padding( bottom = 8.dp )
     ) {
         pills.forEach { (label, without) ->
