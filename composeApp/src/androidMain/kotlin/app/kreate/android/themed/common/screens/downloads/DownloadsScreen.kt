@@ -265,13 +265,19 @@ private fun DownloadRow( download: Download, paused: Boolean, context: Context, 
                     style = typography().xs.color( colorPalette().red ),
                     modifier = Modifier.padding( top = 2.dp )
                 )
-            } else
+            } else {
+                // Artists and state on their own lines: together, the state ("62 %",
+                // "En pause") was the part cut off
+                artists?.let {
+                    BasicText( it, style = typography().xs.color( colorPalette().textSecondary ), maxLines = 1, overflow = TextOverflow.Ellipsis )
+                }
                 BasicText(
-                    text = listOfNotNull( artists, status ).joinToString( " · " ),
-                    style = typography().xs.color( if( failed ) colorPalette().red else colorPalette().textSecondary ),
+                    text = status,
+                    style = typography().xs.semiBold.color( if( failed ) colorPalette().red else colorPalette().textSecondary ),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+            }
             if( !failed )
                 LinearProgressIndicator(
                     progress = { (percent ?: 0f) / 100f },
