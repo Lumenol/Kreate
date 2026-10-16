@@ -208,12 +208,15 @@ jobs:
 
     timeout-minutes: 60       # Prevent Github Action from terminating this workflow on first run
 
+    # Upstream's names first, then this fork's (the ones build-test-apk.yaml uses):
+    # without them the keystore folder was "" and the job stopped at mkdir
     env:
       STORE_PASSWORD: ${{ secrets.STORE_PASSWORD }}
-      KEY_PASSWORD: ${{ secrets.NIGHTLY_KEY_PASSWORD }}
+      KEY_PASSWORD: ${{ secrets.NIGHTLY_KEY_PASSWORD || secrets.KEY_PASSWORD }}
       OFFICIAL_BUILD_PASSPHRASE: ${{ secrets.OFFICIAL_BUILD_PASSPHRASE }}
-      KEYSTORE_PATH: ${{ vars.KEYSTORE_PATH }}
+      KEYSTORE_PATH: ${{ vars.KEYSTORE_PATH || '.ignore.d/keystores' }}
       KEYSTORE_FILENAME: nightly.jks
+      KEYSTORE_SHA256: ${{ secrets.NIGHTLY_KEYSTORE_SHA256 }}
 
     steps:
       # Checkout is placed before reverting keystore because in read
@@ -239,8 +242,14 @@ jobs:
 
       # This step is designed to fail when decoded keystore's
       # hash doesn't match pre-defined hash
+      # Skipped when no hash is set (this fork); the signing fails anyway on a bad keystore
       - name: Verify keystore
-        run: echo "${{ secrets.NIGHTLY_KEYSTORE_SHA256 }} $KEYSTORE_PATH/$KEYSTORE_FILENAME" | sha256sum -c
+        run: |
+          if [ -z "$KEYSTORE_SHA256" ]; then
+            echo "No NIGHTLY_KEYSTORE_SHA256 secret: hash check skipped"
+            exit 0
+          fi
+          echo "$KEYSTORE_SHA256 $KEYSTORE_PATH/$KEYSTORE_FILENAME" | sha256sum -c
 
       - name: Download change logs
         uses: actions/download-artifact@v8
@@ -308,6 +317,9 @@ jobs:
 
     name: Upload to release
     runs-on: ubuntu-latest
+    # Creates the release with the repository's token when RELEASE_TOKEN isn't set
+    permissions:
+      contents: write
 
     steps:
       - name: Download APKs
@@ -335,5 +347,5 @@ jobs:
 
             To download official release, please visit [releases/latest](https://github.com/knighthat/Kreate/releases/latest)
 
-          token: ${{ secrets.RELEASE_TOKEN }}
+          token: ${{ secrets.RELEASE_TOKEN || github.token }}
           generate_release_notes: true
