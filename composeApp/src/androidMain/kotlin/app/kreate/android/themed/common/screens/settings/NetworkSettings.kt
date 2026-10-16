@@ -149,6 +149,7 @@ fun NetworkSettings( paddingValues: PaddingValues ) {
                     }
                 )
             }
+            resetEntry( search, R.string.tab_network, { SettingsReset.NETWORK } )
         }
     }
 }

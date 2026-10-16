@@ -482,6 +482,7 @@ fun UiSettings( paddingValues: PaddingValues ) {
                     subtitle = stringResource( R.string.setting_description_single_back_from_search )
                 )
             }
+            resetEntry( search, R.string.ui_tab, { SettingsReset.UI } )
         }
     }
 }

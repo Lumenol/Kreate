@@ -206,6 +206,7 @@ fun QuickPicksSettings( paddingValues: PaddingValues ) {
                         isEnabled = eventsCount > 0
                     )
             }
+            resetEntry( search, if( isYouTubeLoggedIn() ) R.string.home else R.string.quick_picks, { SettingsReset.HOME } )
         }
     }
 }

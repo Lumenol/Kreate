@@ -106,6 +106,7 @@ fun GeneralSettings( paddingValues: PaddingValues ) {
             }
 
             playerSettingsSection( search )
+            resetEntry( search, R.string.tab_general, { SettingsReset.GENERAL } )
         }
     }
 }

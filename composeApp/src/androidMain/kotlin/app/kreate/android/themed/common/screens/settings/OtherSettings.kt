@@ -225,6 +225,8 @@ fun OtherSettings( paddingValues: PaddingValues, scrollToDebug: Boolean = false 
             }
 
             debugSection( search )
+            resetEntry( search, R.string.tab_miscellaneous, { SettingsReset.OTHER } )
+            resetEntry( search, R.string.tab_miscellaneous, { SettingsReset.ALL }, everything = true )
         }
     }
 }

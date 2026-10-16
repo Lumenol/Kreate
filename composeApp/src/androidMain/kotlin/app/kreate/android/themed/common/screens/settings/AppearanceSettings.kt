@@ -130,6 +130,7 @@ fun AppearanceSettings(paddingValues: PaddingValues) {
                     }
                 )
             }
+            resetEntry( search, R.string.tab_player, { SettingsReset.PLAYER } )
         }
     }
     if (wallpaperResetAlertVisible.value){
