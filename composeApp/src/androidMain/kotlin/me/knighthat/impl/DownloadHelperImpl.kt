@@ -97,10 +97,12 @@ class DownloadHelperImpl(
                 finalException: Exception?
             ) = syncDownloads(download)
 
+            // Removed means gone: putting it back with its last state kept a cancelled
+            // download counted (header pill) while the downloads page had nothing
             override fun onDownloadRemoved(
                 downloadManager: DownloadManager,
                 download: Download
-            ) = syncDownloads(download)
+            ) = forgetDownload(download)
         }
 
         val manager = DownloadManager(
@@ -168,6 +170,10 @@ class DownloadHelperImpl(
                 set(download.request.id, download)
             }
         }
+
+    @Synchronized
+    private fun forgetDownload( download: Download ) =
+        downloads.update { map -> map - download.request.id }
 
     override fun getDownload(songId: String): Flow<Download?> = downloads.map { it[songId] }
 

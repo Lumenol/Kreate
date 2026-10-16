@@ -152,6 +152,7 @@
     <string name="_light">Clair</string>
     <string name="downloaded">Téléchargés</string>
     <string name="download">Télécharger</string>
+    <string name="menu_remove_download">Supprimer le téléchargement</string>
     <string name="downloads_in_progress_title">Téléchargements en cours</string>
     <string name="downloads_pause_all">Tout mettre en pause</string>
     <string name="downloads_pause">Pause</string>
