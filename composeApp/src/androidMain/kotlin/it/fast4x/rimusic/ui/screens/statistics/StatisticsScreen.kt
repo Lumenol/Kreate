@@ -1,5 +1,8 @@
 package it.fast4x.rimusic.ui.screens.statistics
 
+import it.fast4x.rimusic.ui.components.ButtonsRow
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.colorPalette
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
@@ -14,7 +17,10 @@ import androidx.navigation.NavController
 import it.fast4x.compose.persist.PersistMapCleanup
 import app.kreate.android.R
 import it.fast4x.rimusic.enums.StatisticsType
-import it.fast4x.rimusic.ui.components.Skeleton
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
+import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.semiBold
 
 @ExperimentalTextApi
 @ExperimentalFoundationApi
@@ -43,34 +49,48 @@ fun StatisticsScreen(
 
     PersistMapCleanup(tagPrefix = "${statisticsType.name}/")
 
-            Skeleton(
-                navController,
-                tabIndex,
-                onTabIndexChanged,
-                miniPlayer,
-                navBarContent = { item ->
-                    item(0, stringResource(R.string.today), R.drawable.stat_today)
-                    item(1, stringResource(R.string._1_week), R.drawable.stat_week)
-                    item(2, stringResource(R.string._1_month), R.drawable.stat_month)
-                    item(3, stringResource(R.string._3_month), R.drawable.stat_3months)
-                    item(4, stringResource(R.string._6_month), R.drawable.stat_6months)
-                    item(5, stringResource(R.string._1_year), R.drawable.stat_year)
-                    item(6, stringResource(R.string.all), R.drawable.calendar_clear)
-                }
-            ) { currentTabIndex ->
-                saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
-                    val type: StatisticsType =
-                        when( currentTabIndex ) {
-                            0 -> StatisticsType.Today
-                            1 -> StatisticsType.OneWeek
-                            2 -> StatisticsType.OneMonth
-                            3 -> StatisticsType.ThreeMonths
-                            4 -> StatisticsType.SixMonths
-                            5 -> StatisticsType.OneYear
-                            else -> StatisticsType.All
-                        }
+    // A page of its own: "Statistiques" in the bar, the periods as pills on top
+    // and the normal bottom bar. The periods used to replace the bottom bar,
+    // where they read as navigation ("1 An" was cut, "Tout" off screen)
+    app.kreate.android.themed.common.component.DetailSkeleton(
+        navController = navController,
+        miniPlayer = miniPlayer,
+        title = {
+            androidx.compose.foundation.text.BasicText(
+                text = stringResource( R.string.statistics ),
+                style = typography().l.semiBold.color( colorPalette().text )
+            )
+        }
+    ) {
+        androidx.compose.foundation.layout.Column {
+            ButtonsRow(
+                chips = listOf(
+                    0 to stringResource( R.string.stats_period_today ),
+                    1 to stringResource( R.string.stats_period_week ),
+                    2 to stringResource( R.string.stats_period_month ),
+                    3 to stringResource( R.string.stats_period_3_months ),
+                    4 to stringResource( R.string.stats_period_6_months ),
+                    5 to stringResource( R.string.stats_period_year ),
+                    6 to stringResource( R.string.all )
+                ),
+                currentValue = tabIndex,
+                onValueUpdate = onTabIndexChanged,
+                modifier = androidx.compose.ui.Modifier.padding( bottom = 4.dp )
+            )
+            saveableStateHolder.SaveableStateProvider( key = tabIndex ) {
+                val type: StatisticsType =
+                    when( tabIndex ) {
+                        0 -> StatisticsType.Today
+                        1 -> StatisticsType.OneWeek
+                        2 -> StatisticsType.OneMonth
+                        3 -> StatisticsType.ThreeMonths
+                        4 -> StatisticsType.SixMonths
+                        5 -> StatisticsType.OneYear
+                        else -> StatisticsType.All
+                    }
 
-                    StatisticsPage( navController, type )
-                }
+                StatisticsPage( navController, type )
             }
+        }
+    }
 }

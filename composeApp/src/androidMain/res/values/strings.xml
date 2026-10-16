@@ -108,6 +108,12 @@
     <string name="provided_by">Provided by</string>
     <string name="tab_player">Player</string>
     <string name="filter_all">All</string>
+    <string name="stats_period_today">Today</string>
+    <string name="stats_period_week">Week</string>
+    <string name="stats_period_month">Month</string>
+    <string name="stats_period_3_months">3 months</string>
+    <string name="stats_period_6_months">6 months</string>
+    <string name="stats_period_year">Year</string>
     <string name="history_tab_local">Kreate</string>
     <string name="history_tab_ytm">YouTube account</string>
     <string name="no_pinned_playlists">No pinned playlist. Long press a playlist, then "Pin/Unpin playlist".</string>
