@@ -3,6 +3,7 @@
 
 package app.kreate.di
 
+import app.kreate.android.service.player.PreviewPlayer
 import android.content.Context
 import android.database.sqlite.SQLiteConstraintException
 import android.net.ConnectivityManager
@@ -384,14 +385,17 @@ fun Scope.resolveInnertubeMedia( dataSpec: DataSpec ): DataSpec {
         // for caching purpose.
         "Online media doesn't contain cache Key"
     }
-    upsertSongInfo( get(), songId )
+    // A song only previewed (thumbnail tap) stays out of the database, so it doesn't
+    // show up in the Library
+    val previewOnly = songId == PreviewPlayer.previewOnlyId
+    if( !previewOnly ) upsertSongInfo( get(), songId )
 
     // Downloads with a quality of their own ask for it in their uri
     val quality = runCatching {
         dataSpec.uri.getQueryParameter( DOWNLOAD_QUALITY_PARAM )?.let( AudioQualityFormat::valueOf )
     }.getOrNull()
     val cache = getPlayableUrl( songId, quality )
-    saveFormat( songId, cache )
+    if( !previewOnly ) saveFormat( songId, cache )
     val length = cache.format.contentLength ?: C.LENGTH_UNSET.toLong()
     return dataSpec.buildUpon()
                    .setUri(cache.streamUrl)

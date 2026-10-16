@@ -1,5 +1,10 @@
 package app.kreate.android.themed.rimusic.component.song
 
+import androidx.compose.material3.CircularProgressIndicator
+import app.kreate.util.toDuration
+import androidx.compose.ui.platform.LocalContext
+import app.kreate.android.service.player.PreviewPlayer
+import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.joinedNames
 import androidx.annotation.DrawableRes
 import androidx.annotation.OptIn
@@ -427,16 +432,60 @@ object SongItem: Visual() {
         thumbnailOverlay: @Composable BoxScope.() -> Unit = {},
         onClick: () -> Unit = {}
     ) {
+        val context = LocalContext.current
         Structure(
             thumbnail = {
-                Thumbnail(
-                    showThumbnail = showThumbnail,
-                    thumbnailUrl = song.cleanThumbnailUrl(),
-                    isLiked = (song.likedAt ?: 0) > 0,      // A disliked song has a negative likedAt
-                    isPlaying = isPlaying,
-                    values = values,
-                    thumbnailOverlay = thumbnailOverlay
-                )
+                // Tap the thumbnail: a bit of the song, without touching the queue (tap
+                // again to stop); the rest of the row still plays it. Long press: the menu.
+                val previewing = PreviewPlayer.previewingId == song.id
+                Box(
+                    Modifier.combinedClickable(
+                        onClickLabel = stringResource( if( previewing ) R.string.preview_stop else R.string.preview_play ),
+                        onClick = {
+                            PreviewPlayer.toggle(
+                                context,
+                                song.asMediaItem,
+                                song.durationText.toDuration().inWholeMilliseconds,
+                                song.isLocal
+                            )
+                        },
+                        onLongClick = {
+                            hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
+                            onLongClick.invoke()
+                        }
+                    )
+                ) {
+                    Thumbnail(
+                        showThumbnail = showThumbnail,
+                        thumbnailUrl = song.cleanThumbnailUrl(),
+                        isLiked = (song.likedAt ?: 0) > 0,      // A disliked song has a negative likedAt
+                        isPlaying = isPlaying,
+                        values = values,
+                        thumbnailOverlay = {
+                            thumbnailOverlay()
+                            if( previewing )
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.matchParentSize()
+                                                       .background( Color.Black.copy( alpha = .55f ) )
+                                ) {
+                                    // How far the preview is
+                                    CircularProgressIndicator(
+                                        progress = { PreviewPlayer.progress },
+                                        color = Color.White,
+                                        trackColor = Color.White.copy( alpha = .25f ),
+                                        strokeWidth = 3.dp,
+                                        modifier = Modifier.matchParentSize().padding( 6.dp )
+                                    )
+                                    // Stop
+                                    Box(
+                                        Modifier.size( 12.dp )
+                                                .background( Color.White, RoundedCornerShape( 2.dp ) )
+                                    )
+                                }
+                        }
+                    )
+                }
             },
             firstLine = {
                 Badges(

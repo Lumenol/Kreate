@@ -50,6 +50,8 @@ object SettingsReset {
             Preferences.PAUSE_HISTORY,
             Preferences.PAUSE_WHEN_VOLUME_SET_TO_ZERO,
             Preferences.AUDIO_FADE_DURATION,
+            Preferences.PREVIEW_START,
+            Preferences.PREVIEW_LENGTH,
             Preferences.PLAYER_KEEP_MINIMIZED,
             Preferences.MINI_DISABLE_SWIPE_DOWN_TO_DISMISS,
             Preferences.QUEUE_AUTO_APPEND,

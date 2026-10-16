@@ -47,6 +47,8 @@ import it.fast4x.rimusic.enums.FontType
 import it.fast4x.rimusic.enums.HistoryType
 import it.fast4x.rimusic.enums.HomeItemSize
 import it.fast4x.rimusic.enums.HomeScreenTabs
+import it.fast4x.rimusic.enums.PreviewLength
+import it.fast4x.rimusic.enums.PreviewStart
 import it.fast4x.rimusic.enums.IconLikeType
 import it.fast4x.rimusic.enums.LyricsAlignment
 import it.fast4x.rimusic.enums.LyricsBackground
@@ -669,6 +671,14 @@ sealed class Preferences<T>(
         //<editor-fold desc="Quick picks">
         val QUICK_PICKS_TYPE by lazy {
             Enum( preferences, Key.QUICK_PICKS_TYPE, "playEventsType", PlayEventsType.MostPlayed )
+        }
+        /** Where a song's preview starts (tap on its thumbnail) */
+        val PREVIEW_START by lazy {
+            Enum( preferences, Key.PREVIEW_START, "", PreviewStart.Percent30 )
+        }
+        /** How long a song's preview plays */
+        val PREVIEW_LENGTH by lazy {
+            Enum( preferences, Key.PREVIEW_LENGTH, "", PreviewLength.`30s` )
         }
         val QUICK_PICKS_MIN_DURATION by lazy {
             Enum( preferences, Key.QUICK_PICKS_MIN_DURATION, "exoPlayerMinTimeForEvent", ExoPlayerMinTimeForEvent.`20s` )
@@ -2016,6 +2026,8 @@ sealed class Preferences<T>(
         const val NEUTRAL_PALETTE_MIGRATED = "NeutralPaletteMigrated"
         const val REDESIGN_PLAYER_MIGRATED = "RedesignPlayerMigrated"
         const val CRASH_LOG_SEEN = "CrashLogSeen"
+        const val PREVIEW_START = "PreviewStart"
+        const val PREVIEW_LENGTH = "PreviewLength"
         const val THEME_MODE = "ThemeMode"
         const val STARTUP_SCREEN = "StartupScreen"
         const val FONT = "Font"
