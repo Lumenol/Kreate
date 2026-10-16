@@ -104,7 +104,8 @@ fun MoodGridItemColored(
         verticalArrangement = Arrangement.SpaceAround,
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
-            .size(thumbnailSizeDp,thumbnailSizeDp)
+            // Half as tall: one line of text per tile, 37 square tiles made 4 screens
+            .size( thumbnailSizeDp, thumbnailSizeDp / 2 )
             .padding(5.dp)
             .clickable { onClick() }
 
@@ -140,7 +141,8 @@ fun MoodGridItemColored(
                         ),
                         modifier = Modifier.padding(horizontal = 10.dp)
                             .align(Alignment.CenterStart),
-                        maxLines = 2,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
                     )
                 }
             }

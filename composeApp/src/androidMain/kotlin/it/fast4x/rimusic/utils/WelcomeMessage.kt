@@ -1,5 +1,9 @@
 package it.fast4x.rimusic.utils
 
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -10,18 +14,19 @@ import app.kreate.android.R
 import it.fast4x.rimusic.ui.components.themed.TitleMiniSection
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeLoggedIn
 import it.fast4x.rimusic.ytAccountName
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Locale
 
 @Composable
 fun WelcomeMessage(){
-    val hour =
-        remember {
-            val date = Calendar.getInstance().time
-            val formatter = SimpleDateFormat( "HH", Locale.getDefault() )
-            formatter.format(date).toInt()
+    // Read again every minute: kept from the first draw, an app left open since
+    // the morning still said "Bonjour" in the evening
+    var hour by remember { mutableIntStateOf( Calendar.getInstance().get( Calendar.HOUR_OF_DAY ) ) }
+    LaunchedEffect( Unit ) {
+        while( true ) {
+            kotlinx.coroutines.delay( 60_000 )
+            hour = Calendar.getInstance().get( Calendar.HOUR_OF_DAY )
         }
+    }
 
     val message = when (hour) {
         in 6..12 -> {
