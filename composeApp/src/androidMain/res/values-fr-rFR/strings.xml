@@ -327,6 +327,7 @@
     <string name="value_copied">Copié</string>
     <string name="do_you_really_want_to_delete_cache">Vider vraiment le cache ?</string>
     <string name="pinned_playlists">Playlists Épinglées</string>
+    <string name="no_pinned_playlists">Aucune playlist épinglée. Appui long sur une playlist, puis « Épingler/Désépingler la playlist ».</string>
     <string name="sort_duration">Durée</string>
     <string name="pause_between_songs">Mettre en pause entre les titres</string>
     <string name="navigation_bar_type">Type de barre de navigation</string>
