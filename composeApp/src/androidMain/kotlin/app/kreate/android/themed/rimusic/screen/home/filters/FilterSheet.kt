@@ -120,9 +120,11 @@ object FilterTexts {
         val last = Scales.yearsLast
         val to = span.to.coerceAtMost( last )
         return when {
+            // The first step is open at the bottom: "1960 and before"
+            span.from == 0 && to == 0  -> context.getString( R.string.library_filters_released_first, Scales.year( 0 ).toString() )
+            span.from == 0             -> context.getString( R.string.library_filters_released_until, Scales.year( to ).toString() )
             span.from == to            -> context.getString( R.string.library_filters_released_in, Scales.year( to ).toString() )
             to >= last                 -> context.getString( R.string.library_filters_released_since, Scales.year( span.from ).toString() )
-            span.from == 0             -> context.getString( R.string.library_filters_released_until, Scales.year( to ).toString() )
             else                       -> context.getString( R.string.library_filters_released_between, Scales.year( span.from ).toString(), Scales.year( to ).toString() )
         }
     }
@@ -483,21 +485,23 @@ fun FilterSheet( onDone: () -> Unit ) {
                     title = stringResource( R.string.library_filters_released ),
                     span = Span( f.released.from, f.released.to.coerceAtMost( yearsLast ) ),
                     last = yearsLast,
-                    presets = listOf(
-                        now.toString() to years( now, now ),
-                        stringResource( R.string.library_filters_preset_decade, "2020" ) to years( 2020, now ),
-                        stringResource( R.string.library_filters_preset_decade, "2010" ) to years( 2010, 2019 ),
-                        stringResource( R.string.library_filters_preset_decade, "2000" ) to years( 2000, 2009 ),
-                        stringResource( R.string.library_filters_preset_before, "2000" ) to years( Scales.FIRST_YEAR, 1999 )
-                    ),
+                    // This year, the last three decades (from the current one), and before them
+                    presets = buildList {
+                        val decade = now / 10 * 10
+                        add( now.toString() to years( now, now ) )
+                        for( d in decade downTo decade - 20 step 10 )
+                            add( context.getString( R.string.library_filters_preset_decade, d.toString() ) to years( d, minOf( d + 9, now ) ) )
+                        add( context.getString( R.string.library_filters_preset_before, (decade - 20).toString() ) to years( Scales.FIRST_YEAR, decade - 21 ) )
+                    },
                     summary = FilterTexts.releasedRange( context, f.released ),
                     lowLabel = stringResource( R.string.library_filters_released_first, Scales.FIRST_YEAR.toString() ),
                     highLabel = now.toString(),
                     enabled = true,
                     expanded = releasedOpen,
                     onExpand = { releasedOpen = !releasedOpen },
-                    // Up to this year stays open at the top: next year is in too
-                    onChange = { set( f.copy( released = if( it.to >= yearsLast ) Span( it.from, Int.MAX_VALUE ) else it ) ) }
+                    // Years as picked ("in 2026" stays so next year); only the whole range
+                    // goes back to "all", open at the top for the years to come
+                    onChange = { set( f.copy( released = if( it == Span( 0, yearsLast ) ) SongFilters().released else it ) ) }
                 )
                 val viewsLast = Scales.VIEWS.lastIndex
                 RangeSection(

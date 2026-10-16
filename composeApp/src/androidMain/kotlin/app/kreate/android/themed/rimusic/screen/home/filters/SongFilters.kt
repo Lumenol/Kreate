@@ -73,9 +73,8 @@ data class SongFilters(
             plays = plays.fit( Scales.PLAYS.lastIndex ),
             lastPlayed = lastPlayed.fit( Scales.AGO_DAYS.lastIndex ),
             firstPlayed = firstPlayed.fit( Scales.AGO_DAYS.lastIndex ),
-            // Open at the top: "up to this year" stays so next year
-            released = if( released.to >= Scales.yearsLast ) Span( released.from.coerceIn( 0, Scales.yearsLast ), Int.MAX_VALUE )
-                       else released.fit( Scales.yearsLast ),
+            // "All" (open at the top) stays all; years picked stay as they were
+            released = if( released == SongFilters().released ) released else released.fit( Scales.yearsLast ),
             views = views.fit( Scales.VIEWS.lastIndex )
         )
     }

@@ -1,5 +1,8 @@
 package app.kreate.android.themed.rimusic.screen.home
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.transform
+import kotlinx.coroutines.flow.conflate
 import app.kreate.database.models.SongYoutubeInfo
 import app.kreate.database.SongPlayStats
 import app.kreate.android.themed.rimusic.screen.home.filters.SongFiltersStore
@@ -245,7 +248,11 @@ fun HomeSongs(
     }.collectAsState( null, Dispatchers.IO )
     val needsInfo = useFilters && filters.needsYoutubeInfo
     val youtubeInfo by remember( needsInfo ) {
-        if( needsInfo ) Database.songYoutubeInfoTable.all().map { list -> list.associateBy( SongYoutubeInfo::songId ) }
+        // The background filling writes every 1.5 s: the list follows at most every 3 s
+        if( needsInfo ) Database.songYoutubeInfoTable.all()
+                                .conflate()
+                                .transform { emit( it ); delay( 3_000 ) }
+                                .map { list -> list.associateBy( SongYoutubeInfo::songId ) }
         else flowOf( emptyMap<String, SongYoutubeInfo>() )
     }.collectAsState( null, Dispatchers.IO )
     val needsDownloaded = useFilters && filters.downloaded

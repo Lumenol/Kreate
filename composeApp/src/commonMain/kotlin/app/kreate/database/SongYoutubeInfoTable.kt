@@ -49,6 +49,14 @@ interface SongYoutubeInfoTable {
     """)
     fun libraryCount(): Flow<Int>
 
-    @Query("SELECT COUNT(*) FROM song_youtube_info")
+    /** Songs of the library already asked (same songs as [libraryCount]) */
+    @Query("""
+        SELECT COUNT(*) FROM songs S
+        WHERE S.is_local = 0
+          AND EXISTS (SELECT 1 FROM song_youtube_info I WHERE I.song_id = S.id)
+          AND ( S.total_playtime > 0 OR S.liked_at > 0
+                OR EXISTS (SELECT 1 FROM song_playlist_map P WHERE P.song_id = S.id)
+                OR EXISTS (SELECT 1 FROM playback_history E WHERE E.song_id = S.id) )
+    """)
     fun knownCount(): Flow<Int>
 }

@@ -1,5 +1,9 @@
 package app.kreate.android.service
 
+import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.CoroutineExceptionHandler
+import android.database.sqlite.SQLiteException
 import app.kreate.android.Preferences
 import android.content.Context
 import androidx.compose.runtime.getValue
@@ -20,7 +24,6 @@ import me.knighthat.innertube.Innertube
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.seconds
 import me.knighthat.innertube.request.body.Context as InnertubeContext
 
@@ -32,7 +35,11 @@ import me.knighthat.innertube.request.body.Context as InnertubeContext
 object YoutubeInfo {
 
     private val logger = Logger.withTag( "YoutubeInfo" )
-    private val scope = CoroutineScope( SupervisorJob() + Dispatchers.IO )
+    // A database error (a song deleted meanwhile) is logged, never a crash
+    private val scope = CoroutineScope(
+        SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, e -> logger.e( e ) { "YouTube info failed" } }
+    )
+
     /** Asked again past this (Settings → Data); `null`: never */
     private val refreshAfter: Long? get() = Preferences.YOUTUBE_INFO_REFRESH.value.asMillis
 
@@ -44,11 +51,20 @@ object YoutubeInfo {
     var isFilling by mutableStateOf( false )
         private set
 
-    /** Asks YouTube and saves; `false` when it couldn't (network, unknown song) */
-    suspend fun fetch( songId: String ): Boolean {
+    private enum class Result { SAVED, NOTHING, FAILED }
+
+    /**
+     * Asks YouTube. [SAVED]: date or views saved. [NOTHING]: YouTube answered without
+     * either (unavailable video, or a "not a bot" check): nothing is written, a value
+     * known before stays. [FAILED]: no answer (network) or the song is gone.
+     */
+    private suspend fun ask( songId: String ): Result {
         val response = Innertube.player( songId, InnertubeContext.WEB_REMIX_DEFAULT, CURRENT_LOCALE, null, null )
-                                .onFailure { logger.w( it ) { "no YouTube info for $songId" } }
-                                .getOrNull() ?: return false
+                                .getOrElse {
+                                    if( it is CancellationException ) throw it
+                                    logger.w( it ) { "no YouTube info for $songId" }
+                                    return Result.FAILED
+                                }
         val data = response.microformat?.microformatDataRenderer
         val player = response.microformat?.playerMicroformatRenderer
         val date = data?.publishDate ?: player?.publishDate ?: data?.uploadDate
@@ -56,15 +72,23 @@ object YoutubeInfo {
             runCatching { LocalDate.parse( it ).atStartOfDay().toInstant( ZoneOffset.UTC ).toEpochMilli() }.getOrNull()
         }
         val views = (response.videoDetails?.viewCount ?: data?.viewCount)?.toLongOrNull()
+        if( publishedAt == null && views == null ) return Result.NOTHING
 
-        val table = Database.songYoutubeInfoTable
-        // The song row may not be there yet (playback inserts it in the background)
-        if( !table.songExists( songId ) ) return false
-        table.upsert( SongYoutubeInfo( songId, publishedAt, views, System.currentTimeMillis() ) )
-        return true
+        return if( save( SongYoutubeInfo( songId, publishedAt, views, System.currentTimeMillis() ) ) ) Result.SAVED else Result.FAILED
     }
 
-    /** A song starts playing: ask if never asked or a month old, after its row is in */
+    /** `false` when the song isn't (or no longer) in the database */
+    private fun save( info: SongYoutubeInfo ): Boolean = try {
+        val table = Database.songYoutubeInfoTable
+        // The song row may not be there yet (playback inserts it in the background)
+        table.songExists( info.songId ) && run { table.upsert( info ); true }
+    } catch( e: SQLiteException ) {
+        // Deleted between the check and the write
+        logger.w( e ) { "${info.songId} gone, its YouTube info isn't saved" }
+        false
+    }
+
+    /** A song starts playing: ask if never asked or too old, after its row is in */
     fun refreshOnPlay( songId: String ) {
         if( !askedOnPlay.add( songId ) ) return
         scope.launch {
@@ -72,25 +96,27 @@ object YoutubeInfo {
             val fetchedAt = Database.songYoutubeInfoTable.fetchedAt( songId )
             val after = refreshAfter
             if( fetchedAt == null || (after != null && System.currentTimeMillis() - fetchedAt > after) )
-                fetch( songId )
+                ask( songId )
         }
     }
 
     /**
      * Fills the library's songs not known yet, then asks again the ones known for too
      * long (views change; Settings → Data), one every 1.5 s so YouTube doesn't mind.
-     * Stops without network or after a few failures in a row; picks up where it was
-     * next time (what's saved stays). [everything] asks again every song ("refresh now").
+     * [everything] asks again every song ("refresh now").
+     *
+     * A song YouTube says nothing of is marked as asked (empty), so it doesn't come back
+     * first every time; but 5 of those in a row look like YouTube refusing: the filling
+     * stops there and marks none of them. Picks up where it was next time.
      */
     fun fillLibrary( context: Context, everything: Boolean = false ) {
-        if( filler?.isActive == true ) {
-            if( !everything ) return
-            filler?.cancel()
-        }
+        if( filler?.isActive == true && !everything ) return
+        val previous = filler
         filler = scope.launch {
+            // The old run must be over before this one says it runs
+            previous?.cancelAndJoin()
             isFilling = true
             try {
-                var failures = 0
                 val table = Database.songYoutubeInfoTable
                 val after = refreshAfter
                 val queue = table.missing() + when {
@@ -98,17 +124,30 @@ object YoutubeInfo {
                     after != null -> table.staleBefore( System.currentTimeMillis() - after )
                     else          -> emptyList()
                 }
+                val unanswered = mutableListOf<String>()
                 for( songId in queue ) {
                     if( !isNetworkAvailable( context ) ) break
-                    if( fetch( songId ) ) failures = 0
-                    else if( ++failures >= 5 ) {
-                        logger.w { "too many failures, the filling stops here" }
-                        break
+                    when( ask( songId ) ) {
+                        Result.SAVED -> {
+                            // Those just before were isolated cases: mark them as asked
+                            unanswered.forEach { id ->
+                                if( table.fetchedAt( id ) == null )
+                                    save( SongYoutubeInfo( id, null, null, System.currentTimeMillis() ) )
+                            }
+                            unanswered.clear()
+                        }
+                        Result.NOTHING, Result.FAILED -> {
+                            unanswered += songId
+                            if( unanswered.size >= 5 ) {
+                                logger.w { "5 songs in a row without an answer, the filling stops here" }
+                                break
+                            }
+                        }
                     }
                     delay( 1500 )
                 }
             } finally {
-                isFilling = false
+                if( filler === coroutineContext[Job] ) isFilling = false
             }
         }
     }
