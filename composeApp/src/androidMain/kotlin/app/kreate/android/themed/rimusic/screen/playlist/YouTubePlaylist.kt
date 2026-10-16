@@ -246,7 +246,9 @@ fun YouTubePlaylist(
                             },
                             onShuffle = shuffle::onShortClick
                         ) {
-                            if( isYouTubeSyncEnabled() )
+                            // "Liked music" (LM) and "Episodes for later" (SE) belong to the
+                            // account: YouTube answers 404 to saving them
+                            if( isYouTubeSyncEnabled() && playlistId != "LM" && playlistId != "SE" )
                                 LabeledAction( saveToYouTubeLibrary, stringResource( R.string.word_save ) )
                             LabeledAction( downloadAllDialog, stringResource( R.string.download ) )
                             LabeledAction( radio, stringResource( R.string.word_radio ) )
