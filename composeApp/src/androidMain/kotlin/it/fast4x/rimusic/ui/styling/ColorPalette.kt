@@ -23,6 +23,8 @@ data class ColorPalette(
     val accent: Color,
     val onAccent: Color,
     val red: Color = Color(0xffbf4040),
+    // Likes only (hearts): pink-red, so a like never reads as an error
+    val like: Color = Color(0xfff0507a),
     val blue: Color = Color(0xff4472cf),
     val text: Color,
     val textSecondary: Color,
@@ -68,8 +70,9 @@ val DefaultDarkColorPalette = ColorPalette(
     textSecondary = Color(0xffa3a4a6),
     textDisabled = Color(0xff6f6f73),
     iconButtonPlayer = Color(0xffe1e1e2),
-    accent = Color(0xFF2b9348),
-    onAccent = Color.White,
+    // Lighter than #2b9348 so green text and icons stay readable on buttons (4.8:1 on background2)
+    accent = Color(0xFF3dae5f),
+    onAccent = Color(0xff16171d),
     isDark = true
 )
 
@@ -83,8 +86,10 @@ val DefaultLightColorPalette = ColorPalette(
     textSecondary = Color(0xff656566),
     textDisabled = Color(0xff9d9d9d),
     iconButtonPlayer = Color(0xff212121),
-    accent = Color(0xFF2b9348),
+    // Darker than #2b9348, which failed for text on white (3.85:1)
+    accent = Color(0xFF1e7a3a),
     onAccent = Color.White,
+    like = Color(0xffd6336c),
     isDark = false
 )
 
@@ -169,8 +174,12 @@ fun dynamicColorPaletteOf(hsl: FloatArray, isDark: Boolean): ColorPalette {
         textSecondary = Color.hsl(hsl[0], hsl[1].coerceAtMost(0.1f), if (isDark) 0.65f else 0.40f),
         textDisabled = Color.hsl(hsl[0], hsl[1].coerceAtMost(0.2f), if (isDark) 0.40f else 0.65f),
 
-    )
+    ).let { it.copy( onAccent = readableOn( it.accent ) ) }
 }
+
+/** Text or icon colour on [background]: whichever of dark or white contrasts more (they tie near luminance .18) */
+fun readableOn( background: Color ): Color =
+    if( background.luminance() > .18f ) Color(0xff16171d) else Color.White
 
 
 fun dynamicColorPaletteOf(hsl: Hsl, isDark: Boolean) = hsl.let { (hue, saturation) ->
@@ -238,7 +247,7 @@ inline val ColorPalette.collapsedPlayerProgressBar: Color
 
 inline val ColorPalette.favoritesIcon: Color
     get() = if (this === DefaultDarkColorPalette || this === DefaultLightColorPalette || this === PureBlackColorPalette) {
-        red
+        like
     } else {
         accent
     }

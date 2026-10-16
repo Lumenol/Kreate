@@ -25,7 +25,7 @@ fun Slider(
         modifier = modifier,
         steps = steps,
         colors = SliderDefaults.colors(
-            thumbColor = colorPalette().onAccent,
+            thumbColor = colorPalette().accent,
             activeTrackColor = colorPalette().accent,
             inactiveTrackColor = colorPalette().text.copy(alpha = 0.75f),
             disabledThumbColor = colorPalette().text.copy(alpha = 0.4f),

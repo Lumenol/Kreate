@@ -19,7 +19,8 @@ fun customColorPalette(colorPalette: ColorPalette, context: Context, isSystemInD
         textSecondary = Preferences.CUSTOM_LIGHT_TEXT_SECONDARY.value,
         textDisabled = Preferences.CUSTOM_LIGHT_TEXT_DISABLED.value,
         iconButtonPlayer = Preferences.CUSTOM_LIGHT_PLAY_BUTTON.value,
-        accent = Preferences.CUSTOM_LIGHT_ACCENT.value
+        accent = Preferences.CUSTOM_LIGHT_ACCENT.value,
+        onAccent = readableOn( Preferences.CUSTOM_LIGHT_ACCENT.value )
     )
 
     val customThemeDark = colorPalette.copy(
@@ -32,7 +33,8 @@ fun customColorPalette(colorPalette: ColorPalette, context: Context, isSystemInD
         textSecondary = Preferences.CUSTOM_DARK_TEXT_SECONDARY.value,
         textDisabled = Preferences.CUSTOM_DARK_TEXT_DISABLED.value,
         iconButtonPlayer = Preferences.CUSTOM_DARK_PLAY_BUTTON.value,
-        accent = Preferences.CUSTOM_DARK_ACCENT.value
+        accent = Preferences.CUSTOM_DARK_ACCENT.value,
+        onAccent = readableOn( Preferences.CUSTOM_DARK_ACCENT.value )
     )
 
     return when (colorPaletteMode) {
