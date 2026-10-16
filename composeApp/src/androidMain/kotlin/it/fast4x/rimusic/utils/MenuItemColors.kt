@@ -8,8 +8,8 @@ import it.fast4x.rimusic.colorPalette
 @Composable
 fun menuItemColors(): MenuItemColors {
     return MenuItemColors(
-        leadingIconColor =  colorPalette().favoritesIcon,
-        trailingIconColor =  colorPalette().favoritesIcon,
+        leadingIconColor =  colorPalette().accent,
+        trailingIconColor =  colorPalette().accent,
         textColor = colorPalette().textSecondary,
         disabledTextColor = colorPalette().text,
         disabledLeadingIconColor = colorPalette().text,

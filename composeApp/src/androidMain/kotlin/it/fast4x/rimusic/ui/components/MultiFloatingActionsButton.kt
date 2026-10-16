@@ -129,7 +129,7 @@ fun MultiFloatingActionsButton (
             contentAlignment = Alignment.BottomEnd
         ) {
             if (currentState == MultiFabState.Expanded) {
-                val color = colorPalette().favoritesIcon.copy(0.85f)
+                val color = colorPalette().accent.copy(0.85f)
                 Canvas(modifier = Modifier
                     //.border(BorderStroke(1.dp, Color.Green))
                     .fillMaxSize()
@@ -271,7 +271,7 @@ fun SmallFloatingActionButtonRow(
                 .padding(4.dp),
             onClick = { item.onFabItemClicked() },
             containerColor = colorPalette().background2,
-            contentColor = colorPalette().favoritesIcon
+            contentColor = colorPalette().accent
         ) {
             Icon(
                 painter = item.icon,

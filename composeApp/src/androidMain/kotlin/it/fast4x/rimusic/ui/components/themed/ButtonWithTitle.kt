@@ -40,7 +40,7 @@ fun ButtonWithTitle(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(colorPalette().favoritesIcon)
+                .background(colorPalette().accent)
                 .clickable(onClick = onClick)
         ) {
             Icon(

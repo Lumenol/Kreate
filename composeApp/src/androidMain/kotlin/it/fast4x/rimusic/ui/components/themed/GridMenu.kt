@@ -157,6 +157,8 @@ fun LazyGridScope.DownloadGridMenu(
                 icon = {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
+                        // Without it, Material's default purple
+                        color = colorPalette().accent,
                         strokeWidth = 2.dp
                     )
                 },

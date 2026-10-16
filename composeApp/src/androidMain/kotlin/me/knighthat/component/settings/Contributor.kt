@@ -170,7 +170,7 @@ abstract class Contributor {
                         displayNameFontSize = typography.xs.fontSize,
                         handleColor = colorPalette.textSecondary,
                         handleFontSize = typography.xs.fontSize,
-                        trailingColor = colorPalette.favoritesIcon.copy( alpha = .8f ),
+                        trailingColor = colorPalette.accent.copy( alpha = .8f ),
                         trailingFontSize = typography.xs.fontSize,
                         avatarBorderColor = Color.White,
                         crownColor = Color(context.getColor( R.color.yellow_warning ))

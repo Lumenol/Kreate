@@ -71,7 +71,7 @@ class BlurAdjuster private constructor(
                 IconButton(
                     onClick = { strength = 25f },
                     icon = R.drawable.drop_blur,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier.size(24.dp)
                 )
 
@@ -93,7 +93,7 @@ class BlurAdjuster private constructor(
                 IconButton(
                     onClick = { backdrop = 0f },
                     icon = R.drawable.drop_half_fill,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier.size( 24.dp )
                 )
 
@@ -114,7 +114,7 @@ class BlurAdjuster private constructor(
                 IconButton(
                     onClick = { backdrop = 0f },
                     icon = R.drawable.image,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier.size( 24.dp )
                 )
 

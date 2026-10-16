@@ -1189,7 +1189,7 @@ fun Player(
                     .drawBehind {
                         if (backgroundProgress == BackgroundProgress.Both || backgroundProgress == BackgroundProgress.Player) {
                             drawRect(
-                                color = color.favoritesOverlay,
+                                color = color.accent.copy( alpha = .4f ),
                                 topLeft = Offset.Zero,
                                 size = Size(
                                     width = positionAndDuration.value.first.toFloat() /
@@ -1740,7 +1740,7 @@ fun Player(
                     .drawBehind {
                         if (backgroundProgress == BackgroundProgress.Both || backgroundProgress == BackgroundProgress.Player) {
                             drawRect(
-                                color = color.favoritesOverlay,
+                                color = color.accent.copy( alpha = .4f ),
                                 topLeft = Offset.Zero,
                                 size = Size(
                                     width = positionAndDuration.value.first.toFloat() /

@@ -626,7 +626,7 @@ fun Podcast(
                                         IconButton(
                                             onClick = {},
                                             icon = R.drawable.search,
-                                            color = colorPalette().favoritesIcon,
+                                            color = colorPalette().accent,
                                             modifier = Modifier
                                                 .align(Alignment.CenterStart)
                                                 .size(16.dp)

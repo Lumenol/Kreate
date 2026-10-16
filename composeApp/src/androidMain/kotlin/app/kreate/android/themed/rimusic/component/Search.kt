@@ -63,7 +63,7 @@ class Search(
             Icon(
                 painter = painterResource( R.drawable.search ),
                 contentDescription = stringResource( android.R.string.search_go ),
-                tint = colorPalette().favoritesIcon,
+                tint = colorPalette().accent,
                 modifier = Modifier.size( DECO_BOX_ICON_SIZE.dp )
             )
 

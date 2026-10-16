@@ -694,7 +694,7 @@ object SongItem: Visual() {
 
             fun from( colorPalette: ColorPalette, typography: Typography ) =
                 Values(
-                    nowPlayingOverlayColor = colorPalette.favoritesOverlay,
+                    nowPlayingOverlayColor = colorPalette.accent.copy( alpha = .4f ),
                     nowPlayingIndicatorColor = colorPalette.onOverlay,
                     titleTextStyle = typography.xs.semiBold,
                     titleColor = colorPalette.text,

@@ -86,7 +86,7 @@ private fun RowScope.SkipTimeButton(
 
     Icon(
         painter = painterResource( R.drawable.play_forward ),
-        tint = colorPalette().favoritesIcon,
+        tint = colorPalette().accent,
         contentDescription = contentDescription,
         modifier = modifier.size( DURATION_INDICATOR_HEIGHT.dp )
                            .align( Alignment.CenterVertically )
