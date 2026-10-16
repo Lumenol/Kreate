@@ -26,6 +26,9 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -366,7 +369,8 @@ class BottomMenu {
             ) { screen ->
 
                 if( Preferences.MENU_STYLE.value === MenuStyle.List )
-                    LazyColumn {
+                    // Last entry above the system navigation bar, not under it
+                    LazyColumn( contentPadding = WindowInsets.navigationBars.asPaddingValues() ) {
                         items(
                             items = buttons,
                             key = { it.hashCode() }
@@ -402,6 +406,7 @@ class BottomMenu {
                     }
                 else
                     LazyVerticalGrid(
+                        contentPadding = WindowInsets.navigationBars.asPaddingValues(),
                         columns = GridCells.Adaptive( minSize = 120.dp )
                     ) {
                         items(

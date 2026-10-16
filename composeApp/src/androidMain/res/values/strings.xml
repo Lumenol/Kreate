@@ -176,6 +176,7 @@
     <string name="menu_section_display">Display</string>
     <string name="menu_edit_song">Edit song…</string>
     <string name="quick_sleep_timer">Timer</string>
+    <string name="open_random_item">Open one at random</string>
     <string name="downloads_resume">Resume</string>
     <string name="downloads_cancel_all">Cancel all</string>
     <string name="downloads_cancel">Cancel</string>
@@ -335,8 +336,8 @@
     <string name="avoid_closing_the_player_cleaning_queue_by_swiping_down">Avoid closing the player and cleaning the queue by swiping down while it is minimized</string>
     <string name="sort_date_liked">Date Liked</string>
     <string name="export_playlist">Export playlist</string>
-    <string name="playlist_top">Top Playlist</string>
-    <string name="my_playlist_top">My Top %s</string>
+    <string name="playlist_top">My top</string>
+    <string name="my_playlist_top">My top %s</string>
     <string name="navigation_bar_position">Navigation bar position</string>
     <string name="direction_left">Left</string>
     <string name="direction_right">Right</string>

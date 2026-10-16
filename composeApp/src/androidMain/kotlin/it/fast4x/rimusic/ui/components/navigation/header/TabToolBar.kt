@@ -161,7 +161,9 @@ object TabToolBar {
         options: List<E>,
         current: E,
         label: @Composable ( E ) -> String,
-        onSelect: ( E ) -> Unit
+        onSelect: ( E ) -> Unit,
+        // A secondary filter shows only its icon, so two pills fit next to the count
+        iconOf: (( E ) -> Int)? = null
     ) {
         var expanded by remember { mutableStateOf( false ) }
         Box {
@@ -171,14 +173,23 @@ object TabToolBar {
                 modifier = Modifier.height( 36.dp )
                                    .clip( CircleShape )
                                    .background( colorPalette().background2 )
-                                   .clickable { expanded = true }
-                                   .padding( start = 14.dp, end = 10.dp )
+                                   // Announced as a button that opens the choices
+                                   .clickable( role = androidx.compose.ui.semantics.Role.Button ) { expanded = true }
+                                   .padding( start = if( iconOf != null ) 10.dp else 14.dp, end = 10.dp )
             ) {
-                BasicText(
-                    text = label( current ),
-                    style = typography().xs.semiBold.color( colorPalette().text ),
-                    maxLines = 1
-                )
+                if( iconOf != null )
+                    androidx.compose.material3.Icon(
+                        painter = painterResource( iconOf( current ) ),
+                        contentDescription = label( current ),
+                        tint = colorPalette().text,
+                        modifier = Modifier.size( 18.dp )
+                    )
+                else
+                    BasicText(
+                        text = label( current ),
+                        style = typography().xs.semiBold.color( colorPalette().text ),
+                        maxLines = 1
+                    )
                 androidx.compose.material3.Icon(
                     painter = painterResource( app.kreate.android.R.drawable.chevron_down ),
                     contentDescription = null,
@@ -193,6 +204,14 @@ object TabToolBar {
             ) {
                 options.forEach { option ->
                     androidx.compose.material3.DropdownMenuItem(
+                        leadingIcon = iconOf?.let { f -> {
+                            androidx.compose.material3.Icon(
+                                painter = painterResource( f( option ) ),
+                                contentDescription = null,
+                                tint = if( option == current ) colorPalette().accent else colorPalette().text,
+                                modifier = Modifier.size( 20.dp )
+                            )
+                        } },
                         text = {
                             BasicText(
                                 text = label( option ),
