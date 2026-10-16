@@ -1,5 +1,7 @@
 package app.kreate.android.themed.rimusic.screen.player
 
+import app.kreate.android.LocalBottomMenu
+import app.kreate.android.constant.MenuPage
 import androidx.media3.exoplayer.offline.Download
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -141,6 +143,7 @@ fun BoxScope.ActionBar(
     val context = LocalContext.current
     val player: StatefulPlayer = koinInject()
     val menuState = LocalMenuState.current
+    val bottomMenu = LocalBottomMenu.current
 
     val mediaItem = player.currentMediaItem ?: return
 
@@ -442,16 +445,8 @@ fun BoxScope.ActionBar(
                             RelatedSheet( mediaItem, menuState::hide )
                         }
                     },
-                    onMenu = {
-                        menuState.display {
-                            PlayerMenu(
-                                navController = navController,
-                                onDismiss = menuState::hide,
-                                mediaItem = mediaItem,
-                                onClosePlayer = onDismiss
-                            )
-                        }
-                    }
+                    // Same sheet as a long press on a song, with the player's actions
+                    onMenu = { bottomMenu.show( MenuPage.PlayerSong( mediaItem ), true ) }
                 )
             else Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -717,16 +712,7 @@ fun BoxScope.ActionBar(
                     IconButton(
                         icon = R.drawable.ellipsis_vertical,
                         color = colorPalette().accent,
-                        onClick = {
-                            menuState.display {
-                                PlayerMenu(
-                                    navController = navController,
-                                    onDismiss = menuState::hide,
-                                    mediaItem = mediaItem,
-                                    onClosePlayer = onDismiss
-                                )
-                            }
-                        },
+                        onClick = { bottomMenu.show( MenuPage.PlayerSong( mediaItem ), true ) },
                         modifier = Modifier
                             .size(24.dp)
                             .graphicsLayer {

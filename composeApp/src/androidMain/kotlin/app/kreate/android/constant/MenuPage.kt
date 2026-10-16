@@ -64,6 +64,27 @@ sealed interface MenuPage {
             )
     }
 
+    /**
+     * The player's ⋮: the same sheet as a long press on a song, with the player's
+     * own actions (equalizer, sleep timer is a quick action) and editing grouped.
+     */
+    data class PlayerSong(override val song: MediaItem) : MenuPage, SongMenu {
+
+        override suspend fun getButtons(): List<MenuButton<*>> =
+            listOf(
+                SongRadioButton(), app.kreate.android.themed.common.component.menu.EqualizerButton(),
+                GoToArtistButton(), GoToAlbumButton(), ViewSongDetailsButton(),
+                app.kreate.android.themed.common.component.menu.EditSongButton()
+            )
+    }
+
+    /** "Modifier le titre…": rename, authors, cover */
+    data class EditSong(override val song: MediaItem) : MenuPage, SongMenu {
+
+        override suspend fun getButtons(): List<MenuButton<*>> =
+            listOf( SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton() )
+    }
+
     data class LocalSong(override val song: MediaItem) : MenuPage, SongMenu {
 
         override suspend fun getButtons(): List<MenuButton<*>> =

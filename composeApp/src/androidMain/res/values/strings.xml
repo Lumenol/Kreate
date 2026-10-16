@@ -174,6 +174,8 @@
     <string name="downloads_paused_count">%1$d paused</string>
     <string name="menu_section_list">With the list</string>
     <string name="menu_section_display">Display</string>
+    <string name="menu_edit_song">Edit song…</string>
+    <string name="quick_sleep_timer">Timer</string>
     <string name="downloads_resume">Resume</string>
     <string name="downloads_cancel_all">Cancel all</string>
     <string name="downloads_cancel">Cancel</string>
