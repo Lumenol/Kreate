@@ -1,5 +1,7 @@
 package it.fast4x.rimusic.ui.screens.mood
 
+import app.kreate.android.themed.common.component.FastScroller
+import app.kreate.android.themed.common.component.initialOf
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -95,6 +97,9 @@ fun MoodsPage(
 
         discoverPage?.fold(
             onSuccess = { moodResult ->
+              // Long page of tiles: the Library's fast scroll handle, with the letter
+              val sortedMoods = discoverPage?.getOrNull()?.moods.orEmpty().sortedBy { it.title }
+              androidx.compose.foundation.layout.Box( Modifier.fillMaxSize() ) {
                 LazyVerticalGrid(
                     state = moodAngGenresLazyGridState,
                     columns = GridCells.Adaptive(Dimensions.thumbnails.album + 24.dp),
@@ -145,6 +150,11 @@ fun MoodsPage(
                     }
 
                 }
+                FastScroller( moodAngGenresLazyGridState ) { index ->
+                    // Item 0 is the header
+                    initialOf( sortedMoods.getOrNull( index - 1 )?.title )
+                }
+              }
             },
             onFailure = {
                 BasicText(
