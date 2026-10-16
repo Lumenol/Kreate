@@ -987,6 +987,7 @@
     <string name="error_failed_to_decipher_signature">Failed to decipher signature</string>
     <string name="error_failed_to_update_discord_activity">Failed to update Discord activity</string>
     <string name="error_failed_to_load_playlist">Failed to load playlist</string>
+    <string name="youtube_login_refused">YouTube refused your account (session expired?): playlist shown without it. Log in again in Settings → Accounts</string>
     <string name="error_failed_to_get_playlists_next_songs">Failed to get more songs</string>
     <string name="error_failed_to_load_artist">Failed to get artist</string>
     <string name="error_failed_to_load_album">Failed to load album</string>

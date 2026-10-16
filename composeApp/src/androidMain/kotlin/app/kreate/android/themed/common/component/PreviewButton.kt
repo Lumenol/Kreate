@@ -31,6 +31,7 @@ import androidx.media3.common.util.UnstableApi
 import app.kreate.android.R
 import app.kreate.android.service.player.PreviewPlayer
 import app.kreate.android.utils.ConnectivityUtils
+import app.kreate.android.utils.PlaylistIds
 import app.kreate.android.utils.innertube.CURRENT_LOCALE
 import app.kreate.android.utils.innertube.toMediaItem
 import app.kreate.util.toDuration
@@ -182,15 +183,14 @@ object PreviewSongs {
         asMediaItem to durationText.toDuration().inWholeMilliseconds
 
     /** Only YouTube playlists can be loaded (not charts or podcasts shelves) */
-    fun isPlaylist( id: String ): Boolean =
-        listOf( "VL", "PL", "RD", "OLAK" ).any( id::startsWith )
+    fun isPlaylist( id: String ): Boolean = PlaylistIds.isBrowsable( id )
 
     suspend fun album( browseId: String ): PreviewSong? =
         OldInnertube.albumPage( BrowseBody( browseId = browseId ) )
                     ?.getOrNull()?.songsPage?.items?.firstOrNull()?.asPreview()
 
     suspend fun playlist( id: String ): PreviewSong? =
-        OldInnertube.playlistPage( BrowseBody( browseId = if( id.startsWith( "VL" ) ) id else "VL$id" ) )
+        OldInnertube.playlistPage( BrowseBody( browseId = PlaylistIds.browseId( id ) ) )
                     ?.getOrNull()?.songsPage?.items?.firstOrNull()?.asPreview()
 
     /**
