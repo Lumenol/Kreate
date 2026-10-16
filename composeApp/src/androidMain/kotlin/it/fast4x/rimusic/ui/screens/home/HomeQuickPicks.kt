@@ -1,5 +1,6 @@
 package it.fast4x.rimusic.ui.screens.home
 
+import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
 import androidx.compose.foundation.horizontalScroll
 import android.annotation.SuppressLint
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -989,25 +990,29 @@ fun HomeQuickPicks(
                     }
 
                     charts?.run {
-                        Title(
-                            title = "${stringResource(R.string.charts)} ($selectedCountryName)",
-                            onClick = {
-                                menuState.display {
-                                    Menu {
-                                        menu.items.forEach { item ->
-                                            MenuEntry(
-                                                icon = R.drawable.arrow_right,
-                                                text = item.countryDisplayName,
-                                                onClick = {
-                                                    countryCode = item.countryCode
-                                                    menuState.hide()
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        )
+                        // "Classements" then the country as a pill ("France ▾"): the arrow
+                        // after "Classements (France)" read as a link to an empty section
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding( end = 16.dp )
+                        ) {
+                            Title(
+                                title = stringResource( R.string.charts ),
+                                icon = null,
+                                modifier = Modifier.weight( 1f )
+                            )
+                            // Never without a pill, or the country couldn't be changed
+                            val current = menu.items.firstOrNull { it.countryCode == countryCode }
+                                ?: menu.items.firstOrNull { it.countryDisplayName == selectedCountryName }
+                                ?: menu.items.firstOrNull()
+                            if( current != null )
+                                TabToolBar.FilterPill(
+                                    options = menu.items,
+                                    current = current,
+                                    label = { item -> item.countryDisplayName },
+                                    onSelect = { item -> countryCode = item.countryCode }
+                                )
+                        }
 
                         sections.forEach { section ->
                             // Don't show section if the title is null or blank
