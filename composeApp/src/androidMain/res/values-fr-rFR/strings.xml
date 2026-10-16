@@ -898,7 +898,7 @@ Volume BAS : titre précédent</string>
     <string name="setting_entry_reset_all">Tout réinitialiser</string>
     <string name="setting_description_reset_all">Remet les réglages de toutes les pages des Paramètres à leur valeur par défaut. Kreate redémarre ensuite.</string>
     <string name="setting_confirm_reset_all">Remettre les %1$d réglages des Paramètres à leur valeur par défaut ?\n\nTon compte, la langue, le contrôle parental, tes playlists, ton historique et tes téléchargements ne changent pas.\n\nKreate va redémarrer.</string>
-    <string name="settings_section_general">Mises à jour, langue, lecture, téléchargements automatiques</string>
+    <string name="settings_section_general">Langue, région, lecture, téléchargements automatiques</string>
     <string name="settings_section_ui">Thème, couleurs, barre de navigation, menus, gestes</string>
     <string name="settings_section_player">Apparence du lecteur, file d\'attente, pochette, notification</string>
     <string name="settings_section_home">Sections affichées sur l\'Accueil</string>
@@ -906,7 +906,8 @@ Volume BAS : titre précédent</string>
     <string name="settings_section_accounts">YouTube, Discord, synchronisation</string>
     <string name="settings_section_other">Dossiers de l\'appareil, batterie, contrôle parental, débogage</string>
     <string name="settings_section_network">Proxy, DNS sécurisé</string>
-    <string name="settings_section_about">Version, journal des modifications, contributeurs</string>
+    <string name="settings_section_about">Version, code source, signaler un problème, licences, contributeurs</string>
+    <string name="content_description_back">Retour</string>
     <string name="setting_entry_player_tabs">Onglets À suivre · Paroles · Similaires</string>
     <string name="setting_description_player_tabs">Affiche ces trois onglets en bas du lecteur à la place de la rangée d\'icônes</string>
     <string name="player_tab_up_next">À suivre</string>

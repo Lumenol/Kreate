@@ -1,6 +1,11 @@
 package it.fast4x.rimusic.ui.screens.settings
 
 import androidx.activity.compose.BackHandler
+import it.fast4x.rimusic.enums.NavigationBarPosition
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -71,8 +76,13 @@ fun SettingsScreen(
     val saveableStateHolder = rememberSaveableStateHolder()
     // The "Debug" badge of the header opens the debug options directly
     val openDebug = remember { SettingsScreen.consumeOpenDebug() }
+    // Opened that way, back leaves Settings (the list was never shown), and the jump
+    // to Debug happens once, not each time Miscellaneous is reopened from the list
+    var openedDirectly by rememberSaveable { mutableStateOf( openDebug ) }
+    var scrollToDebug by rememberSaveable { mutableStateOf( openDebug ) }
     // -1: the list of sections; otherwise the open section
-    var tabIndex by rememberSaveable { mutableIntStateOf( if( openDebug ) 6 else -1 ) }
+    var tabIndex by rememberSaveable { mutableIntStateOf( if( openDebug ) SettingsSection.MISCELLANEOUS else -1 ) }
+    val listState = rememberLazyListState()
 
     val topPadding =
         if( UiType.ViMusic.isCurrent() )
@@ -83,9 +93,14 @@ fun SettingsScreen(
         PaddingValues( 6.dp, topPadding, 6.dp )
     }
 
-    val sections = SettingsSection.all()
+    val sections = SettingsSection.all( navController ) { scrollToDebug }
+    val goUp: (() -> Unit)? =
+        if( tabIndex >= 0 && !openedDirectly ) {{
+            tabIndex = -1
+            scrollToDebug = false
+        }} else null
     // In a section, "back" (top bar or system) goes up to the list
-    BackHandler( enabled = tabIndex >= 0 ) { tabIndex = -1 }
+    BackHandler( enabled = goUp != null ) { goUp?.invoke() }
 
     // Nine chips didn't fit (names cut, some off screen): the page opens on a list
     // of sections, each with what it holds, and a section opens on tap
@@ -98,24 +113,18 @@ fun SettingsScreen(
                 style = typography().l.semiBold.color( colorPalette().text )
             )
         },
-        onBack = if( tabIndex >= 0 ) {{ tabIndex = -1 }} else null
+        onBack = goUp
     ) {
         Box( Modifier.fillMaxSize() ) {
-            if( tabIndex < 0 )
-                SettingsSectionList( sections, paddingValues ) { tabIndex = it }
+            val section = sections.getOrNull( tabIndex )
+            if( section == null )
+                SettingsSectionList( sections, listState, paddingValues ) {
+                    tabIndex = it
+                    openedDirectly = false
+                }
             else
-                saveableStateHolder.SaveableStateProvider(tabIndex) {
-                    when (tabIndex) {
-                        0 -> GeneralSettings( paddingValues )
-                        1 -> UiSettings( paddingValues )
-                        2 -> AppearanceSettings( paddingValues )
-                        3 -> QuickPicksSettings( paddingValues )
-                        4 -> DataSettings( paddingValues )
-                        5 -> AccountSettings( paddingValues )
-                        6 -> OtherSettings( paddingValues, scrollToDebug = openDebug )
-                        7 -> NetworkSettings( paddingValues )
-                        8 -> About( navController, paddingValues )
-                    }
+                saveableStateHolder.SaveableStateProvider( tabIndex ) {
+                    section.content( paddingValues )
                 }
         }
     }
@@ -123,24 +132,36 @@ fun SettingsScreen(
     RestartAppDialog.Render()
 }
 
-/** One line of the settings list: its tab, icon, name and what it holds */
-class SettingsSection( val title: String, val description: String, val iconId: Int ) {
+/** One line of the settings list: icon, name, what it holds, and the page it opens */
+class SettingsSection(
+    val title: String,
+    val description: String,
+    val iconId: Int,
+    val content: @Composable ( PaddingValues ) -> Unit
+) {
     companion object {
+        /** Position of Miscellaneous, which the Debug badge opens */
+        const val MISCELLANEOUS = 6
+
+        @OptIn(ExperimentalMaterial3Api::class)
+        @UnstableApi
         @Composable
-        fun all() = listOf(
-            SettingsSection( stringResource( R.string.tab_general ), stringResource( R.string.settings_section_general ), R.drawable.settings ),
-            SettingsSection( stringResource( R.string.ui_tab ), stringResource( R.string.settings_section_ui ), R.drawable.ui ),
-            SettingsSection( stringResource( R.string.tab_player ), stringResource( R.string.settings_section_player ), R.drawable.play ),
+        fun all( navController: NavController, scrollToDebug: () -> Boolean ) = listOf(
+            SettingsSection( stringResource( R.string.tab_general ), stringResource( R.string.settings_section_general ), R.drawable.settings ) { GeneralSettings( it ) },
+            SettingsSection( stringResource( R.string.ui_tab ), stringResource( R.string.settings_section_ui ), R.drawable.ui ) { UiSettings( it ) },
+            SettingsSection( stringResource( R.string.tab_player ), stringResource( R.string.settings_section_player ), R.drawable.play ) { AppearanceSettings( it ) },
             SettingsSection(
                 stringResource( if( isYouTubeLoggedIn() ) R.string.home else R.string.quick_picks ),
                 stringResource( R.string.settings_section_home ),
                 R.drawable.sparkles
-            ),
-            SettingsSection( stringResource( R.string.tab_data ), stringResource( R.string.settings_section_data ), R.drawable.server ),
-            SettingsSection( stringResource( R.string.tab_accounts ), stringResource( R.string.settings_section_accounts ), R.drawable.person ),
-            SettingsSection( stringResource( R.string.tab_miscellaneous ), stringResource( R.string.settings_section_other ), R.drawable.equalizer ),
-            SettingsSection( stringResource( R.string.tab_network ), stringResource( R.string.settings_section_network ), R.drawable.globe ),
-            SettingsSection( stringResource( R.string.about ), stringResource( R.string.settings_section_about ), R.drawable.information )
+            ) { QuickPicksSettings( it ) },
+            SettingsSection( stringResource( R.string.tab_data ), stringResource( R.string.settings_section_data ), R.drawable.server ) { DataSettings( it ) },
+            SettingsSection( stringResource( R.string.tab_accounts ), stringResource( R.string.settings_section_accounts ), R.drawable.person ) { AccountSettings( it ) },
+            SettingsSection( stringResource( R.string.tab_miscellaneous ), stringResource( R.string.settings_section_other ), R.drawable.equalizer ) {
+                OtherSettings( it, scrollToDebug = scrollToDebug() )
+            },
+            SettingsSection( stringResource( R.string.tab_network ), stringResource( R.string.settings_section_network ), R.drawable.globe ) { NetworkSettings( it ) },
+            SettingsSection( stringResource( R.string.about ), stringResource( R.string.settings_section_about ), R.drawable.information ) { About( navController, it ) }
         )
     }
 }
@@ -148,21 +169,25 @@ class SettingsSection( val title: String, val description: String, val iconId: I
 @Composable
 private fun SettingsSectionList(
     sections: List<SettingsSection>,
+    listState: LazyListState,
     paddingValues: PaddingValues,
     onOpen: (Int) -> Unit
 ) =
     LazyColumn(
+        state = listState,
         contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer ),
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxHeight()
+                           // Like every section page: narrower next to a navigation bar on the right
+                           .fillMaxWidth( if( NavigationBarPosition.Right.isCurrent() ) Dimensions.contentWidthRightBar else 1f )
                            .background( colorPalette().background0 )
                            .padding( paddingValues )
     ) {
-        itemsIndexed( sections ) { index, section ->
+        itemsIndexed( sections, key = { index, _ -> index } ) { index, section ->
             Row(
                 horizontalArrangement = Arrangement.spacedBy( 18.dp ),
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
-                                   .clickable { onOpen( index ) }
+                                   .clickable( role = Role.Button ) { onOpen( index ) }
                                    .padding( horizontal = 16.dp, vertical = 14.dp )
             ) {
                 Icon(

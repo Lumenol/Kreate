@@ -121,7 +121,7 @@ fun DetailTopBar(
                 IconButton( onClick = { if( onBack != null ) onBack() else navController.navigateUp() } ) {
                     Icon(
                         painter = painterResource( R.drawable.chevron_back ),
-                        contentDescription = null,
+                        contentDescription = stringResource( R.string.content_description_back ),
                         tint = colorPalette().text,
                         modifier = Modifier.size( 24.dp )
                     )
