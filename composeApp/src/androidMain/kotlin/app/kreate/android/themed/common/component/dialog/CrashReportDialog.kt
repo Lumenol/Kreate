@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.fastMaxOfOrNull
 import androidx.core.net.toUri
 import app.kreate.android.R
+import app.kreate.android.Preferences
 import app.kreate.android.utils.CrashHandler
 import it.fast4x.rimusic.ui.styling.LocalAppearance
 import it.fast4x.rimusic.utils.textCopyToClipboard
@@ -73,19 +74,30 @@ class CrashReportDialog(private val context: Context): Dialog() {
 
     fun isAvailable(): Boolean = ::crashlogFile.isInitialized
 
+    /** A crash log whose report wasn't shown yet */
+    fun isNew(): Boolean = isAvailable() && crashlogFile.name != Preferences.CRASH_LOG_SEEN.value
+
     fun openCrashlogFile() =
         context.contentResolver.openInputStream( crashlogFile.toUri() )
 
     override fun showDialog() {
-        if( isAvailable() )
+        if( isNew() )
             super.showDialog()
     }
 
     override fun hideDialog() {
         super.hideDialog()
 
-        if( ::crashlogFile.isInitialized )
-            crashlogFile.delete()
+        // Keep the latest log, to export or copy it later from Settings > Debug (the
+        // dialog shows on startup, before Settings can be reached); just don't show it
+        // again. Older ones go.
+        if( ::crashlogFile.isInitialized ) {
+            Preferences.CRASH_LOG_SEEN.value = crashlogFile.name
+            CrashHandler.getDir( context )
+                        .listFiles()
+                        ?.filter { it.name != crashlogFile.name && CrashHandler.fileNameRegex.matches( it.name ) }
+                        ?.forEach { it.delete() }
+        }
     }
 
     @Composable
@@ -159,7 +171,7 @@ class CrashReportDialog(private val context: Context): Dialog() {
             val uriHandler = LocalUriHandler.current
             Button(
                 onClick = {
-                    // Read and copy first: hiding the dialog deletes the crash log
+                    // Read and copy first, then leave the dialog
                     val log = writeCrashlogToClipboard().orEmpty()
 
                     hideDialog()
