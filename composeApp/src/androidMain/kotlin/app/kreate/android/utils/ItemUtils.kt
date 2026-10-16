@@ -1,5 +1,6 @@
 package app.kreate.android.utils
 
+import it.fast4x.rimusic.utils.joinedNames
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -162,7 +163,7 @@ object ItemUtils {
                         },
                         secondLine = {
                             AlbumItem.Artists(
-                                artistsText = childItem.authors?.joinToString( ", " ) { it.name.orEmpty() }.orEmpty(),
+                                artistsText = childItem.authors?.joinedNames().orEmpty(),
                                 values = albumItemValues,
                                 textAlign = TextAlign.Start
                             )
@@ -196,7 +197,7 @@ object ItemUtils {
                         },
                         secondLine = {
                             AlbumItem.Artists(
-                                artistsText = childItem.authors?.joinToString( ", " ) { it.name.orEmpty() }.orEmpty(),
+                                artistsText = childItem.authors?.joinedNames().orEmpty(),
                                 values = albumItemValues,
                                 textAlign = TextAlign.Start
                             )
