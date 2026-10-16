@@ -190,17 +190,21 @@ fun QuickPicksSettings( paddingValues: PaddingValues ) {
 
                 val subtitle by remember { derivedStateOf {
                     if( eventsCount > 0 )
-                        context.getString( R.string.delete_playback_events, eventsCount.toString() )
+                        // Count in the user's format ("1 731", not "1731")
+                        context.getString( R.string.delete_playback_events, java.text.NumberFormat.getIntegerInstance().format( eventsCount ) )
                     else
                         context.getString( R.string.quick_picks_are_cleared )
                 }}
 
-                SettingComponents.Text(
-                    title = stringResource( R.string.reset_quick_picks ),
-                    subtitle = subtitle,
-                    onClick = { clearEvents = true },
-                    isEnabled = eventsCount > 0
-                )
+                val resetTitle = stringResource( R.string.reset_quick_picks )
+                // Found by the settings search like the other entries
+                if( search appearsIn resetTitle )
+                    SettingComponents.Text(
+                        title = resetTitle,
+                        subtitle = subtitle,
+                        onClick = { clearEvents = true },
+                        isEnabled = eventsCount > 0
+                    )
             }
         }
     }
