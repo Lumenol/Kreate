@@ -37,6 +37,16 @@ enum class NavRoutes {
         private val ESCAPED_SEQUENCES_REGEX = Regex("^((\\[ntrbf])+)|((\\[ntrbf])+\$)")
 
         fun current( navController: NavController ) = navController.currentBackStackEntry?.destination?.route
+
+        /** The current route with its arguments in place ("SONG_DETAILS/abc"), as [navigateHere] builds it */
+        private fun currentFilled( navController: NavController ): String? {
+            val entry = navController.currentBackStackEntry ?: return null
+            val pattern = entry.destination.route ?: return null
+            val args = entry.arguments
+            return Regex( "\\{([^}]+)\\}" ).replace( pattern ) { match ->
+                args?.get( match.groupValues[1] )?.toString() ?: match.value
+            }
+        }
     }
 
     fun isHere( navController: NavController ) = current( navController )?.startsWith( this.name ) ?: false
@@ -58,7 +68,11 @@ enum class NavRoutes {
                                         .orEmpty()
 
             withContext( Dispatchers.Main ) {
-                navController.navigate( "$name$cleanPath" )
+                val target = "$name$cleanPath"
+                // Already on this very page (same arguments): asking again stacked it
+                // once more, each needing its own "back"
+                if( currentFilled( navController ) == target ) return@withContext
+                navController.navigate( target )
             }
         }
     }

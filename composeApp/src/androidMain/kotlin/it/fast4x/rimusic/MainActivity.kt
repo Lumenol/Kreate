@@ -1,5 +1,6 @@
 package it.fast4x.rimusic
 
+import androidx.navigation.NavController
 import app.kreate.android.service.player.PreviewPlayer
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -378,6 +379,18 @@ MainActivity :
             val navController = rememberNavController()
             var showPlayer by rememberSaveable { mutableStateOf(false) }
             var switchToAudioPlayer by rememberSaveable { mutableStateOf(false) }
+            // A page opened from the player (its menu: details, artist, album...) opened
+            // under it, out of sight: the player lies over every page. Going to a page
+            // now lowers it. The first call is the page shown at start, not a move
+            DisposableEffect( navController ) {
+                var initial = true
+                val listener = NavController.OnDestinationChangedListener { _, _, _ ->
+                    if( initial ) initial = false
+                    else if( showPlayer ) showPlayer = false
+                }
+                navController.addOnDestinationChangedListener( listener )
+                onDispose { navController.removeOnDestinationChangedListener( listener ) }
+            }
             var animatedGradient by Preferences.ANIMATED_GRADIENT
             var customColor by Preferences.CUSTOM_COLOR
             val lightTheme = colorPaletteMode == ColorPaletteMode.Light || (colorPaletteMode == ColorPaletteMode.System && (!isSystemInDarkTheme()))
