@@ -171,6 +171,7 @@
     <string name="downloads_retry_failed">Retry (%1$d)</string>
     <string name="downloads_running_count">↓ %1$d in progress</string>
     <string name="downloads_failed_count">%1$d failed</string>
+    <string name="downloads_paused_count">%1$d paused</string>
     <string name="downloads_resume">Resume</string>
     <string name="downloads_cancel_all">Cancel all</string>
     <string name="downloads_cancel">Cancel</string>
