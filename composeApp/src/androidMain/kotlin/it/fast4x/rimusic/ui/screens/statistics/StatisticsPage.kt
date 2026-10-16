@@ -78,6 +78,22 @@ import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.semiBold
 import kotlinx.coroutines.Dispatchers
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.media3.common.MediaItem
+import it.fast4x.rimusic.ui.components.themed.IconButton
+import it.fast4x.rimusic.ui.components.themed.Menu
+import it.fast4x.rimusic.ui.components.themed.MenuEntry
+import it.fast4x.rimusic.ui.components.themed.PlaylistsMenu
+import it.fast4x.rimusic.utils.addNext
+import it.fast4x.rimusic.utils.enqueue
+import it.fast4x.rimusic.utils.forcePlayFromBeginning
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import co.touchlab.kermit.Logger
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -159,6 +175,25 @@ fun StatisticsPage(
                 )
                 .distinctUntilChanged()
     }.collectAsState( emptyList(), Dispatchers.IO )
+
+    // Play, queue or save every song of the period: read once, when asked
+    val coroutineScope = rememberCoroutineScope()
+    fun withAllSongs( action: (List<MediaItem>) -> Unit ) {
+        coroutineScope.launch {
+            val items = withContext( Dispatchers.IO ) {
+                Database.eventTable.allSongsMostPlayedBetween( from ).map( Song::asMediaItem )
+            }
+            if( items.isNotEmpty() ) action( items )
+        }
+    }
+    val addAllToPlaylist = PlaylistsMenu.init(
+        navController = navController,
+        mediaItems = { _ -> Database.eventTable.allSongsMostPlayedBetween( from ).map( Song::asMediaItem ) },
+        onFailure = { throwable, preview ->
+            Logger.e( throwable ) { "Failed to add the period's songs to playlist ${preview.playlist.name}" }
+        },
+        finalAction = {}
+    )
 
     // Every song heard in the period, not the size of the top list (always 10)
     val songsHeard by remember {
@@ -261,6 +296,52 @@ fun StatisticsPage(
                                 "${totalDuration.listeningTime()} ${context.getString( R.string.statistics_of_time_taken )}"
                             }}
 
+                            // Long press: the usual actions, on every song of the period
+                            val onLongClick = {
+                                hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
+                                menuState.display {
+                                    Menu {
+                                        MenuEntry(
+                                            icon = R.drawable.play,
+                                            text = stringResource( R.string.play_all ),
+                                            onClick = {
+                                                menuState.hide()
+                                                withAllSongs { player.stopRadio(); player.forcePlayFromBeginning( it ) }
+                                            }
+                                        )
+                                        MenuEntry(
+                                            icon = R.drawable.shuffle,
+                                            text = stringResource( R.string.shuffle ),
+                                            onClick = {
+                                                menuState.hide()
+                                                withAllSongs { player.stopRadio(); player.forcePlayFromBeginning( it.shuffled() ) }
+                                            }
+                                        )
+                                        MenuEntry(
+                                            icon = R.drawable.play_skip_forward,
+                                            text = stringResource( R.string.play_next ),
+                                            onClick = {
+                                                menuState.hide()
+                                                withAllSongs { player.addNext( it, context ) }
+                                            }
+                                        )
+                                        MenuEntry(
+                                            icon = R.drawable.enqueue,
+                                            text = stringResource( R.string.enqueue ),
+                                            onClick = {
+                                                menuState.hide()
+                                                withAllSongs { player.enqueue( it, context ) }
+                                            }
+                                        )
+                                        MenuEntry(
+                                            icon = R.drawable.add_in_playlist,
+                                            text = stringResource( R.string.add_to_playlist ),
+                                            onClick = addAllToPlaylist::onShortClick
+                                        )
+                                    }
+                                }
+                            }
+
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(
@@ -269,10 +350,12 @@ fun StatisticsPage(
                                                        bottom = 8.dp
                                                    )
                                                    .fillMaxWidth()
+                                                   .clip( thumbnailRoundness.shape )
                                                    .background(
                                                        color = colorPalette().background4,
                                                        shape = thumbnailRoundness.shape
                                                    )
+                                                   .combinedClickable( onClick = {}, onLongClick = onLongClick )
                                                    .padding( all =  12.dp )
                             ) {
                                 Column( Modifier.weight( 1f ) ) {
@@ -294,11 +377,15 @@ fun StatisticsPage(
                                     )
                                 }
 
-                                Icon(
-                                    painter = painterResource( R.drawable.musical_notes ),
-                                    contentDescription = null,
-                                    tint = colorPalette().shimmer,
-                                    modifier = Modifier.size( 34.dp )
+                                // Plays every song of the period, most listened first
+                                IconButton(
+                                    icon = R.drawable.play,
+                                    color = colorPalette().accent,
+                                    onClick = {
+                                        withAllSongs { player.stopRadio(); player.forcePlayFromBeginning( it ) }
+                                    },
+                                    onLongClick = onLongClick,
+                                    modifier = Modifier.size( 28.dp )
                                 )
                             }
                         }

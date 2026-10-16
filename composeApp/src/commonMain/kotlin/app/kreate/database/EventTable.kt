@@ -71,6 +71,17 @@ interface EventTable: DatabaseTable<Event> {
         limit: Int = Int.MAX_VALUE
     ): Flow<List<Song>>
 
+    /** Every song of [findSongsMostPlayedBetween], read once (to play or save them all), off the main thread */
+    @Query("""
+        SELECT S.*
+        FROM songs S
+        JOIN playback_history E ON E.song_id = S.id
+        WHERE E.created_at BETWEEN :from AND :to
+        GROUP BY E.song_id
+        ORDER BY SUM(E.time_spent) DESC
+    """)
+    fun allSongsMostPlayedBetween( from: Long, to: Long = Long.MAX_VALUE ): List<Song>
+
     /**
      * Return a list of artists that have their songs listened to by user.
      *
