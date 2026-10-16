@@ -879,6 +879,10 @@ sealed class Preferences<T>(
         val NEUTRAL_PALETTE_MIGRATED by lazy {
             Boolean( preferences, Key.NEUTRAL_PALETTE_MIGRATED, "", false )
         }
+        /** Name of the crash log whose report was already shown: it's kept to export, not shown again */
+        val CRASH_LOG_SEEN by lazy {
+            String( preferences, Key.CRASH_LOG_SEEN, "", "" )
+        }
         /** Whether the one-time switch to the redesigned player layout already ran */
         val REDESIGN_PLAYER_MIGRATED by lazy {
             Boolean( preferences, Key.REDESIGN_PLAYER_MIGRATED, "", false )
@@ -2011,6 +2015,7 @@ sealed class Preferences<T>(
         const val COLOR_PALETTE = "ColorPalette"
         const val NEUTRAL_PALETTE_MIGRATED = "NeutralPaletteMigrated"
         const val REDESIGN_PLAYER_MIGRATED = "RedesignPlayerMigrated"
+        const val CRASH_LOG_SEEN = "CrashLogSeen"
         const val THEME_MODE = "ThemeMode"
         const val STARTUP_SCREEN = "StartupScreen"
         const val FONT = "Font"

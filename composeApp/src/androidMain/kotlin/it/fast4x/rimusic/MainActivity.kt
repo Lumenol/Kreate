@@ -88,7 +88,6 @@ import app.kreate.android.coil3.ImageFactory
 import app.kreate.android.service.player.StatefulPlayer
 import app.kreate.android.service.updater.UpdatePlugins
 import app.kreate.android.themed.common.component.BottomMenu
-import app.kreate.android.themed.common.component.dialog.CrashReportDialog
 import app.kreate.database.models.PersistentQueue
 import co.touchlab.kermit.Logger
 import coil3.imageLoader
@@ -1074,13 +1073,6 @@ MainActivity :
 
             logger.d { "Successfully stop player and unbind PlayerServiceModern service" }
             //</editor-fold>
-
-            // Delete latest report
-            val report = CrashReportDialog(this)
-            if( report.isAvailable() ) {
-                report.crashlogFile.delete()
-                logger.d { "Successfully deleted latest crashlog" }
-            }
 
             monet.removeMonetColorsChangedListener(this)
             _monet = null
