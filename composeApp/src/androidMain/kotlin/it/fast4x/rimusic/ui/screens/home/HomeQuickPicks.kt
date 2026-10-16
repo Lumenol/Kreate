@@ -1,6 +1,5 @@
 package it.fast4x.rimusic.ui.screens.home
 
-import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
 import androidx.compose.foundation.horizontalScroll
 import android.annotation.SuppressLint
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -22,6 +21,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -101,6 +101,7 @@ import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.LocalMenuState
+import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
 import it.fast4x.rimusic.ui.components.themed.Loader
 import it.fast4x.rimusic.ui.components.themed.Menu
@@ -978,15 +979,18 @@ fun HomeQuickPicks(
                         mutableStateOf<InnertubeCharts?>( null, referentialEqualityPolicy() )
                     }
                     LaunchedEffect( refreshing, countryCode ) {
-                        CoroutineScope( Dispatchers.IO ).launch {
+                        // In the effect's scope: switching country quickly cancels the older
+                        // request, so its answer can't land after the newer one
+                        withContext( Dispatchers.IO ) {
                             me.knighthat.innertube.Innertube.charts( CURRENT_LOCALE, countryCode, null )
                                 .onFailure { err ->
                                     Logger.e( "", err, "HomeQuickPicks" )
                                     Toaster.e( R.string.error_failed_to_get_charts )
                                 }
                                 .getOrNull()
-                                .also { charts = it }
                         }
+                            // On failure keep the charts shown, and with them the pill to pick again
+                            ?.also { charts = it }
                     }
 
                     charts?.run {
@@ -1001,16 +1005,19 @@ fun HomeQuickPicks(
                                 icon = null,
                                 modifier = Modifier.weight( 1f )
                             )
-                            // Never without a pill, or the country couldn't be changed
-                            val current = menu.items.firstOrNull { it.countryCode == countryCode }
-                                ?: menu.items.firstOrNull { it.countryDisplayName == selectedCountryName }
+                            // The country of the charts on screen (YouTube's answer first, the
+                            // preference may already point to the next one); never without a pill
+                            val current = menu.items.firstOrNull { it.countryDisplayName == selectedCountryName }
+                                ?: menu.items.firstOrNull { it.countryCode == countryCode }
                                 ?: menu.items.firstOrNull()
                             if( current != null )
                                 TabToolBar.FilterPill(
                                     options = menu.items,
                                     current = current,
                                     label = { item -> item.countryDisplayName },
-                                    onSelect = { item -> countryCode = item.countryCode }
+                                    onSelect = { item -> countryCode = item.countryCode },
+                                    // A long name ("République dominicaine") doesn't push the title out
+                                    modifier = Modifier.widthIn( max = 150.dp )
                                 )
                         }
 
