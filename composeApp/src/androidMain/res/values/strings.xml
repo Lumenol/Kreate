@@ -178,6 +178,7 @@
     <string name="quick_sleep_timer">Timer</string>
     <string name="statistics_one_song_heard">1 song heard</string>
     <string name="open_random_item">Open one at random</string>
+    <string name="settings_search_in">Search in %1$s</string>
     <string name="songs_empty_all">No songs yet. The ones you play show up here.</string>
     <string name="songs_empty_favorites">No liked songs. Tap a song\'s heart to find it here.</string>
     <string name="songs_empty_cached">No cached songs. Played songs are kept here to play again offline.</string>
