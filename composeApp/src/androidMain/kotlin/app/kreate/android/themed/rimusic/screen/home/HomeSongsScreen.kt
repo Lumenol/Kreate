@@ -199,6 +199,7 @@ fun HomeSongsScreen(
             TabToolBar.Compact(
                 buttons,
                 trailing = {
+                    LibraryFiltersMock.FilterButton { menuState.display { LibraryFiltersMock.Sheet { menuState.hide() } } }
                     TabToolBar.IconPill(
                         iconId = R.drawable.play,
                         description = stringResource( R.string.play_all ),
@@ -214,14 +215,14 @@ fun HomeSongsScreen(
                 }
             ) {
                 // The count, like on the other Library tabs
-                HeaderInfo( itemsOnDisplayState.size.toString(), R.drawable.musical_notes )
-                TabToolBar.FilterPill(
-                    options = chips,
-                    current = builtInPlaylist,
-                    label = { if( it == BuiltInPlaylist.All ) stringResource( R.string.filter_all ) else it.text },
-                    onSelect = { builtInPlaylist = it }
+                HeaderInfo(
+                    if( LibraryFiltersMock.activeCount > 0 ) "42 / ${itemsOnDisplayState.size}" else itemsOnDisplayState.size.toString(),
+                    R.drawable.musical_notes
                 )
+                // MOCKUP: the category pill is gone, its choices are the "Type" filters
             }
+
+            LibraryFiltersMock.ActiveRow()
 
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
