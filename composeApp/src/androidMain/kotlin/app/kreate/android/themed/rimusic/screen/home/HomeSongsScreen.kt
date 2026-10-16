@@ -168,20 +168,53 @@ fun HomeSongsScreen(
             )
     ) {
         Column( Modifier.fillMaxSize() ) {
-            // The Library's chips already name the tab: play all / shuffle first,
-            // every other action in the "⋮" menu
-            TabToolBar.Compact( buttons ) {
-                TabToolBar.PillButton(
-                    text = stringResource( R.string.play_all ),
-                    iconId = R.drawable.play,
-                    filled = true,
-                    onClick = { player.forcePlayFromBeginning( getMediaItems() ) }
-                )
-                TabToolBar.PillButton(
-                    text = stringResource( R.string.shuffle ),
-                    iconId = R.drawable.shuffle,
-                    filled = false,
-                    onClick = shuffle::onShortClick
+            //<editor-fold defaultstate="collapsed" desc="Chips">
+            val showFavoritesPlaylist by Preferences.HOME_SONGS_SHOW_FAVORITES_CHIP
+            val showCachedPlaylist by Preferences.HOME_SONGS_SHOW_CACHED_CHIP
+            val showDownloadedPlaylist by Preferences.HOME_SONGS_SHOW_DOWNLOADED_CHIP
+            val showMyTopPlaylist by Preferences.HOME_SONGS_SHOW_MOST_PLAYED_CHIP
+            val showOnDevice by Preferences.HOME_SONGS_SHOW_ON_DEVICE_CHIP
+            val chips = remember( showFavoritesPlaylist, showCachedPlaylist, showMyTopPlaylist, showDownloadedPlaylist) {
+                buildList {
+                    add( BuiltInPlaylist.All )
+                    if( showFavoritesPlaylist )
+                        add( BuiltInPlaylist.Favorites )
+                    if( showCachedPlaylist )
+                        add( BuiltInPlaylist.Offline )
+                    if( showDownloadedPlaylist )
+                        add( BuiltInPlaylist.Downloaded )
+                    if( showMyTopPlaylist )
+                        add( BuiltInPlaylist.Top )
+                    if( showOnDevice )
+                        add( BuiltInPlaylist.OnDevice )
+                }
+            }
+            //</editor-fold>
+
+            // One row: the filter as a single pill ("All ▾"), play all / shuffle as
+            // icons, every other action in the "⋮" menu. The chips row is gone.
+            TabToolBar.Compact(
+                buttons,
+                trailing = {
+                    TabToolBar.IconPill(
+                        iconId = R.drawable.play,
+                        description = stringResource( R.string.play_all ),
+                        filled = true,
+                        onClick = { player.forcePlayFromBeginning( getMediaItems() ) }
+                    )
+                    TabToolBar.IconPill(
+                        iconId = R.drawable.shuffle,
+                        description = stringResource( R.string.shuffle ),
+                        filled = false,
+                        onClick = shuffle::onShortClick
+                    )
+                }
+            ) {
+                TabToolBar.FilterPill(
+                    options = chips,
+                    current = builtInPlaylist,
+                    label = { if( it == BuiltInPlaylist.All ) stringResource( R.string.filter_all ) else it.text },
+                    onSelect = { builtInPlaylist = it }
                 )
             }
 
@@ -193,34 +226,6 @@ fun HomeSongsScreen(
                     .fillMaxWidth()
             ) {
                 Column {
-                    //<editor-fold defaultstate="collapsed" desc="Chips">
-                    val showFavoritesPlaylist by Preferences.HOME_SONGS_SHOW_FAVORITES_CHIP
-                    val showCachedPlaylist by Preferences.HOME_SONGS_SHOW_CACHED_CHIP
-                    val showDownloadedPlaylist by Preferences.HOME_SONGS_SHOW_DOWNLOADED_CHIP
-                    val showMyTopPlaylist by Preferences.HOME_SONGS_SHOW_MOST_PLAYED_CHIP
-                    val showOnDevice by Preferences.HOME_SONGS_SHOW_ON_DEVICE_CHIP
-                    val chips = remember( showFavoritesPlaylist, showCachedPlaylist, showMyTopPlaylist, showDownloadedPlaylist) {
-                        buildList {
-                            add( BuiltInPlaylist.All )
-                            if( showFavoritesPlaylist )
-                                add( BuiltInPlaylist.Favorites )
-                            if( showCachedPlaylist )
-                                add( BuiltInPlaylist.Offline )
-                            if( showDownloadedPlaylist )
-                                add( BuiltInPlaylist.Downloaded )
-                            if( showMyTopPlaylist )
-                                add( BuiltInPlaylist.Top )
-                            if( showOnDevice )
-                                add( BuiltInPlaylist.OnDevice )
-                        }
-                    }
-                    //</editor-fold>
-
-                    ButtonsRow(
-                        chips = chips,
-                        currentValue = builtInPlaylist,
-                        onValueUpdate = { builtInPlaylist = it }
-                    )
 
                     when (builtInPlaylist) {
                         // No storage bar here: unlabelled, it read as a stray line (it's in Settings → Data)

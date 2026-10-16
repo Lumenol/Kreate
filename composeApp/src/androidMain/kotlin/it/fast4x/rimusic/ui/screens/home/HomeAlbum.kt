@@ -214,73 +214,29 @@ fun HomeAlbums(
             Column( Modifier.fillMaxSize() ) {
                 // Sticky tab's title
                 // The Library's chips already name the tab: count, then every action in "⋮"
+                // Count and filters in one row (pills that open their choices), every
+                // other action in "⋮": the chips row under it is gone
                 TabToolBar.Compact( listOf( sort, search, randomizer, shuffle, itemSize ) ) {
                     HeaderInfo(items.size.toString(), R.drawable.album)
-                }
-
-                Row(
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .padding(horizontal = 12.dp)
-                        //.padding(vertical = 4.dp)
-                        .padding(bottom = 8.dp)
-                        .fillMaxWidth()
-                ) {
-                    Box {
-                        ButtonsRow(
-                            chips = buttonsList,
-                            currentValue = albumType,
-                            onValueUpdate = { albumType = it },
-                            modifier = Modifier.padding(end = 12.dp)
+                    TabToolBar.FilterPill(
+                        options = AlbumsType.entries.toList(),
+                        current = albumType,
+                        label = { it.text },
+                        onSelect = { albumType = it }
+                    )
+                    if( isYouTubeSyncEnabled() )
+                        TabToolBar.FilterPill(
+                            options = FilterBy.entries.toList(),
+                            current = filterBy,
+                            label = {
+                                when( it ) {
+                                    FilterBy.All -> stringResource( R.string.all )
+                                    FilterBy.Local -> stringResource( R.string.on_device )
+                                    FilterBy.YoutubeLibrary -> stringResource( R.string.ytm_library )
+                                }
+                            },
+                            onSelect = { filterBy = it }
                         )
-                        if (isYouTubeSyncEnabled()) {
-                            Row(
-                                modifier = Modifier
-                                    .align(Alignment.CenterEnd)
-                            ) {
-                                BasicText(
-                                    text = when (filterBy) {
-                                        FilterBy.All -> stringResource(R.string.all)
-                                        FilterBy.Local -> stringResource(R.string.on_device)
-                                        FilterBy.YoutubeLibrary -> stringResource(R.string.ytm_library)
-                                    },
-                                    style = typography.xs.semiBold,
-                                    maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier
-                                        .align(Alignment.CenterVertically)
-                                        .padding(end = 5.dp)
-                                        .clickable {
-                                            menuState.display {
-                                                FilterMenu(
-                                                    title = stringResource(R.string.filter_by),
-                                                    onDismiss = menuState::hide,
-                                                    onAll = { filterBy = FilterBy.All },
-                                                    onYoutubeLibrary = {
-                                                        filterBy = FilterBy.YoutubeLibrary
-                                                    },
-                                                    onLocal = { filterBy = FilterBy.Local }
-                                                )
-                                            }
-
-                                        }
-                                )
-                                HeaderIconButton(
-                                    icon = R.drawable.playlist,
-                                    color = colorPalette.text,
-                                    onClick = {},
-                                    modifier = Modifier
-                                        .offset(0.dp, 2.5.dp)
-                                        .clickable(
-                                            interactionSource = remember { MutableInteractionSource() },
-                                            indication = null,
-                                            onClick = {}
-                                        )
-                                )
-                            }
-                        }
-                    }
                 }
 
                 // Sticky search bar
