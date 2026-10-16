@@ -129,6 +129,7 @@ import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.shimmerEffect
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -229,14 +230,17 @@ fun HomeQuickPicks(
 
     var loadedData by Preferences.IS_DATA_KEY_LOADED
 
-    suspend fun loadData() {
+    // The page's requests run side by side: one after the other, the account's own
+    // home (top of the screen) waited for the charts and Discover first
+    suspend fun loadData(): Unit = coroutineScope {
 
         //Used to refresh chart when country change
         if (showCharts)
-            chartsPageResult =
-                Innertube.chartsPageComplete( countryCode )
+            launch {
+                chartsPageResult = withContext( Dispatchers.IO ) { Innertube.chartsPageComplete( countryCode ) }
+            }
 
-        if (loadedData) return
+        if (loadedData) return@coroutineScope
 
         runCatching {
             refreshScope.launch(Dispatchers.IO) {
@@ -289,12 +293,21 @@ fun HomeQuickPicks(
                 }
             }
 
-            if (showNewAlbums || showNewAlbumsArtists || showMoodsAndGenres) {
-                discoverPageResult = Innertube.discoverPage()
-            }
+            val home = if (isYouTubeLoggedIn())
+                launch {
+                    homePageResult = withContext( Dispatchers.IO ) { YtMusic.getHomePage() }
+                }
+            else null
 
-            if (isYouTubeLoggedIn())
-                homePageResult = YtMusic.getHomePage()
+            val discover = if (showNewAlbums || showNewAlbumsArtists || showMoodsAndGenres)
+                launch {
+                    discoverPageResult = withContext( Dispatchers.IO ) { Innertube.discoverPage() }
+                }
+            else null
+
+            // Each section shows as soon as its own answer is in; "loaded" once all are
+            home?.join()
+            discover?.join()
 
         }.onFailure {
             Logger.e( tag = "HomeQuickPicks" ) { "loadData failed!" }

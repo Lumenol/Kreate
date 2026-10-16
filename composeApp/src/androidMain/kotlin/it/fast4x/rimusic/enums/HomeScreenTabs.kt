@@ -11,7 +11,7 @@ enum class HomeScreenTabs(
 
     Default( 0, R.string._default ),
 
-    QuickPics( 0, R.string.quick_picks ),
+    QuickPics( 0, R.string.home ),
 
     Songs( 1, R.string.songs ),
 
