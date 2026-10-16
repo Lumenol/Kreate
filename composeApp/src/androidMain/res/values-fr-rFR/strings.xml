@@ -205,6 +205,8 @@
     <string name="ui_tab">Interface</string>
     <string name="tab_player">Lecteur</string>
     <string name="filter_all">Tous</string>
+    <string name="account_disconnect">Se déconnecter</string>
+    <string name="account_connect">Se connecter</string>
     <string name="stats_period_today">Aujourd\'hui</string>
     <string name="stats_period_week">Semaine</string>
     <string name="stats_period_month">Mois</string>
@@ -621,7 +623,7 @@ Volume BAS : titre précédent</string>
     <string name="vertical_widget">Widget vertical</string>
     <string name="horizontal_widget">Widget horizontal</string>
     <string name="sleep_timer_ended">Minuterie de veille terminée</string>
-    <string name="discord_enable_rich_presence">Activer Rich Presence (Discord)</string>
+    <string name="discord_enable_rich_presence">Afficher ce que tu écoutes sur Discord</string>
     <string name="discord_disconnect">Déconnecté</string>
     <string name="discord_connect">Se connecter</string>
     <string name="discord_connected_to_discord_account">Connecté à un compte Discord</string>
@@ -818,7 +820,7 @@ Volume BAS : titre précédent</string>
     <string name="setting_description_smart_rewind">Le bouton Précédent agira comme un bouton de retour en arrière après %s</string>
     <string name="setting_entry_show_chip">Afficher l\'onglet « %s »</string>
     <string name="show_quotes">Afficher « %s »</string>
-    <string name="setting_entry_crash_log">Journal de crash</string>
+    <string name="setting_entry_crash_log">Journal des plantages</string>
     <string name="setting_entry_logs">Journaux</string>
     <string name="setting_description_copy_or_export_logs">Touche ici pour exporter, et l\'icône pour copier</string>
     <string name="error_message_unsupported_local_playlist">Format non supporté</string>
@@ -854,7 +856,7 @@ Volume BAS : titre précédent</string>
     <string name="dialog_text_download_all_warning">Tu risques d\'être bloqué si tu télécharges beaucoup de titres d\'un coup : ils ne seraient plus lisibles hors ligne.</string>
     <string name="error_invalid_proxy">Proxy invalide</string>
     <string name="info_restart_player_service">Redémarrer le lecteur</string>
-    <string name="setting_entry_youtube_login">Connecte-toi à ton compte YouTube</string>
+    <string name="setting_entry_youtube_login">Connexion au compte YouTube</string>
     <string name="setting_entry_youtube_sync_data">Synchroniser le compte avec %s</string>
     <string name="setting_description_youtube_sync_data">Charger automatiquement les playlists dans l\'onglet « %s »</string>
     <string name="setting_entry_youtube_report_playback">Envoyer l\'historique d\'écoute à YouTube</string>
@@ -914,9 +916,9 @@ Volume BAS : titre précédent</string>
     <string name="setting_description_runtime_log_share_off">Certains journaux ne sont pas visibles pour les applications de lecture de journaux</string>
     <string name="setting_entry_runtime_log_level">Niveau de journalisation</string>
     <string name="setting_entry_runtime_log_file_count">Nombre de fichiers</string>
-    <string name="string_description_runtime_log_file_count">%s sera conservé à tout moment</string>
+    <string name="string_description_runtime_log_file_count">%s gardés au maximum</string>
     <string name="settings_entry_runtime_log_max_size_per_file">Taille maximale par fichier</string>
-    <string name="setting_description_runtime_log_max_size_per_file">Doit être au moins %s avant de rouler</string>
+    <string name="setting_description_runtime_log_max_size_per_file">Nouveau fichier une fois %s atteints</string>
     <string name="setting_entry_sync_quotes">Synchroniser « %s »</string>
     <string name="setting_entry_test_proxy">Proxy de test</string>
     <string name="success_proxy_verified">Le proxy est correctement configuré</string>

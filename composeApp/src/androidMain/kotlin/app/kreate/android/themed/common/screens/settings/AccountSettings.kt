@@ -130,11 +130,13 @@ fun AccountSettings(
                                                    .clip( thumbnailShape() )
                             )
 
+                        val disconnectText = stringResource( R.string.account_disconnect )
+                        val connectText = stringResource( R.string.account_connect )
                         val (title, subtitle) = remember( isLoggedIn, Preferences.YOUTUBE_ACCOUNT_NAME, Preferences.YOUTUBE_SELF_CHANNEL_HANDLE ) {
                             if ( isLoggedIn )
-                                "Disconnect" to "%s %s".format( Preferences.YOUTUBE_ACCOUNT_NAME.value, Preferences.YOUTUBE_SELF_CHANNEL_HANDLE.value )
+                                disconnectText to "%s %s".format( Preferences.YOUTUBE_ACCOUNT_NAME.value, Preferences.YOUTUBE_SELF_CHANNEL_HANDLE.value )
                             else
-                                "Connect" to ""
+                                connectText to ""
                         }
                         if( search appearsIn title )
                             SettingComponents.Text(

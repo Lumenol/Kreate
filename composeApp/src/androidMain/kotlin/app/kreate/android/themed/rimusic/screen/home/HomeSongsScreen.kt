@@ -210,6 +210,8 @@ fun HomeSongsScreen(
                     )
                 }
             ) {
+                // The count, like on the other Library tabs
+                HeaderInfo( itemsOnDisplayState.size.toString(), R.drawable.musical_notes )
                 TabToolBar.FilterPill(
                     options = chips,
                     current = builtInPlaylist,

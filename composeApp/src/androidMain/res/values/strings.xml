@@ -108,6 +108,8 @@
     <string name="provided_by">Provided by</string>
     <string name="tab_player">Player</string>
     <string name="filter_all">All</string>
+    <string name="account_disconnect">Disconnect</string>
+    <string name="account_connect">Connect</string>
     <string name="stats_period_today">Today</string>
     <string name="stats_period_week">Week</string>
     <string name="stats_period_month">Month</string>
