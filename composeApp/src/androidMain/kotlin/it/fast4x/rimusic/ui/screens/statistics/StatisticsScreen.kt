@@ -1,6 +1,10 @@
 package it.fast4x.rimusic.ui.screens.statistics
 
-import it.fast4x.rimusic.ui.components.ButtonsRow
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
+import androidx.compose.foundation.layout.width
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.colorPalette
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -49,34 +53,43 @@ fun StatisticsScreen(
 
     PersistMapCleanup(tagPrefix = "${statisticsType.name}/")
 
-    // A page of its own: "Statistiques" in the bar, the periods as pills on top
-    // and the normal bottom bar. The periods used to replace the bottom bar,
-    // where they read as navigation ("1 An" was cut, "Tout" off screen)
+    val periods = listOf(
+        0 to stringResource( R.string.stats_period_today ),
+        1 to stringResource( R.string.stats_period_week ),
+        2 to stringResource( R.string.stats_period_month ),
+        3 to stringResource( R.string.stats_period_3_months ),
+        4 to stringResource( R.string.stats_period_6_months ),
+        5 to stringResource( R.string.stats_period_year ),
+        6 to stringResource( R.string.all )
+    )
+
+    // A page of its own: "Statistiques" and the period as one pill ("Mois ▾") in
+    // the bar, like the Library's filters. Only the Titres/Artistes/Albums/
+    // Playlists row is left above the list (two rows of pills were cut).
     app.kreate.android.themed.common.component.DetailSkeleton(
         navController = navController,
         miniPlayer = miniPlayer,
         title = {
             androidx.compose.foundation.text.BasicText(
                 text = stringResource( R.string.statistics ),
-                style = typography().l.semiBold.color( colorPalette().text )
+                style = typography().l.semiBold.color( colorPalette().text ),
+                maxLines = 1,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
             )
+        },
+        actions = {
+            TabToolBar.FilterPill(
+                options = periods.map { p -> p.first },
+                current = tabIndex,
+                // Never throws on a stale saved index: falls back to "Tout" like the content
+                label = { index -> periods.firstOrNull { p -> p.first == index }?.second ?: periods.last().second },
+                onSelect = onTabIndexChanged
+            )
+            Spacer( Modifier.width( 8.dp ) )
         }
     ) {
-        androidx.compose.foundation.layout.Column {
-            ButtonsRow(
-                chips = listOf(
-                    0 to stringResource( R.string.stats_period_today ),
-                    1 to stringResource( R.string.stats_period_week ),
-                    2 to stringResource( R.string.stats_period_month ),
-                    3 to stringResource( R.string.stats_period_3_months ),
-                    4 to stringResource( R.string.stats_period_6_months ),
-                    5 to stringResource( R.string.stats_period_year ),
-                    6 to stringResource( R.string.all )
-                ),
-                currentValue = tabIndex,
-                onValueUpdate = onTabIndexChanged,
-                modifier = androidx.compose.ui.Modifier.padding( bottom = 4.dp )
-            )
+        // A little air between the bar and the Titres/Artistes… row
+        Box( Modifier.padding( top = 4.dp ) ) {
             saveableStateHolder.SaveableStateProvider( key = tabIndex ) {
                 val type: StatisticsType =
                     when( tabIndex ) {

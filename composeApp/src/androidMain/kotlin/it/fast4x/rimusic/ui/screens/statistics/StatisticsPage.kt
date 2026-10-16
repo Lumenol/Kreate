@@ -216,11 +216,12 @@ fun StatisticsPage(
                     span = { GridItemSpan(maxLineSpan) }
                 ) {
 
+                    // ButtonsRow has its own start margin: the extra 12 dp on each side
+                    // pushed "Playlists" off the right edge
                     ButtonsRow(
                         chips = buttonsList,
                         currentValue = statisticsCategory,
-                        onValueUpdate = { statisticsCategory = it },
-                        modifier = Modifier.padding(horizontal = 12.dp)
+                        onValueUpdate = { statisticsCategory = it }
                     )
 
                 }
