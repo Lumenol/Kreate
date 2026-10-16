@@ -18,6 +18,10 @@ jobs:
   check-for-changes:
     name: Check for changes
     runs-on: ubuntu-latest
+    # Reads the past runs (actions) and the code (checkout)
+    permissions:
+      actions: read
+      contents: read
 
     env:
       CHANGELOGS_FILENAME: changelogs.txt
@@ -29,8 +33,25 @@ jobs:
       changes_made: ${{ steps.last-successful-run.outputs.changes_made || steps.detect_changes.outputs.changes_made }}
 
     steps:
+      # Authenticated: anonymous calls are rate-limited and answer an error instead of the list
       - name: Get workflows
-        run: curl -L "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs?per_page=100&status=success" > "$WORKFLOWS_FILENAME"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl -sL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs?per_page=100&status=success" > "$WORKFLOWS_FILENAME"
+
+          # The repository variable WORKFLOW_ID isn't set on every fork: take this
+          # workflow's own id from the current run instead
+          if [ -z "$WORKFLOW_ID" ]; then
+            WORKFLOW_ID=$(
+              curl -sL -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+                "https://api.github.com/repos/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" | jq -r '.workflow_id // empty'
+            )
+            # Own name: a job-level env value may win over GITHUB_ENV
+            echo "RESOLVED_WORKFLOW_ID=$WORKFLOW_ID" >> "$GITHUB_ENV"
+          fi
+          echo "Workflow id: ${WORKFLOW_ID:-unknown}"
 
       # To truly detect changes, we need to get when was the last success run happened.
       # This script goes through all runs and take runs of script $WORKFLOW_ID,
@@ -38,20 +59,22 @@ jobs:
       - name: Get last successful run
         id: last-successful-run
         run: |
+          # Without a workflow id or a readable list, nothing can be compared: build anyway
+          ID="${WORKFLOW_ID:-$RESOLVED_WORKFLOW_ID}"
           LAST_SUCCESSFUL_RUN=$(
-            jq -r '
+            jq -r --arg id "$ID" '
             [
-              .workflow_runs[] |
-              select(.workflow_id == '$WORKFLOW_ID')
+              (.workflow_runs // [])[] |
+              select(($id | length) > 0 and (.workflow_id | tostring) == $id)
             ] |
             sort_by(.updated_at | fromdate) |
             last |
             .updated_at
-            ' "$WORKFLOWS_FILENAME"
+            ' "$WORKFLOWS_FILENAME" 2>/dev/null || echo "null"
           )
 
           # If there's no previous job, assume this is the first run, and run anyway
-          if [ "$LAST_SUCCESSFUL_RUN" = "null" ]; then
+          if [ -z "$LAST_SUCCESSFUL_RUN" ] || [ "$LAST_SUCCESSFUL_RUN" = "null" ]; then
             echo "changes_made=true" >> $GITHUB_OUTPUT
           else
             echo "timestamp=$LAST_SUCCESSFUL_RUN" >> $GITHUB_OUTPUT
