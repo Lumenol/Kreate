@@ -908,6 +908,9 @@ Volume BAS : titre précédent</string>
     <string name="settings_section_network">Proxy, DNS sécurisé</string>
     <string name="settings_section_about">Version, code source, signaler un problème, licences, contributeurs</string>
     <string name="content_description_back">Retour</string>
+    <string name="playlist_saved_to_library">Playlist enregistrée dans ta bibliothèque</string>
+    <string name="playlist_removed_from_library">Playlist retirée de ta bibliothèque</string>
+    <string name="playlist_save_failed">YouTube n\'a pas pu enregistrer la playlist</string>
     <string name="setting_entry_preview_start">Début de l\'extrait</string>
     <string name="setting_entry_preview_length">Durée de l\'extrait</string>
     <string name="setting_description_preview">Toucher la vignette d\'un titre l\'écoute un instant, sans changer ta file</string>

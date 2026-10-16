@@ -1,5 +1,6 @@
 package app.kreate.android.viewmodel
 
+import it.fast4x.rimusic.ui.screens.settings.isYouTubeLoggedIn
 import android.content.Context
 import androidx.annotation.AnyThread
 import androidx.compose.foundation.lazy.LazyListState
@@ -48,10 +49,16 @@ class YouTubePlaylistViewModel(
     private val _continued = MutableStateFlow(emptyList<InnertubeSong>())
     private val _continuation = MutableStateFlow<String?>(null)
 
-    // browseId must not be empty or null in any case
-    val browseId: String = savedStateHandle["browseId"]!!
+    // browseId must not be empty or null in any case. A bare playlist id (a Home mix
+    // "RDTMAK...", "PL...", "OLAK...", "LM") gets the "VL" the browse call needs: without
+    // it YouTube answers with an empty page and the playlist showed nothing
+    val browseId: String = savedStateHandle.get<String>( "browseId" )!!.let { id ->
+        if( listOf( "PL", "RD", "OLAK", "LM", "UU" ).any( id::startsWith ) ) "VL$id" else id
+    }
     val params: String? = savedStateHandle["params"]
-    val useLogin: Boolean = savedStateHandle["useLogin"]!!
+    // Logged in, always ask with the account, like YouTube Music: the Home's mixes
+    // ("Replay mix", "Discover mix"...) are made for it and come back empty without it
+    val useLogin: Boolean = savedStateHandle.get<Boolean>( "useLogin" )!! || isYouTubeLoggedIn()
     val listState = LazyListState()
     val search = Search(listState)
     val playlistPage = _playlistPage.asStateFlow()
