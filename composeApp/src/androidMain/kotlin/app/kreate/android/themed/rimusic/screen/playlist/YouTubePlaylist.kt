@@ -1,5 +1,7 @@
 package app.kreate.android.themed.rimusic.screen.playlist
 
+import androidx.compose.runtime.collectAsState
+import app.kreate.database.models.Playlist
 import app.kreate.android.themed.common.component.DetailHeader
 import app.kreate.android.themed.common.component.DetailMenu
 import app.kreate.android.themed.common.component.DetailSkeleton
@@ -146,34 +148,61 @@ fun YouTubePlaylist(
         itemSelector.isActive = false
     }
     val radio = Radio( ::getSongs )
+    // Saved = in the database with its browse id (that's what removing deletes too)
+    val playlistId = remember( viewModel.browseId ) { viewModel.browseId.substringAfter( "VL" ) }
+    val savedPlaylist by remember( playlistId ) {
+        Database.playlistTable.findByBrowseId( playlistId )
+    }.collectAsState( null )
     val saveToYouTubeLibrary = remember {
         object: DualIcon, DynamicColor {
 
             override val secondIconId: Int = R.drawable.bookmark
             override val iconId: Int = R.drawable.bookmark_outline
 
-            override var isFirstIcon: Boolean by mutableStateOf( false )
+            override var isFirstIcon: Boolean by mutableStateOf( true )
             override var isFirstColor: Boolean by mutableStateOf( false )
 
+            // It only ever removed, and showed "saved" whatever the state: tapping a
+            // Home mix took it out of the YouTube library and nothing seemed to happen
             override fun onShortClick() {
                 if( !isNetworkAvailable( context ) ) {
                     Toaster.noInternet()
                     return
                 }
 
+                val saved = !isFirstIcon
                 CoroutineScope( Dispatchers.IO ).launch {
-                    YtMusic.removelikePlaylistOrAlbum(
-                        viewModel.browseId.substringAfter("VL")
-                    )
-
-                    Database.playlistTable
-                            .findByBrowseId( viewModel.browseId.substringAfter("VL") )
-                            .first()
-                            ?.let( Database.playlistTable::delete )
+                    if( saved )
+                        YtMusic.removelikePlaylistOrAlbum( playlistId )
+                               .onSuccess {
+                                   Database.playlistTable
+                                           .findByBrowseId( playlistId )
+                                           .first()
+                                           ?.let( Database.playlistTable::delete )
+                                   Toaster.i( R.string.playlist_removed_from_library )
+                               }
+                               .onFailure { Toaster.e( R.string.playlist_save_failed ) }
+                    else
+                        YtMusic.likePlaylistOrAlbum( playlistId )
+                               .onSuccess {
+                                   if( Database.playlistTable.findByBrowseId( playlistId ).first() == null )
+                                       Database.playlistTable.insert(
+                                           Playlist(
+                                               name = playlistPage?.name ?: playlistId,
+                                               browseId = playlistId,
+                                               isEditable = false,
+                                               isYoutubePlaylist = true
+                                           )
+                                       )
+                                   Toaster.s( R.string.playlist_saved_to_library )
+                               }
+                               .onFailure { Toaster.e( R.string.playlist_save_failed ) }
                 }
             }
         }
     }
+    // The icon follows the real state
+    LaunchedEffect( savedPlaylist ) { saveToYouTubeLibrary.isFirstIcon = savedPlaylist == null }
 
     exportDialog.Render()
     downloadAllDialog.Render()
