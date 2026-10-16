@@ -167,7 +167,8 @@ object ArtistItem: Visual(), MultiplatformItem {
                     Thumbnail( artist.id, artist.thumbnailUrl, sizeDp = sizeDp )
                     // A preview of their most popular song (YouTube artists only)
                     if( artist.id.startsWith( "UC" ) )
-                        PreviewButton( artist.id, Modifier.padding( bottom = VERTICAL_SPACING.dp ) ) {
+                        // Moved in, to sit on the round photo
+                        PreviewButton( artist.id, Modifier.padding( bottom = VERTICAL_SPACING.dp ), inset = 6.dp ) {
                             PreviewSongs.artist( artist.id )
                         }
                 }

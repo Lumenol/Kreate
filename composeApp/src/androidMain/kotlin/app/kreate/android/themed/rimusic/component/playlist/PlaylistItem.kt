@@ -434,6 +434,7 @@ object PlaylistItem: Visual(), MultiplatformItem {
                         showPlatformIcon = showPlatformIcon
                     )
                     // A preview of its first song
+                    if( PreviewSongs.isPlaylist( innertubePlaylist.key ) )
                     PreviewButton( innertubePlaylist.key, Modifier.padding( bottom = VERTICAL_SPACING.dp ) ) {
                         PreviewSongs.playlist( innertubePlaylist.key )
                     }
@@ -480,6 +481,7 @@ object PlaylistItem: Visual(), MultiplatformItem {
                         showPlatformIcon = showPlatformIcon
                     )
                     // A preview of its first song
+                    if( PreviewSongs.isPlaylist( innertubePlaylist.id ) )
                     PreviewButton( innertubePlaylist.id, Modifier.padding( bottom = VERTICAL_SPACING.dp ) ) {
                         PreviewSongs.playlist( innertubePlaylist.id )
                     }

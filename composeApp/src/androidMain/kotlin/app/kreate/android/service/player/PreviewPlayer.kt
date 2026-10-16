@@ -1,5 +1,6 @@
 package app.kreate.android.service.player
 
+import app.kreate.android.themed.common.component.PreviewSongs
 import android.content.Context
 import androidx.annotation.MainThread
 import androidx.compose.runtime.getValue
@@ -65,6 +66,9 @@ object PreviewPlayer {
     private var player: ExoPlayer? = null
     private var resumeMain = false
     private var ticker: Job? = null
+    // Where the preview starts; known late when the song's length wasn't (artists' top songs)
+    private var startMs = 0L
+    private var seekWhenReady = false
     private val scope = CoroutineScope( SupervisorJob() + Dispatchers.Main )
 
     // The user starting the main player during a preview ends the preview (nothing to resume)
@@ -113,6 +117,15 @@ object PreviewPlayer {
                                                                                .build()
                             addListener( object : Player.Listener {
                                 override fun onPlaybackStateChanged( playbackState: Int ) {
+                                    // Length unknown beforehand: jump to the start point now
+                                    if( playbackState == Player.STATE_READY && seekWhenReady ) {
+                                        seekWhenReady = false
+                                        val duration = this@apply.duration
+                                        if( duration != C.TIME_UNSET && duration > 0 ) {
+                                            startMs = duration * Preferences.PREVIEW_START.value.percent / 100
+                                            this@apply.seekTo( startMs )
+                                        }
+                                    }
                                     if( playbackState == Player.STATE_ENDED ) stop()
                                 }
 
@@ -159,7 +172,8 @@ object PreviewPlayer {
         previewingId = key
         progress = 0f
 
-        val startMs = durationMs * Preferences.PREVIEW_START.value.percent / 100
+        startMs = durationMs * Preferences.PREVIEW_START.value.percent / 100
+        seekWhenReady = durationMs <= 0 && Preferences.PREVIEW_START.value.percent > 0
         val item = if( isLocal ) mediaItem else mediaItem.buildUpon().setCustomCacheKey( mediaItem.mediaId ).build()
         player.volume = main.volume
         // Straight to the start point: no loading of the intro first
@@ -185,6 +199,8 @@ object PreviewPlayer {
     /** Ends the preview, if any, and lets the main player resume */
     @MainThread
     fun stop() {
+        // A card's song still loading would start on the next page
+        PreviewSongs.cancel()
         if( previewingId == null ) return
 
         ticker?.cancel()
