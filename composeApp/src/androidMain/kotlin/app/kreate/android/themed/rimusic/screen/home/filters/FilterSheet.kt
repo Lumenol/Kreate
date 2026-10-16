@@ -124,7 +124,14 @@ object FilterTexts {
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun Chip( text: String, selected: Boolean, enabled: Boolean = true, onLongClick: (() -> Unit)? = null, onClick: () -> Unit ) {
+private fun Chip(
+    text: String,
+    selected: Boolean,
+    enabled: Boolean = true,
+    trailingIconId: Int? = null,
+    onLongClick: (() -> Unit)? = null,
+    onClick: () -> Unit
+) {
     val shape = RoundedCornerShape( 50 )
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -140,6 +147,14 @@ private fun Chip( text: String, selected: Boolean, enabled: Boolean = true, onLo
             Spacer( Modifier.width( 6.dp ) )
         }
         BasicText( text, style = typography().xs.semiBold.color( if( selected ) colorPalette().background0 else colorPalette().text ) )
+        if( trailingIconId != null ) {
+            Spacer( Modifier.width( 6.dp ) )
+            Icon(
+                painterResource( trailingIconId ), null,
+                tint = if( selected ) colorPalette().background0 else colorPalette().textSecondary,
+                modifier = Modifier.size( 14.dp )
+            )
+        }
     }
 }
 
@@ -282,17 +297,46 @@ fun FilterSheet( onDone: () -> Unit ) {
             )
         }
 
-        // Shortcuts: lit while the filters are exactly theirs; long press to change them
+        // Shortcuts: lit while the filters are exactly theirs. "Edit" shows a pencil on
+        // each, a touch then opens update / rename / delete (a long press does too)
+        var editMode by remember { mutableStateOf( false ) }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth().padding( start = 20.dp, end = 12.dp, top = 6.dp )
+        ) {
+            BasicText(
+                stringResource( R.string.library_filters_shortcuts ).uppercase(),
+                style = typography().xxs.semiBold.color( colorPalette().textSecondary ),
+                modifier = Modifier.weight( 1f )
+            )
+            BasicText(
+                stringResource( if( editMode ) R.string.library_filters_shortcuts_done else R.string.library_filters_shortcuts_edit ),
+                style = typography().xs.semiBold.color( colorPalette().accent ),
+                modifier = Modifier.clip( RoundedCornerShape( 50 ) )
+                                   .clickable { editMode = !editMode }
+                                   .padding( 8.dp )
+            )
+        }
         Row(
             horizontalArrangement = Arrangement.spacedBy( 8.dp ),
-            modifier = Modifier.horizontalScroll( rememberScrollState() ).padding( horizontal = 20.dp, vertical = 6.dp )
+            modifier = Modifier.horizontalScroll( rememberScrollState() ).padding( horizontal = 20.dp, vertical = 4.dp )
         ) {
-            // First, where it's seen: filters set by hand can become a shortcut
-            if( f.isActive && shortcuts.none { it.filters == f } )
-                Chip( "+ " + stringResource( R.string.library_filters_save ), false ) { naming = -1 }
+            // Always first: the current filters become a shortcut (greyed with none set,
+            // or when a shortcut already holds them)
+            Chip(
+                "+ " + stringResource( R.string.library_filters_save ),
+                false,
+                enabled = f.isActive && shortcuts.none { it.filters == f }
+            ) { naming = -1 }
             shortcuts.forEachIndexed { i, shortcut ->
-                Chip( shortcut.name, shortcut.filters == f, onLongClick = { editing = i } ) {
-                    set( if( shortcut.filters == f ) SongFilters() else shortcut.filters )
+                Chip(
+                    shortcut.name,
+                    !editMode && shortcut.filters == f,
+                    trailingIconId = if( editMode ) R.drawable.pencil else null,
+                    onLongClick = { editing = i }
+                ) {
+                    if( editMode ) editing = i
+                    else set( if( shortcut.filters == f ) SongFilters() else shortcut.filters )
                 }
             }
         }

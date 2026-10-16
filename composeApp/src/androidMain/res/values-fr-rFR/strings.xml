@@ -1120,4 +1120,7 @@ Volume BAS : titre précédent</string>
     <string name="library_filters_shortcut_forgotten_likes">Aimés mais oubliés</string>
     <string name="library_filters_shortcut_rediscover">À redécouvrir</string>
     <string name="library_filters_empty">Aucun titre ne correspond aux filtres</string>
+    <string name="library_filters_shortcuts">Raccourcis</string>
+    <string name="library_filters_shortcuts_edit">Modifier</string>
+    <string name="library_filters_shortcuts_done">Terminé</string>
 </resources>
