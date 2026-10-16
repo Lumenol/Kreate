@@ -1,5 +1,6 @@
 package app.kreate.android.service
 
+import androidx.compose.runtime.mutableIntStateOf
 import java.util.concurrent.atomic.AtomicBoolean
 import it.fast4x.rimusic.utils.isConnectionMetered
 import kotlin.coroutines.cancellation.CancellationException
@@ -49,10 +50,17 @@ object YoutubeInfo {
     // Playback resolves a song several times (chunks): ask once per run
     private val askedOnPlay = ConcurrentHashMap.newKeySet<String>()
     private var filler: Job? = null
+    @Volatile
+    private var fillingEverything = false
     private val dailyPending = AtomicBoolean( false )
 
     /** The background filling runs: the sheet tells it */
     var isFilling by mutableStateOf( false )
+        private set
+    /** Songs asked so far / to ask in the current run, for Settings → Data */
+    var runDone by mutableIntStateOf( 0 )
+        private set
+    var runTotal by mutableIntStateOf( 0 )
         private set
 
     private enum class Result { SAVED, NOTHING, FAILED }
@@ -190,8 +198,16 @@ object YoutubeInfo {
      * first every time; but 5 of those in a row look like YouTube refusing: the filling
      * stops there and marks none of them. Picks up where it was next time.
      */
-    fun fillLibrary( context: Context, everything: Boolean = false, wifiOnly: Boolean = false ) {
-        if( filler?.isActive == true && !everything ) return
+    /**
+     * @return `false` when nothing new starts: a full refresh already runs (tapping
+     * again restarted it from the top, losing what was done)
+     */
+    fun fillLibrary( context: Context, everything: Boolean = false, wifiOnly: Boolean = false ): Boolean {
+        if( filler?.isActive == true ) {
+            // A daily run in progress gives way to a full refresh, not to itself
+            if( !everything || fillingEverything ) return false
+        }
+        fillingEverything = everything
         val previous = filler
         filler = scope.launch {
             // The old run must be over before this one says it runs
@@ -208,6 +224,8 @@ object YoutubeInfo {
                 }).distinct()
                 val unanswered = mutableListOf<String>()
                 var complete = true
+                runDone = 0
+                runTotal = queue.size
                 for( songId in queue ) {
                     if( !isNetworkAvailable( context ) || (wifiOnly && context.isConnectionMetered()) ) {
                         complete = false
@@ -231,6 +249,7 @@ object YoutubeInfo {
                             }
                         }
                     }
+                    runDone++
                     delay( 1500 )
                 }
                 // Done for today: the daily run waits until tomorrow
@@ -239,8 +258,12 @@ object YoutubeInfo {
                     Preferences.YOUTUBE_INFO_LAST_FILL.value = System.currentTimeMillis()
                 }
             } finally {
-                if( filler === coroutineContext[Job] ) isFilling = false
+                if( filler === coroutineContext[Job] ) {
+                    isFilling = false
+                    fillingEverything = false
+                }
             }
         }
+        return true
     }
 }

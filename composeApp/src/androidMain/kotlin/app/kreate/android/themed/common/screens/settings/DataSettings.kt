@@ -401,13 +401,17 @@ fun DataSettings( paddingValues: PaddingValues ) {
                 val total by remember { Database.songYoutubeInfoTable.libraryCount() }.collectAsState( 0, Dispatchers.IO )
                 SettingComponents.Text(
                     title = stringResource( R.string.library_filters_refresh_now ),
-                    subtitle = stringResource(
-                        if( YoutubeInfo.isFilling ) R.string.library_filters_refresh_running_count else R.string.library_filters_refresh_now_description,
-                        known.coerceAtMost( total ), total
-                    ),
+                    // While it runs: songs asked in this run (every song already has its row,
+                    // "known / total" stayed at "1800 / 1800")
+                    subtitle = if( YoutubeInfo.isFilling )
+                        stringResource( R.string.library_filters_refresh_running_count, YoutubeInfo.runDone, YoutubeInfo.runTotal )
+                    else
+                        stringResource( R.string.library_filters_refresh_now_description, known.coerceAtMost( total ), total ),
                     onClick = {
-                        YoutubeInfo.fillLibrary( context, everything = true )
-                        Toaster.i( R.string.library_filters_refresh_running )
+                        if( YoutubeInfo.fillLibrary( context, everything = true ) )
+                            Toaster.i( R.string.library_filters_refresh_running )
+                        else
+                            Toaster.i( R.string.library_filters_refresh_already )
                     }
                 )
             }
