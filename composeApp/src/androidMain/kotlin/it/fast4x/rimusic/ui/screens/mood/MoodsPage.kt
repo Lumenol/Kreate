@@ -1,5 +1,6 @@
 package it.fast4x.rimusic.ui.screens.mood
 
+import androidx.compose.foundation.layout.size
 import app.kreate.android.themed.common.component.FastScroller
 import app.kreate.android.themed.common.component.initialOf
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -84,10 +85,16 @@ fun MoodsPage(
             )
     ) {
         if( discoverPage == null ) {
-            repeat(4) {
+            // Same shape as the tiles (half-height), so nothing jumps when they load
+            val tile = AlbumItem.thumbnailSize().width
+            repeat(8) {
                 Row {
-                    repeat(6) {
-                        AlbumItem.VerticalPlaceholder()
+                    repeat(2) {
+                        androidx.compose.foundation.layout.Box(
+                            Modifier.size( tile, tile / 2 )
+                                    .padding( 5.dp )
+                                    .shimmerEffect()
+                        )
                     }
                 }
             }

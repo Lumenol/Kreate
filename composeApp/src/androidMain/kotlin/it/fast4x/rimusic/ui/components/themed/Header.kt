@@ -240,32 +240,29 @@ fun HalfHeader(
     }
 }
 
+/**
+ * The count next to the Library's filter pills ("♫ 119"): readable size, icon and
+ * number kept together in their own row (they were tiny and grey, spread apart).
+ */
 @Composable
 fun HeaderInfo (
     title: String,
-    iconId: Int,
-    spacer: Dp = 5.dp
-) {
-    Image(
-        painter = painterResource( iconId ),
-        contentDescription = null,
-        colorFilter = ColorFilter.tint(colorPalette().textSecondary),
-        modifier = Modifier.size( 12.dp )
-    )
-    BasicText(
-        text = title,
-        style = TextStyle(
-            color = colorPalette().textSecondary,
-            fontStyle = typography().xxxs.semiBold.fontStyle,
-            fontWeight = typography().xxxs.semiBold.fontWeight,
-            fontSize = typography().xxxs.semiBold.fontSize
-        ),
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier.padding( start = 4.dp )
-    )
-
-    Spacer(
-        modifier = Modifier.width( spacer )
-    )
-}
+    iconId: Int
+) =
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy( 4.dp )
+    ) {
+        Image(
+            painter = painterResource( iconId ),
+            contentDescription = null,
+            colorFilter = ColorFilter.tint( colorPalette().textSecondary ),
+            modifier = Modifier.size( 14.dp )
+        )
+        BasicText(
+            text = title,
+            style = typography().xs.semiBold.copy( color = colorPalette().textSecondary ),
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis
+        )
+    }
