@@ -1,5 +1,6 @@
 package it.fast4x.rimusic.ui.screens.home
 
+import androidx.compose.foundation.horizontalScroll
 import android.annotation.SuppressLint
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -327,7 +328,6 @@ fun HomeQuickPicks(
 
     val scrollState = rememberScrollState()
     val quickPicksLazyGridState = rememberLazyGridState()
-    val moodAngGenresLazyGridState = rememberLazyGridState()
     val chartsPageSongLazyGridState = rememberLazyGridState()
     val chartsPageArtistLazyGridState = rememberLazyGridState()
 
@@ -894,27 +894,37 @@ fun HomeQuickPicks(
                                 //modifier = Modifier.fillMaxWidth(0.7f)
                             )
 
-                            // Two scrolling rows of compact pills: the 4-row grid of big
-                            // tiles took a whole screen for a secondary feature
-                            LazyHorizontalGrid(
-                                state = moodAngGenresLazyGridState,
-                                rows = GridCells.Fixed(2),
-                                flingBehavior = ScrollableDefaults.flingBehavior(),
-                                contentPadding = PaddingValues( horizontal = 16.dp ),
-                                horizontalArrangement = Arrangement.spacedBy( 8.dp ),
+                            // Two rows of compact pills scrolling together, each pill as
+                            // wide as its name: a grid made every column as wide as its
+                            // widest pill (holes) and cut long names ("Bande…"). Rows balanced
+                            // by name length, computed once per page
+                            val moodRows = remember( page.moods ) {
+                                val rows = listOf( mutableListOf<Innertube.Mood.Item>(), mutableListOf() )
+                                val widths = intArrayOf( 0, 0 )
+                                page.moods.sortedBy { it.title }.forEach { mood ->
+                                    val row = if( widths[0] <= widths[1] ) 0 else 1
+                                    rows[row].add( mood )
+                                    widths[row] += mood.title.length + 4       // + the stripe and margins
+                                }
+                                rows.filter { it.isNotEmpty() }
+                            }
+                            Column(
                                 verticalArrangement = Arrangement.spacedBy( 8.dp ),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height( 88.dp )
+                                modifier = Modifier.fillMaxWidth()
+                                                   .horizontalScroll( rememberScrollState() )
+                                                   .padding( rowContentPadding )
                             ) {
-                                items(
-                                    items = page.moods.sortedBy { it.title },
-                                    key = { it.endpoint.params ?: it.title }
-                                ) {
-                                    MoodPill(
-                                        mood = it,
-                                        onClick = { it.endpoint.browseId?.let { _ -> onMoodClick(it) } }
-                                    )
+                                moodRows.forEach { row ->
+                                    Row( horizontalArrangement = Arrangement.spacedBy( 8.dp ) ) {
+                                        row.forEach { mood ->
+                                            androidx.compose.runtime.key( mood.endpoint.params ?: mood.title ) {
+                                                MoodPill(
+                                                    mood = mood,
+                                                    onClick = { mood.endpoint.browseId?.let { _ -> onMoodClick( mood ) } }
+                                                )
+                                            }
+                                        }
+                                    }
                                 }
                             }
 
