@@ -52,13 +52,36 @@ import me.knighthat.utils.Toaster
 
 const val EXPLICIT_BUNDLE_TAG = "is_explicit"
 
+/**
+ * What YouTube puts between artists, in the content language: punctuation or a
+ * conjunction ("&", "et", "y", "und", "и", "ve"…).
+ */
+private val ARTIST_SEPARATOR = Regex(
+    "^[\\s,，&·•、/+]*$|^(et|and|y|und|e|en|i|og|och|x|vs\\.?|feat\\.?|ft\\.?|with|avec|и|і|ve|dan|và|a|és|și|και|및|و|和|と)$",
+    RegexOption.IGNORE_CASE
+)
+
+/**
+ * Artists' names for display. YouTube sends the separators as "authors" of their
+ * own, which gave "DJ MOIGUS, & , DJ FKU". A separator has no link to an artist
+ * page and always sits between two names: only such entries are left out, so a
+ * lone artist named "X" or a linked one named "And" stays.
+ */
+fun List<Innertube.Info<*>>.joinedNames(): String =
+    filterIndexed { index, info ->
+        val between = index in 1 until lastIndex
+        !(between && info.endpoint == null && ARTIST_SEPARATOR.matches( info.name?.trim().orEmpty() ))
+    }
+        .mapNotNull { it.name?.trim()?.takeIf( String::isNotEmpty ) }
+        .joinToString( ", " )
+
 val Innertube.AlbumItem.asAlbum: Album
     get() = Album (
         id = key,
         title = info?.name,
         thumbnailUrl = thumbnail?.url,
         year = year,
-        authorsText = authors?.joinToString(", ") { it.name ?: "" },
+        authorsText = authors?.joinedNames(),
         //shareUrl =
     )
 
@@ -99,7 +122,7 @@ val Innertube.SongItem.asMediaItem: MediaItem
             MediaMetadata.Builder()
                 .setTitle(info?.name)
                 .setDisplayTitle( info?.name )
-                .setArtist(authors?.filter {it.name?.matches(Regex("\\s*([,&])\\s*")) == false }?.joinToString(", ") { it.name ?: "" })
+                .setArtist(authors?.joinedNames())
                 .setAlbumTitle(album?.name)
                 .setArtworkUri(thumbnail?.url?.toUri())
                 .setDurationMs( durationText.toDuration().inWholeMilliseconds )
@@ -126,7 +149,7 @@ val Innertube.SongItem.asSong: Song
         // Song's title must not be "null". If they are,
         // Something is wrong with Innertube.
         title = info!!.name!!,
-        artistsText = authors?.joinToString(", ") { it.name ?: "" },
+        artistsText = authors?.joinedNames(),
         durationText = durationText,
         thumbnailUrl = thumbnail?.url,
         isExplicit = explicit
@@ -142,7 +165,7 @@ val Innertube.VideoItem.asMediaItem: MediaItem
             MediaMetadata.Builder()
                 .setTitle(info?.name)
                 .setDisplayTitle( info?.name )
-                .setArtist(authors?.joinToString(", ") { it.name ?: "" })
+                .setArtist(authors?.joinedNames())
                 .setArtworkUri(thumbnail?.url?.toUri())
                 .setDurationMs( durationText.toDuration().inWholeMilliseconds )
                 .setMediaType( MediaMetadata.MEDIA_TYPE_MUSIC )

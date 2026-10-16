@@ -1,5 +1,6 @@
 package app.kreate.android.viewmodel
 
+import it.fast4x.rimusic.utils.joinedNames
 import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -89,7 +90,7 @@ class LocalPlaylistViewModel(
                                      Song(
                                          id = info!!.endpoint!!.videoId!!,
                                          title = info!!.name!!,
-                                         artistsText = authors?.joinToString { author -> author.name ?: "" },
+                                         artistsText = authors?.joinedNames(),
                                          durationText = durationText,
                                          thumbnailUrl = thumbnail?.url,
                                          isExplicit = explicit

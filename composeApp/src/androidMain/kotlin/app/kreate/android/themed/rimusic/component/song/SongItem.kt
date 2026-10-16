@@ -1,5 +1,6 @@
 package app.kreate.android.themed.rimusic.component.song
 
+import it.fast4x.rimusic.utils.joinedNames
 import androidx.annotation.DrawableRes
 import androidx.annotation.OptIn
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -635,9 +636,7 @@ object SongItem: Visual() {
             ) {
                 Title( innertubeVideo.info?.name.orEmpty(), values, Modifier.fillMaxWidth() )
                 Artists(
-                    artistsText = innertubeVideo.authors
-                                                ?.fastJoinToString { it.name.orEmpty() }
-                                                .orEmpty(),
+                    artistsText = innertubeVideo.authors?.joinedNames().orEmpty(),
                     values = values,
                     modifier = Modifier.fillMaxWidth()
                 )
