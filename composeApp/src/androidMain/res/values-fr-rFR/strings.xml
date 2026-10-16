@@ -163,6 +163,7 @@
     <string name="menu_section_display">Affichage</string>
     <string name="menu_edit_song">Modifier le titre…</string>
     <string name="quick_sleep_timer">Minuteur</string>
+    <string name="open_random_item">Ouvrir au hasard</string>
     <string name="downloads_resume">Reprendre</string>
     <string name="downloads_cancel_all">Tout annuler</string>
     <string name="downloads_cancel">Annuler</string>

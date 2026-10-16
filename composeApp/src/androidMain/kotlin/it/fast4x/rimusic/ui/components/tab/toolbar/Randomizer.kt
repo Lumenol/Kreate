@@ -2,10 +2,14 @@ package it.fast4x.rimusic.ui.components.tab.toolbar
 
 import androidx.compose.runtime.Composable
 import app.kreate.android.R
-import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
+import androidx.compose.ui.res.stringResource
 import kotlin.random.Random
 
-interface Randomizer<T>: Button {
+/**
+ * "Ouvrir au hasard": an entry of the ⋯ menu. It was a dice icon in the toolbar,
+ * where it pushed the Library's filter pills off screen.
+ */
+interface Randomizer<T>: MenuIcon {
 
     companion object {
         /**
@@ -20,13 +24,15 @@ interface Randomizer<T>: Button {
 
     fun onClick( index: Int )
 
-    @Composable
-    override fun ToolBarButton() {
-        TabToolBar.Icon(
-            iconId = R.drawable.dice,
-            enabled = getItems().isNotEmpty()
-        ) {
-            onClick( nextInt( getItems().size ) )
-        }
-    }
+    override val iconId: Int
+        get() = R.drawable.dice
+
+    override val menuIconTitle: String
+        @Composable
+        get() = stringResource( R.string.open_random_item )
+
+    override val isEnabled: Boolean
+        get() = getItems().isNotEmpty()
+
+    override fun onShortClick() = onClick( nextInt( getItems().size ) )
 }
