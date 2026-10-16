@@ -816,10 +816,10 @@ Volume BAS : titre précédent</string>
     <string name="song_must_be_cached_or_downloaded_to_export">Le titre doit être mis en cache ou téléchargé pour être exporté</string>
     <string name="title_restart_required">Redémarrage requis</string>
     <string name="restart_dialog_body">Rouvre %s ensuite !</string>
-    <string name="title_export_settings">Paramètres d\'exportation</string>
+    <string name="title_export_settings">Exporter les réglages</string>
     <string name="store_settings_in_a_file">Enregistrer tes paramètres dans un fichier</string>
     <string name="description_exclude_credentials">Les identifiants comme ceux de la connexion à YouTube sont exclus pour des raisons de sécurité</string>
-    <string name="title_import_settings">Paramètres d\'importation</string>
+    <string name="title_import_settings">Importer des réglages</string>
     <string name="restore_settings_from_file">Restaurer tes paramètres depuis le fichier créé par « %s »</string>
     <string name="relative_listening_time">Temps d\'écoute relatif</string>
     <string name="added_to_dislikes">%s marqué « Je n\'aime pas »</string>
