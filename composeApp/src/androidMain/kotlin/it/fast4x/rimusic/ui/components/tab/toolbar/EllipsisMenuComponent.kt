@@ -51,6 +51,8 @@ class EllipsisMenuComponent private constructor(
             buttons().forEach {
                 if( it is MenuIcon)
                     it.ListMenuItem()
+                else if( it is MenuHeader )
+                    it.Render()
             }
         }
     }

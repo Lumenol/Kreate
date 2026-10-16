@@ -19,6 +19,7 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.ui.components.tab.toolbar.Button
 import it.fast4x.rimusic.ui.components.tab.toolbar.EllipsisMenuComponent
 import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
+import it.fast4x.rimusic.ui.components.tab.toolbar.MenuHeader
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -124,7 +125,9 @@ object TabToolBar {
         trailing: @Composable RowScope.() -> Unit = {},
         leading: @Composable RowScope.() -> Unit = {}
     ) {
-        val menuItems = buttons.filterIsInstance<MenuIcon>()
+        // Headings go with the menu entries, never in the toolbar
+        val menuItems = buttons.filter { it is MenuIcon || it is MenuHeader }
+            .takeIf { list -> list.any { it is MenuIcon } }.orEmpty()
         val ellipsisMenu = EllipsisMenuComponent.init { menuItems }
 
         Row(
@@ -143,7 +146,7 @@ object TabToolBar {
                 content = leading
             )
             trailing()
-            buttons.filterNot { it is MenuIcon }.forEach { it.ToolBarButton() }
+            buttons.filterNot { it is MenuIcon || it is MenuHeader }.forEach { it.ToolBarButton() }
             if( menuItems.isNotEmpty() )
                 ellipsisMenu.ToolBarButton()
         }

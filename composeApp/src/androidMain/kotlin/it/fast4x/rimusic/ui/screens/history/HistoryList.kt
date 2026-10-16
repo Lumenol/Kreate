@@ -249,16 +249,16 @@ fun HistoryList(
                 }
         }
     }
-}
-
-/** Small dated heading ("AUJOURD'HUI"), instead of a big grey band */
-@Composable
-private fun SectionHeader( text: String ) =
-    androidx.compose.foundation.text.BasicText(
-        text = text.uppercase(),
-        style = typography().xs.semiBold.color( colorPalette().textSecondary )
-                            .copy( letterSpacing = androidx.compose.ui.unit.TextUnit( .08f, androidx.compose.ui.unit.TextUnitType.Em ) ),
-        modifier = Modifier.fillMaxWidth()
-                           .background( colorPalette().background0 )
-                           .padding( start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp )
-    )
+}
+
+/** Small dated heading ("AUJOURD'HUI"), instead of a big grey band */
+@Composable
+private fun SectionHeader( text: String ) =
+    androidx.compose.foundation.text.BasicText(
+        text = text.uppercase(),
+        style = typography().xs.semiBold.color( colorPalette().textSecondary )
+                            .copy( letterSpacing = androidx.compose.ui.unit.TextUnit( .08f, androidx.compose.ui.unit.TextUnitType.Em ) ),
+        modifier = Modifier.fillMaxWidth()
+                           .background( colorPalette().background0 )
+                           .padding( start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp )
+    )

@@ -1,5 +1,7 @@
 package app.kreate.android.themed.rimusic.screen.home
 
+import it.fast4x.rimusic.ui.components.tab.toolbar.addAfter
+import it.fast4x.rimusic.ui.components.tab.toolbar.MenuHeader
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.Box
 import app.kreate.android.themed.common.component.initialOf
@@ -233,10 +235,11 @@ fun HomeSongs(
 
     LaunchedEffect( builtInPlaylist ) {
         val firstButton = if( builtInPlaylist == BuiltInPlaylist.Top ) topPlaylists else songSort
-        buttons.add( 0, firstButton )
-        buttons.add( 3, downloadAllDialog )
-        buttons.add( 4, deleteDownloadsDialog )
-        buttons.add( exportDialog )
+        buttons.addAfter( MENU_DISPLAY, firstButton )
+        buttons.addAfter( MENU_LIST, downloadAllDialog )
+        // Export closes the "list" group, just before the "display" heading
+        buttons.add( buttons.indexOfFirst { b -> b is MenuHeader && b.key == MENU_DISPLAY }.coerceAtLeast( 0 ), exportDialog )
+        buttons.addAfter( MENU_ERASE, deleteDownloadsDialog )
     }
 
     //<editor-fold defaultstate="collapsed" desc="Dialog Renders">

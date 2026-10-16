@@ -1,5 +1,6 @@
 package app.kreate.android.themed.rimusic.screen.home.onDevice
 
+import it.fast4x.rimusic.ui.components.tab.toolbar.addAfter
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -174,7 +175,7 @@ fun OnDeviceSong(
                           }
     }
     LaunchedEffect( Unit ) {
-        buttons.add( 0, odSort )
+        buttons.addAfter( app.kreate.android.themed.rimusic.screen.home.MENU_DISPLAY, odSort )
 
         if( !isPermissionGranted )
             try {
