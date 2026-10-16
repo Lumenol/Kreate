@@ -1133,7 +1133,7 @@
     <string name="library_filters_views_less">under %1$s views</string>
     <string name="library_filters_views_more">over %1$s views</string>
     <string name="library_filters_views_between">%1$s to %2$s views</string>
-    <string name="library_filters_youtube_note">Release = date put online on YouTube: for older songs it\'s often later than the real release. Songs without this info are left out of these two filters.</string>
+    <string name="library_filters_youtube_note">Release = the date given by the label ("Released on"), or its ℗ year, or else the date put online on YouTube. Songs without this info are left out of these two filters.</string>
     <string name="song_details_views">%1$s views</string>
     <string name="library_filters_refresh_running_count">Refreshing in the background… %1$d / %2$d songs</string>
     <string name="library_filters_youtube_missing">%1$d songs without YouTube info yet (filled in the background, daily on Wi-Fi)</string>

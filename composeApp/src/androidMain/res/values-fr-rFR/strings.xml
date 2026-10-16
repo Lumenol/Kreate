@@ -1136,7 +1136,7 @@ Volume BAS : titre précédent</string>
     <string name="library_filters_views_less">moins de %1$s vues</string>
     <string name="library_filters_views_more">plus de %1$s vues</string>
     <string name="library_filters_views_between">%1$s à %2$s vues</string>
-    <string name="library_filters_youtube_note">Diffusion = mise en ligne sur YouTube : pour les anciens titres, souvent plus tard que la vraie sortie. Les titres sans cette info sont exclus de ces deux filtres.</string>
+    <string name="library_filters_youtube_note">Diffusion = date de sortie donnée par le label (« Released on »), sinon son année ℗, sinon la mise en ligne sur YouTube. Les titres sans cette info sont exclus de ces deux filtres.</string>
     <string name="song_details_views">%1$s vues</string>
     <string name="library_filters_refresh_running_count">Actualisation en arrière-plan… %1$d / %2$d titres</string>
     <string name="library_filters_youtube_missing">%1$d titres sans infos YouTube pour l\'instant (complétées en arrière-plan, chaque jour en Wi-Fi)</string>

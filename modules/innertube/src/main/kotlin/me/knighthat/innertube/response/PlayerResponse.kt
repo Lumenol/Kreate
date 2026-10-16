@@ -105,6 +105,8 @@ interface PlayerResponse : InnertubeResponse {
         val isUnpluggedCorpus: Boolean
         val musicVideoType: String?
         val isLiveContent: Boolean
+        /** The whole description (WEB and IOS clients): "Released on: …", "℗ 1975 …" */
+        val shortDescription: String?
     }
 
     interface PlayerConfig {
