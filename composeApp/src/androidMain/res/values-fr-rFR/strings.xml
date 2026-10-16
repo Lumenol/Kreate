@@ -908,6 +908,14 @@ Volume BAS : titre précédent</string>
     <string name="settings_section_network">Proxy, DNS sécurisé</string>
     <string name="settings_section_about">Version, code source, signaler un problème, licences, contributeurs</string>
     <string name="content_description_back">Retour</string>
+    <string name="setting_entry_preview_start">Début de l\'extrait</string>
+    <string name="setting_entry_preview_length">Durée de l\'extrait</string>
+    <string name="setting_description_preview">Toucher la vignette d\'un titre l\'écoute un instant, sans changer ta file</string>
+    <string name="preview_start_beginning">Au début</string>
+    <string name="preview_start_middle">Au milieu</string>
+    <string name="preview_play">Écouter un extrait</string>
+    <string name="preview_stop">Arrêter l\'extrait</string>
+    <string name="preview_failed">L\'extrait n\'a pas pu être lu</string>
     <string name="setting_entry_player_tabs">Onglets À suivre · Paroles · Similaires</string>
     <string name="setting_description_player_tabs">Affiche ces trois onglets en bas du lecteur à la place de la rangée d\'icônes</string>
     <string name="player_tab_up_next">À suivre</string>

@@ -1,5 +1,6 @@
 package it.fast4x.rimusic
 
+import app.kreate.android.service.player.PreviewPlayer
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.ComponentName
@@ -1035,6 +1036,12 @@ MainActivity :
         }.onFailure {
             logger.e( it ) { "onResume failed" }
         }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Leaving the app ends a song preview, so the music resumes
+        PreviewPlayer.stop()
     }
 
     override fun onPause() {

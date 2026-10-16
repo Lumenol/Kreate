@@ -905,6 +905,14 @@
     <string name="settings_section_network">Proxy, secure DNS</string>
     <string name="settings_section_about">Version, source code, report an issue, licenses, contributors</string>
     <string name="content_description_back">Back</string>
+    <string name="setting_entry_preview_start">Preview start</string>
+    <string name="setting_entry_preview_length">Preview length</string>
+    <string name="setting_description_preview">Tapping a song\'s thumbnail plays a bit of it, without changing your queue</string>
+    <string name="preview_start_beginning">At the beginning</string>
+    <string name="preview_start_middle">In the middle</string>
+    <string name="preview_play">Play a preview</string>
+    <string name="preview_stop">Stop the preview</string>
+    <string name="preview_failed">The preview couldn\'t be played</string>
     <string name="setting_entry_player_tabs">Up next · Lyrics · Related tabs</string>
     <string name="setting_description_player_tabs">Show these three tabs at the bottom of the player instead of the row of icons</string>
     <string name="player_tab_up_next">Up next</string>

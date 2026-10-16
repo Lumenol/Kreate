@@ -131,6 +131,20 @@ fun LazyListScope.playerSettingsSection( search: SettingEntrySearch ) {
             subtitleId = R.string.effect_fade_audio_description
         )
     }
+    entry( search, R.string.setting_entry_preview_start ) {
+        SettingComponents.EnumEntry(
+            Preferences.PREVIEW_START,
+            titleId = R.string.setting_entry_preview_start,
+            subtitleId = R.string.setting_description_preview
+        )
+    }
+    entry( search, R.string.setting_entry_preview_length ) {
+        SettingComponents.EnumEntry(
+            Preferences.PREVIEW_LENGTH,
+            titleId = R.string.setting_entry_preview_length,
+            subtitleId = R.string.setting_description_preview
+        )
+    }
     entry( search, R.string.player_keep_minimized ) {
         SettingComponents.BooleanEntry(
             Preferences.PLAYER_KEEP_MINIMIZED,

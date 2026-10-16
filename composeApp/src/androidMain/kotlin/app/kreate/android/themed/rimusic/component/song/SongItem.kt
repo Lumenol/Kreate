@@ -1,14 +1,9 @@
 package app.kreate.android.themed.rimusic.component.song
 
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.waitForUpOrCancellation
-import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.ui.input.pointer.PointerInputScope
-import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.material3.CircularProgressIndicator
+import app.kreate.util.toDuration
 import androidx.compose.ui.platform.LocalContext
 import app.kreate.android.service.player.PreviewPlayer
-import kotlinx.coroutines.withTimeoutOrNull
 import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.joinedNames
 import androidx.annotation.DrawableRes
@@ -438,22 +433,27 @@ object SongItem: Visual() {
         onClick: () -> Unit = {}
     ) {
         val context = LocalContext.current
-        val currentOnClick by rememberUpdatedState( onClick )
         Structure(
             thumbnail = {
-                // Hold the thumbnail to hear a few seconds without touching the queue;
-                // a short tap still plays the song, like the rest of the row
+                // Tap the thumbnail: a bit of the song, without touching the queue (tap
+                // again to stop); the rest of the row still plays it. Long press: the menu.
+                val previewing = PreviewPlayer.previewingId == song.id
                 Box(
-                    Modifier.pointerInput( song.id ) {
-                        holdToPreview(
-                            onTap = { currentOnClick() },
-                            onHold = {
-                                hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
-                                PreviewPlayer.start( context, song.asMediaItem )
-                            },
-                            onRelease = PreviewPlayer::stop
-                        )
-                    }
+                    Modifier.combinedClickable(
+                        onClickLabel = stringResource( if( previewing ) R.string.preview_stop else R.string.preview_play ),
+                        onClick = {
+                            PreviewPlayer.toggle(
+                                context,
+                                song.asMediaItem,
+                                song.durationText.toDuration().inWholeMilliseconds,
+                                song.isLocal
+                            )
+                        },
+                        onLongClick = {
+                            hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
+                            onLongClick.invoke()
+                        }
+                    )
                 ) {
                     Thumbnail(
                         showThumbnail = showThumbnail,
@@ -463,17 +463,24 @@ object SongItem: Visual() {
                         values = values,
                         thumbnailOverlay = {
                             thumbnailOverlay()
-                            if( PreviewPlayer.previewingId == song.id )
+                            if( previewing )
                                 Box(
                                     contentAlignment = Alignment.Center,
                                     modifier = Modifier.matchParentSize()
                                                        .background( Color.Black.copy( alpha = .55f ) )
                                 ) {
-                                    Icon(
-                                        painter = painterResource( R.drawable.musical_notes ),
-                                        contentDescription = null,
-                                        tint = Color.White,
-                                        modifier = Modifier.size( 22.dp )
+                                    // How far the preview is
+                                    CircularProgressIndicator(
+                                        progress = { PreviewPlayer.progress },
+                                        color = Color.White,
+                                        trackColor = Color.White.copy( alpha = .25f ),
+                                        strokeWidth = 3.dp,
+                                        modifier = Modifier.matchParentSize().padding( 6.dp )
+                                    )
+                                    // Stop
+                                    Box(
+                                        Modifier.size( 12.dp )
+                                                .background( Color.White, RoundedCornerShape( 2.dp ) )
                                     )
                                 }
                         }
@@ -755,40 +762,6 @@ object SongItem: Visual() {
 
             fun from( appearance: Appearance ) =
                 from( appearance.colorPalette, appearance.typography )
-        }
-    }
-}
-
-/**
- * Short tap: [onTap]. Held past the long-press delay: [onHold], then [onRelease] when
- * the finger lifts (or the gesture is cancelled). Moving first (scrolling) does nothing.
- * The press is consumed so the row's own tap and long press (menu) don't fire too.
- */
-private suspend fun PointerInputScope.holdToPreview(
-    onTap: () -> Unit,
-    onHold: () -> Unit,
-    onRelease: () -> Unit
-) = awaitEachGesture {
-    val down = awaitFirstDown()
-    down.consume()
-
-    var cancelled = false
-    val up = withTimeoutOrNull( viewConfiguration.longPressTimeoutMillis ) {
-        waitForUpOrCancellation().also { if( it == null ) cancelled = true }
-    }
-    when {
-        up != null -> { up.consume(); onTap() }
-        cancelled  -> Unit
-        else       -> {
-            onHold()
-            try {
-                do {
-                    val event = awaitPointerEvent()
-                    event.changes.forEach { it.consume() }
-                } while( event.changes.any { it.pressed } )
-            } finally {
-                onRelease()
-            }
         }
     }
 }
