@@ -101,6 +101,15 @@ fun HomeLibrary(
                  }
              }
              .fastFilter { search appearsIn it.playlist.cleanName() }
+             .let { list ->
+                 // Monthly playlists by month, newest first ("20269" = September 2026),
+                 // whatever the sort: they came out July, September, August…
+                 if( playlistType != PlaylistsType.MonthlyPlaylist ) list
+                 else list.sortedByDescending { p ->
+                     val d = p.playlist.name.filter( Char::isDigit )
+                     if( d.length in 5..6 ) d.take( 4 ).toInt() * 100 + d.drop( 4 ).toInt() else 0
+                 }
+             }
     }}
 
     val sort = remember {

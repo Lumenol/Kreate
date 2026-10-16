@@ -27,6 +27,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.text.BasicText
 import it.fast4x.rimusic.typography
@@ -132,8 +133,15 @@ object TabToolBar {
             modifier = modifier.fillMaxWidth()
                                .padding( start = 16.dp, end = 8.dp, top = 4.dp, bottom = 4.dp )
         ) {
-            leading()
-            Spacer( Modifier.weight( 1f ) )
+            // The count and filter pills take what's left and scroll sideways if they
+            // must: the buttons and "⋮" on the right always stay on screen
+            Row(
+                horizontalArrangement = Arrangement.spacedBy( 8.dp ),
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.weight( 1f )
+                                   .horizontalScroll( androidx.compose.foundation.rememberScrollState() ),
+                content = leading
+            )
             trailing()
             buttons.filterNot { it is MenuIcon }.forEach { it.ToolBarButton() }
             if( menuItems.isNotEmpty() )
