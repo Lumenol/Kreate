@@ -1,5 +1,15 @@
 package app.kreate.android.themed.rimusic.component.song
 
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.input.pointer.PointerInputScope
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
+import app.kreate.android.service.player.PreviewPlayer
+import kotlinx.coroutines.withTimeoutOrNull
+import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.joinedNames
 import androidx.annotation.DrawableRes
 import androidx.annotation.OptIn
@@ -427,16 +437,48 @@ object SongItem: Visual() {
         thumbnailOverlay: @Composable BoxScope.() -> Unit = {},
         onClick: () -> Unit = {}
     ) {
+        val context = LocalContext.current
+        val currentOnClick by rememberUpdatedState( onClick )
         Structure(
             thumbnail = {
-                Thumbnail(
-                    showThumbnail = showThumbnail,
-                    thumbnailUrl = song.cleanThumbnailUrl(),
-                    isLiked = (song.likedAt ?: 0) > 0,      // A disliked song has a negative likedAt
-                    isPlaying = isPlaying,
-                    values = values,
-                    thumbnailOverlay = thumbnailOverlay
-                )
+                // Hold the thumbnail to hear a few seconds without touching the queue;
+                // a short tap still plays the song, like the rest of the row
+                Box(
+                    Modifier.pointerInput( song.id ) {
+                        holdToPreview(
+                            onTap = { currentOnClick() },
+                            onHold = {
+                                hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
+                                PreviewPlayer.start( context, song.asMediaItem )
+                            },
+                            onRelease = PreviewPlayer::stop
+                        )
+                    }
+                ) {
+                    Thumbnail(
+                        showThumbnail = showThumbnail,
+                        thumbnailUrl = song.cleanThumbnailUrl(),
+                        isLiked = (song.likedAt ?: 0) > 0,      // A disliked song has a negative likedAt
+                        isPlaying = isPlaying,
+                        values = values,
+                        thumbnailOverlay = {
+                            thumbnailOverlay()
+                            if( PreviewPlayer.previewingId == song.id )
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.matchParentSize()
+                                                       .background( Color.Black.copy( alpha = .55f ) )
+                                ) {
+                                    Icon(
+                                        painter = painterResource( R.drawable.musical_notes ),
+                                        contentDescription = null,
+                                        tint = Color.White,
+                                        modifier = Modifier.size( 22.dp )
+                                    )
+                                }
+                        }
+                    )
+                }
             },
             firstLine = {
                 Badges(
@@ -713,6 +755,40 @@ object SongItem: Visual() {
 
             fun from( appearance: Appearance ) =
                 from( appearance.colorPalette, appearance.typography )
+        }
+    }
+}
+
+/**
+ * Short tap: [onTap]. Held past the long-press delay: [onHold], then [onRelease] when
+ * the finger lifts (or the gesture is cancelled). Moving first (scrolling) does nothing.
+ * The press is consumed so the row's own tap and long press (menu) don't fire too.
+ */
+private suspend fun PointerInputScope.holdToPreview(
+    onTap: () -> Unit,
+    onHold: () -> Unit,
+    onRelease: () -> Unit
+) = awaitEachGesture {
+    val down = awaitFirstDown()
+    down.consume()
+
+    var cancelled = false
+    val up = withTimeoutOrNull( viewConfiguration.longPressTimeoutMillis ) {
+        waitForUpOrCancellation().also { if( it == null ) cancelled = true }
+    }
+    when {
+        up != null -> { up.consume(); onTap() }
+        cancelled  -> Unit
+        else       -> {
+            onHold()
+            try {
+                do {
+                    val event = awaitPointerEvent()
+                    event.changes.forEach { it.consume() }
+                } while( event.changes.any { it.pressed } )
+            } finally {
+                onRelease()
+            }
         }
     }
 }
