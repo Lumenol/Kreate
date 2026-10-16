@@ -1,5 +1,8 @@
 package it.fast4x.rimusic.ui.screens.history
 
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.semiBold
 import androidx.annotation.OptIn
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -140,8 +143,9 @@ fun HistoryList(
                 }
     }.collectAsState( emptyMap(), Dispatchers.IO )
 
-    val buttonsList = mutableListOf(HistoryType.History to stringResource(R.string.history))
-    buttonsList += HistoryType.YTMHistory to stringResource(R.string.yt_history)
+    // Short: where the history comes from
+    val buttonsList = mutableListOf(HistoryType.History to stringResource(R.string.history_tab_local))
+    buttonsList += HistoryType.YTMHistory to stringResource(R.string.history_tab_ytm)
 
     var historyType by Preferences.HISTORY_PAGE_TYPE
 
@@ -169,23 +173,13 @@ fun HistoryList(
         }
 
         LazyColumn(
+            // No top inset: the page's own title bar is already below the status bar
             contentPadding = LocalPlayerAwareWindowInsets.current
-                .only(WindowInsetsSides.Vertical + WindowInsetsSides.End).asPaddingValues(),
+                .only(WindowInsetsSides.Bottom + WindowInsetsSides.End).asPaddingValues(),
             modifier = Modifier
                 .background(colorPalette().background0)
                 .fillMaxSize()
         ) {
-
-            item(key = "header", contentType = 0) {
-                HeaderWithIcon(
-                    title = stringResource(R.string.history),
-                    iconId = R.drawable.history,
-                    enabled = false,
-                    showIcon = false,
-                    modifier = Modifier,
-                    onClick = {}
-                )
-            }
 
             item(
                 key = "tabList", contentType = 0,
@@ -200,15 +194,7 @@ fun HistoryList(
 
             if( historyType == HistoryType.History )
                 events.forEach { (headerStr, details) ->
-                    stickyHeader {
-                        Title(
-                            title = headerStr,
-                            modifier = Modifier.background(
-                                color = colorPalette().background3,
-                                shape = thumbnailShape()
-                            )
-                        )
-                    }
+                    stickyHeader { SectionHeader( headerStr ) }
 
                     items(
                         items = details.fastDistinctBy { it.song.id },
@@ -233,15 +219,7 @@ fun HistoryList(
 
             if ( historyType == HistoryType.YTMHistory )
                 historyPage?.getOrNull()?.sections?.forEach { section ->
-                    stickyHeader {
-                        Title(
-                            title = section.title,
-                            modifier = Modifier.background(
-                                color = colorPalette().background3,
-                                shape = thumbnailShape()
-                            )
-                        )
-                    }
+                    stickyHeader { SectionHeader( section.title ) }
 
                     items(
                         items = section.songs
@@ -271,5 +249,16 @@ fun HistoryList(
                 }
         }
     }
-}
-
+}
+
+/** Small dated heading ("AUJOURD'HUI"), instead of a big grey band */
+@Composable
+private fun SectionHeader( text: String ) =
+    androidx.compose.foundation.text.BasicText(
+        text = text.uppercase(),
+        style = typography().xs.semiBold.color( colorPalette().textSecondary )
+                            .copy( letterSpacing = androidx.compose.ui.unit.TextUnit( .08f, androidx.compose.ui.unit.TextUnitType.Em ) ),
+        modifier = Modifier.fillMaxWidth()
+                           .background( colorPalette().background0 )
+                           .padding( start = 16.dp, end = 16.dp, top = 14.dp, bottom = 6.dp )
+    )

@@ -11,7 +11,8 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import app.kreate.android.R
 import it.fast4x.compose.persist.PersistMapCleanup
-import it.fast4x.rimusic.ui.components.Skeleton
+import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.semiBold
 
 @ExperimentalTextApi
 @ExperimentalFoundationApi
@@ -27,20 +28,18 @@ fun HistoryScreen(
 
     PersistMapCleanup(tagPrefix = "history")
 
-            Skeleton(
-                navController,
-                miniPlayer = miniPlayer,
-                navBarContent = { item ->
-                    item(0, stringResource(R.string.history), R.drawable.history)
-                }
-            ) { currentTabIndex ->
-                saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
-                    when (currentTabIndex) {
-                        0 -> HistoryList(
-                            navController = navController,
-                        )
-                    }
-                }
-            }
-
+    // A page of its own like Downloads: back arrow and title, the bottom bar
+    // stays. It used the app header + a one-tab bar, a third of the screen
+    app.kreate.android.themed.common.component.DetailSkeleton(
+        navController = navController,
+        miniPlayer = miniPlayer,
+        title = {
+            androidx.compose.foundation.text.BasicText(
+                text = stringResource( R.string.history ),
+                style = it.fast4x.rimusic.typography().l.semiBold.color( it.fast4x.rimusic.colorPalette().text )
+            )
+        }
+    ) {
+        HistoryList( navController = navController )
+    }
 }

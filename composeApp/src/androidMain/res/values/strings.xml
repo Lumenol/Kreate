@@ -108,6 +108,8 @@
     <string name="provided_by">Provided by</string>
     <string name="tab_player">Player</string>
     <string name="filter_all">All</string>
+    <string name="history_tab_local">Kreate</string>
+    <string name="history_tab_ytm">YouTube account</string>
     <string name="no_pinned_playlists">No pinned playlist. Long press a playlist, then "Pin/Unpin playlist".</string>
     <string name="about_version_by">v%1$s by </string>
     <string name="delete_playback_events">Delete %1$s playback events</string>

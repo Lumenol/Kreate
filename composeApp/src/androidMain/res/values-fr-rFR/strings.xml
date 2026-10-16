@@ -205,6 +205,8 @@
     <string name="ui_tab">Interface</string>
     <string name="tab_player">Lecteur</string>
     <string name="filter_all">Tous</string>
+    <string name="history_tab_local">Kreate</string>
+    <string name="history_tab_ytm">Compte YouTube</string>
     <string name="biggest">Très gros</string>
     <string name="set_custom_cache">Définir un cache personnalisé</string>
     <string name="enter_value_in_mb">Valeur en Mo</string>
