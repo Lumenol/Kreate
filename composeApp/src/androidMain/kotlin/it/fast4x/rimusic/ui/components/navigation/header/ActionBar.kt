@@ -12,6 +12,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -98,10 +99,10 @@ fun ActionBar(
     var expanded by remember { mutableStateOf(false) }
 
     // History in sight: in the menu alone, behind the account picture, nobody found it
-    HeaderIcon( R.drawable.history ) { NavRoutes.history.navigateHere( navController ) }
+    HeaderIcon( R.drawable.history, description = stringResource( R.string.history ) ) { NavRoutes.history.navigateHere( navController ) }
 
     // Search Icon
-    HeaderIcon( R.drawable.search ) {
+    HeaderIcon( R.drawable.search, description = stringResource( R.string.word_search ) ) {
         navController.navigate( NavRoutes.search.name ) {
             if( Preferences.SINGLE_BACK_FROM_SEARCH.value )
                 popUpTo( NavRoutes.search.name )

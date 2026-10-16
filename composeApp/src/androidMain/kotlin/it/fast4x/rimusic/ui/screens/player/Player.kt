@@ -1779,7 +1779,7 @@ fun Player(
 
                         Image(
                             bitmap = AppIcon.Round.imageBitmap( context ),
-                            contentDescription = "app icon in player",
+                            contentDescription = "Kreate",
                             modifier = Modifier.size( 24.dp )
                                                .clickable {
                                                    onDismiss()
