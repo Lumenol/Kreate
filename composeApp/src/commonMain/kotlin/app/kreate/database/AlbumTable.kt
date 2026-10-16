@@ -341,4 +341,19 @@ interface AlbumTable: DatabaseTable<Album> {
         AlbumSortBy.RANDOM          -> allInLibraryRandomized()
     }.map( sortOrder::applyTo ).take( 4 )
     //</editor-fold>
+
+    /**
+     * Albums without a cover take the one most of their songs have. In one query:
+     * done album by album when the screen opened, the list wasn't loaded yet and
+     * nothing was filled (2191 of 2205 albums had no cover).
+     */
+    @Query("""
+        UPDATE albums SET thumbnail_url = (
+            SELECT s.thumbnail_url FROM song_album_map m JOIN songs s ON s.id = m.song_id
+            WHERE m.album_id = albums.id AND s.thumbnail_url IS NOT NULL AND s.thumbnail_url != ''
+            GROUP BY s.thumbnail_url ORDER BY COUNT(*) DESC LIMIT 1
+        )
+        WHERE thumbnail_url IS NULL
+    """)
+    fun fillMissingCovers(): Int
 }
