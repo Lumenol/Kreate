@@ -17,7 +17,9 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.MediaItem
+import app.kreate.android.LocalBottomMenu
 import app.kreate.android.R
+import app.kreate.android.constant.MenuPage
 import app.kreate.android.service.player.StatefulPlayer
 import app.kreate.android.themed.rimusic.component.song.SongItem
 import it.fast4x.innertube.Innertube
@@ -27,6 +29,9 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.Loader
 import it.fast4x.rimusic.ui.components.themed.Menu
+import it.fast4x.rimusic.utils.addNext
+import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.findMediaItemIndexById
 import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.semiBold
 import kotlinx.coroutines.Dispatchers
@@ -35,11 +40,13 @@ import org.koin.compose.koinInject
 
 /**
  * "Related" tab of the player: songs YouTube Music links to [mediaItem].
- * Tapping one plays it and starts a radio from it, like on the home screen.
+ * Tapping one plays it right away, inserted after the current song (the queue is
+ * kept); a long press opens the usual song menu (play next, add to queue, radio...).
  */
 @Composable
 fun RelatedSheet( mediaItem: MediaItem, onDismiss: () -> Unit ) {
     val player: StatefulPlayer = koinInject()
+    val bottomMenu = LocalBottomMenu.current
     val hapticFeedback = LocalHapticFeedback.current
     val colorPalette = colorPalette()
     val typography = typography()
@@ -85,9 +92,19 @@ fun RelatedSheet( mediaItem: MediaItem, onDismiss: () -> Unit ) {
                     hapticFeedback = hapticFeedback,
                     isPlaying = song.id == currentMediaItem?.mediaId,
                     values = songItemValues,
-                    onLongClick = {}
+                    // The usual song menu: play next, add to queue, playlist, share...
+                    onLongClick = { bottomMenu.show( MenuPage.Song( song.asMediaItem ), true ) }
                 ) {
-                    player.startRadio( song, true )
+                    // Gently: play it now, right after the current song, and keep the
+                    // queue (it used to be replaced by a radio). The radio is in the menu.
+                    val item = song.asMediaItem
+                    player.addNext( item )
+                    val index = player.findMediaItemIndexById( item.mediaId )
+                    if( index >= 0 && index != player.currentMediaItemIndex ) {
+                        player.seekToDefaultPosition( index )
+                        player.prepare()
+                        player.playWhenReady = true
+                    }
                     onDismiss()
                 }
             }
