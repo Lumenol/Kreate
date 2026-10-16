@@ -1,5 +1,6 @@
 package app.kreate.android.themed.common.screens.details
 
+import app.kreate.database.models.SongYoutubeInfo
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -72,9 +73,18 @@ private fun BoxWithConstraintsScope.Thumbnail(
     )
 }
 
+/**
+ * Title, artist and "views · release date" over the thumbnail. Built from the song's
+ * basic info when the details answer fails (YouTube changed it), so the page never
+ * stays empty.
+ */
 @Composable
-private fun BoxScope.Artist(
-    details: InnertubeSongDetails,
+private fun BoxScope.Header(
+    title: String,
+    artistName: String,
+    artistThumbnailUrl: String?,
+    subscribers: String?,
+    stats: String?,
     colorPalette: ColorPalette,
     typography: Typography,
     modifier: Modifier = Modifier
@@ -85,32 +95,56 @@ private fun BoxScope.Artist(
                            .padding( 16.dp )
     ) {
         BasicText(
-            text = details.title,
+            text = title,
             style = typography.xl.copy( colorPalette.text ),
         )
+        if( !stats.isNullOrBlank() )
+            BasicText(
+                text = stats,
+                style = typography.xs.copy( colorPalette.textSecondary )
+            )
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy( 5.dp)
         ) {
-            ImageFactory.AsyncImage(
-                thumbnailUrl = details.artist.thumbnails.first().url,
-                modifier = Modifier.size( 40.dp )
-                                   .clip(CircleShape )
-            )
+            if( artistThumbnailUrl != null )
+                ImageFactory.AsyncImage(
+                    thumbnailUrl = artistThumbnailUrl,
+                    modifier = Modifier.size( 40.dp )
+                                       .clip(CircleShape )
+                )
 
             Column {
                 BasicText(
-                    text = details.artist.name,
+                    text = artistName,
                     style = typography.s.copy( colorPalette.textSecondary )
                 )
-                BasicText(
-                    text = details.artist.longNumSubscribers.orEmpty(),
-                    style = typography.xs.copy( colorPalette.textDisabled )
-                )
+                if( !subscribers.isNullOrBlank() )
+                    BasicText(
+                        text = subscribers,
+                        style = typography.xs.copy( colorPalette.textDisabled )
+                    )
             }
         }
     }
+
+/** "187 M views · Oct 14, 2018", in the user's language; `null` when nothing is known */
+private fun statsOf( context: android.content.Context, info: SongYoutubeInfo?, details: InnertubeSongDetails? ): String? {
+    val locale = context.resources.configuration.locales[0]
+    val views = info?.viewCount?.let {
+        context.getString(
+            R.string.song_details_views,
+            android.icu.text.CompactDecimalFormat.getInstance( locale, android.icu.text.CompactDecimalFormat.CompactStyle.SHORT ).format( it )
+        )
+    } ?: details?.viewCount?.short?.takeIf( String::isNotBlank )
+    val date = info?.publishedAt?.let {
+        java.text.DateFormat.getDateInstance( java.text.DateFormat.MEDIUM, locale )
+            .apply { timeZone = java.util.TimeZone.getTimeZone( "UTC" ) }
+            .format( java.util.Date( it ) )
+    } ?: details?.releaseDate?.takeIf( String::isNotBlank )
+    return listOfNotNull( views, date ).joinToString( " · " ).ifBlank { null }
+}
 
 @Composable
 private fun LazyItemScope.Description(
@@ -154,6 +188,7 @@ fun SongDetailsScreen(
     ) {
         val (colorPalette, typography) = LocalAppearance.current
         val shape = RoundedCornerShape(15.dp)
+        val context = androidx.compose.ui.platform.LocalContext.current
 
         LazyColumn(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -161,7 +196,9 @@ fun SongDetailsScreen(
             verticalArrangement = Arrangement.spacedBy( 5.dp ),
             modifier = Modifier.fillMaxSize()
         ) {
-            val details = viewModel.songDetails ?: return@LazyColumn
+            val details = viewModel.songDetails
+            val basic = viewModel.songBasicInfo
+            if( details == null && basic == null ) return@LazyColumn
 
             item {
                 val shape = remember {
@@ -177,12 +214,21 @@ fun SongDetailsScreen(
                         Thumbnail( it, shape )
                     }
 
-                    Artist( details, colorPalette, typography )
+                    Header(
+                        title = details?.title ?: basic?.name.orEmpty(),
+                        artistName = details?.artist?.name ?: basic?.artistsText.orEmpty(),
+                        artistThumbnailUrl = details?.artist?.thumbnails?.firstOrNull()?.url,
+                        subscribers = details?.artist?.longNumSubscribers,
+                        stats = statsOf( context, viewModel.youtubeInfo, details ),
+                        colorPalette = colorPalette,
+                        typography = typography
+                    )
                 }
             }
 
-            item {
-                Description( details, colorPalette, typography, shape )
-            }
+            if( details != null )
+                item {
+                    Description( details, colorPalette, typography, shape )
+                }
         }
     }

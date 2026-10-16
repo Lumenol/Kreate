@@ -693,6 +693,10 @@ sealed class Preferences<T>(
         val YOUTUBE_INFO_REFRESH by lazy {
             Enum( preferences, Key.YOUTUBE_INFO_REFRESH, "", YoutubeInfoRefresh.Days90 )
         }
+        /** Last full background filling of the songs' YouTube info (daily, on Wi-Fi) */
+        val YOUTUBE_INFO_LAST_FILL by lazy {
+            Long( preferences, Key.YOUTUBE_INFO_LAST_FILL, "", 0L )
+        }
         val QUICK_PICKS_MIN_DURATION by lazy {
             Enum( preferences, Key.QUICK_PICKS_MIN_DURATION, "exoPlayerMinTimeForEvent", ExoPlayerMinTimeForEvent.`20s` )
         }
@@ -1947,6 +1951,7 @@ sealed class Preferences<T>(
         const val HOME_SONGS_TYPE = "HomeSongsType"
         const val LIBRARY_SONG_FILTERS = "LibrarySongFilters"
         const val YOUTUBE_INFO_REFRESH = "YoutubeInfoRefresh"
+        const val YOUTUBE_INFO_LAST_FILL = "YoutubeInfoLastFill"
         const val LIBRARY_FILTER_SHORTCUTS = "LibraryFilterShortcuts"
         const val HISTORY_PAGE_TYPE = "HistoryPageType"
         const val HOME_LIBRARY_TYPE = "HomePlaylistType"

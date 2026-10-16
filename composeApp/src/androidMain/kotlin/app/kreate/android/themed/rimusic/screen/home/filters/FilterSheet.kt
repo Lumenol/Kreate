@@ -3,8 +3,6 @@ package app.kreate.android.themed.rimusic.screen.home.filters
 import kotlinx.coroutines.Dispatchers
 import it.fast4x.rimusic.Database
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.LaunchedEffect
-import app.kreate.android.service.YoutubeInfo
 import android.content.Context
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -317,9 +315,6 @@ fun FilterSheet( onDone: () -> Unit ) {
     var firstOpen by rememberSaveable { mutableStateOf( f.firstPlayedActive ) }
     var releasedOpen by rememberSaveable { mutableStateOf( f.releasedActive ) }
     var viewsOpen by rememberSaveable { mutableStateOf( f.viewsActive ) }
-    // What YouTube said of the songs is filled in the background, once these are looked at
-    if( releasedOpen || viewsOpen || f.needsYoutubeInfo )
-        LaunchedEffect( Unit ) { YoutubeInfo.fillLibrary( context ) }
 
     Column(
         Modifier.padding( top = 48.dp )
@@ -521,29 +516,19 @@ fun FilterSheet( onDone: () -> Unit ) {
                     onExpand = { viewsOpen = !viewsOpen },
                     onChange = { set( f.copy( views = it ) ) }
                 )
+                // The info is filled in the background (daily on Wi-Fi, or from Settings →
+                // Data): only say what these two filters can't see yet
                 if( releasedOpen || viewsOpen || f.needsYoutubeInfo ) {
                     val known by remember { Database.songYoutubeInfoTable.knownCount() }.collectAsState( 0, Dispatchers.IO )
                     val total by remember { Database.songYoutubeInfoTable.libraryCount() }.collectAsState( 0, Dispatchers.IO )
                     BasicText(
                         text = buildString {
                             if( known < total )
-                                append( stringResource(
-                                    if( YoutubeInfo.isFilling ) R.string.library_filters_youtube_progress else R.string.library_filters_youtube_paused,
-                                    known.coerceAtMost( total ), total
-                                ) ).append( "\n" )
+                                append( stringResource( R.string.library_filters_youtube_missing, total - known ) ).append( "\n" )
                             append( stringResource( R.string.library_filters_youtube_note ) )
                         },
                         style = typography().xxs.color( colorPalette().textSecondary )
                     )
-                    // Views change: ask again now rather than wait (Settings → Data has the delay)
-                    if( !YoutubeInfo.isFilling )
-                        BasicText(
-                            stringResource( R.string.library_filters_refresh_now ),
-                            style = typography().xs.semiBold.color( colorPalette().accent ),
-                            modifier = Modifier.clip( RoundedCornerShape( 50 ) )
-                                               .clickable { YoutubeInfo.fillLibrary( context, everything = true ) }
-                                               .padding( vertical = 6.dp )
-                        )
                 }
             }
             // The list fades out above the button

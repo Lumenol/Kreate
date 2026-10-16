@@ -15,6 +15,9 @@ interface SongYoutubeInfoTable {
     @Query("SELECT * FROM song_youtube_info")
     fun all(): Flow<List<SongYoutubeInfo>>
 
+    @Query("SELECT * FROM song_youtube_info WHERE song_id = :songId")
+    fun get( songId: String ): SongYoutubeInfo?
+
     @Query("SELECT fetched_at FROM song_youtube_info WHERE song_id = :songId")
     fun fetchedAt( songId: String ): Long?
 

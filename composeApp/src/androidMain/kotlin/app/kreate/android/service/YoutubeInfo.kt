@@ -1,5 +1,7 @@
 package app.kreate.android.service
 
+import java.util.concurrent.atomic.AtomicBoolean
+import it.fast4x.rimusic.utils.isConnectionMetered
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -46,6 +48,7 @@ object YoutubeInfo {
     // Playback resolves a song several times (chunks): ask once per run
     private val askedOnPlay = ConcurrentHashMap.newKeySet<String>()
     private var filler: Job? = null
+    private val dailyPending = AtomicBoolean( false )
 
     /** The background filling runs: the sheet tells it */
     var isFilling by mutableStateOf( false )
@@ -88,6 +91,31 @@ object YoutubeInfo {
         false
     }
 
+    /**
+     * At startup: once a day, on Wi-Fi only, fill what's missing and ask again what's
+     * too old (the first day catches up the whole library, then a few songs a day).
+     * Settings → Data runs it at will, on any network.
+     */
+    fun runIfDue( context: Context ) {
+        val last = Preferences.YOUTUBE_INFO_LAST_FILL.value
+        if( System.currentTimeMillis() - last < 86_400_000L ) return
+        // Called each time the app comes to the front: one waiting run at a time
+        if( !dailyPending.compareAndSet( false, true ) ) return
+        scope.launch {
+            try {
+                // Leave the start of the app alone
+                delay( 30.seconds )
+                if( isNetworkAvailable( context ) && !context.isConnectionMetered() )
+                    fillLibrary( context, wifiOnly = true )
+            } finally {
+                dailyPending.set( false )
+            }
+        }
+    }
+
+    /** Asks now (the song's details page): `true` when saved */
+    suspend fun refresh( songId: String ): Boolean = ask( songId ) == Result.SAVED
+
     /** A song starts playing: ask if never asked or too old, after its row is in */
     fun refreshOnPlay( songId: String ) {
         if( !askedOnPlay.add( songId ) ) return
@@ -109,7 +137,7 @@ object YoutubeInfo {
      * first every time; but 5 of those in a row look like YouTube refusing: the filling
      * stops there and marks none of them. Picks up where it was next time.
      */
-    fun fillLibrary( context: Context, everything: Boolean = false ) {
+    fun fillLibrary( context: Context, everything: Boolean = false, wifiOnly: Boolean = false ) {
         if( filler?.isActive == true && !everything ) return
         val previous = filler
         filler = scope.launch {
@@ -125,8 +153,12 @@ object YoutubeInfo {
                     else          -> emptyList()
                 }
                 val unanswered = mutableListOf<String>()
+                var complete = true
                 for( songId in queue ) {
-                    if( !isNetworkAvailable( context ) ) break
+                    if( !isNetworkAvailable( context ) || (wifiOnly && context.isConnectionMetered()) ) {
+                        complete = false
+                        break
+                    }
                     when( ask( songId ) ) {
                         Result.SAVED -> {
                             // Those just before were isolated cases: mark them as asked
@@ -140,12 +172,15 @@ object YoutubeInfo {
                             unanswered += songId
                             if( unanswered.size >= 5 ) {
                                 logger.w { "5 songs in a row without an answer, the filling stops here" }
+                                complete = false
                                 break
                             }
                         }
                     }
                     delay( 1500 )
                 }
+                // Done for today: the daily run waits until tomorrow
+                if( complete ) Preferences.YOUTUBE_INFO_LAST_FILL.value = System.currentTimeMillis()
             } finally {
                 if( filler === coroutineContext[Job] ) isFilling = false
             }
