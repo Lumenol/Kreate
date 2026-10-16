@@ -102,11 +102,11 @@ fun cacheSubtitle( context: Context, preference: Preferences.Long, currentValue:
         val fromSetting by preference
         if( fromSetting == 0L ) return@derivedStateOf context.getString( R.string.vt_disabled )
 
-        val maxSize = when( fromSetting ) {
-            Long.MAX_VALUE -> context.getString( R.string.unlimited )
-            else -> Formatter.formatShortFileSize( context, fromSetting )
-        }
         val usage = Formatter.formatShortFileSize( context, currentValue() )
+        // No limit: no percentage, it was always "(0%)"
+        if( fromSetting == Long.MAX_VALUE )
+            return@derivedStateOf context.getString( R.string.setting_description_storage_usage_unlimited, usage )
+        val maxSize = Formatter.formatShortFileSize( context, fromSetting )
         val percentage = ((currentValue().toFloat() / fromSetting) * 100).roundToInt()
 
         context.getString( R.string.setting_description_storage_usage, maxSize, usage, percentage )
@@ -178,7 +178,8 @@ fun DataSettings( paddingValues: PaddingValues ) {
                         indicator?.ToolBarButton()
                 }
 
-                if( cacheSize > 0 )
+                // No gauge without a limit: it always read 0 %
+                if( cacheSize > 0 && cacheSize != Long.MAX_VALUE )
                     indicator?.ProgressBar( progressBarModifier )
 
                 LaunchedEffect( diskCache ) {
@@ -210,7 +211,7 @@ fun DataSettings( paddingValues: PaddingValues ) {
                         indicator.ToolBarButton()
                 }
 
-                if( maxCacheSize > 0 )
+                if( maxCacheSize > 0 && maxCacheSize != Long.MAX_VALUE )
                     indicator.ProgressBar( progressBarModifier )
 
                 LaunchedEffect( maxCacheSize ) {
@@ -246,7 +247,7 @@ fun DataSettings( paddingValues: PaddingValues ) {
                         indicator.ToolBarButton()
                 }
 
-                if( maxCacheSize > 0 )
+                if( maxCacheSize > 0 && maxCacheSize != Long.MAX_VALUE )
                     indicator.ProgressBar( progressBarModifier )
 
                 LaunchedEffect( maxCacheSize ) {

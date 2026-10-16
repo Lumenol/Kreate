@@ -1,5 +1,6 @@
 package it.fast4x.rimusic.ui.screens.player
 
+import it.fast4x.rimusic.utils.formatDuration
 import android.annotation.SuppressLint
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.animateContentSize
@@ -363,7 +364,7 @@ private fun Duration(
         modifier = Modifier.fillMaxWidth()
     ) {
         BasicText(
-            text = formatAsDuration(position.toLong()),
+            text = formatDuration( position.toLong() ),
             style = typography.xxs.semiBold,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -371,7 +372,7 @@ private fun Duration(
 
         if (duration != C.TIME_UNSET) {
             BasicText(
-                text = formatAsDuration(duration),
+                text = formatDuration( duration ),
                 style = typography.xxs.semiBold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

@@ -3,7 +3,6 @@ package it.fast4x.rimusic.ui.screens.mood
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.ExperimentalTextApi
@@ -11,7 +10,12 @@ import androidx.media3.common.util.UnstableApi
 import androidx.navigation.NavController
 import app.kreate.android.R
 import it.fast4x.compose.persist.PersistMapCleanup
-import it.fast4x.rimusic.ui.components.Skeleton
+import app.kreate.android.themed.common.component.DetailSkeleton
+import androidx.compose.foundation.text.BasicText
+import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.typography
+import it.fast4x.rimusic.utils.color
+import it.fast4x.rimusic.utils.semiBold
 
 @ExperimentalTextApi
 @ExperimentalFoundationApi
@@ -20,24 +24,23 @@ import it.fast4x.rimusic.ui.components.Skeleton
 @UnstableApi
 @Composable
 fun MoodsPageScreen(
-    navController: NavController
+    navController: NavController,
+    miniPlayer: @Composable () -> Unit = {}
 ) {
-    val saveableStateHolder = rememberSaveableStateHolder()
-
     PersistMapCleanup(tagPrefix = "playlist/$defaultBrowseId")
 
-            Skeleton(
-                navController,
-                navBarContent = { item ->
-                    item(0, stringResource(R.string.moods_and_genres), R.drawable.album)
-                }
-            ) { currentTabIndex ->
-                saveableStateHolder.SaveableStateProvider(key = currentTabIndex) {
-                    when (currentTabIndex) {
-                        0 -> MoodsPage(
-                            navController = navController
-                        )
-                    }
-                }
-            }
+    // A page of its own like History: title in the bar, mini player and bottom
+    // bar stay (it had neither)
+    DetailSkeleton(
+        navController = navController,
+        miniPlayer = miniPlayer,
+        title = {
+            BasicText(
+                text = stringResource( R.string.moods_and_genres ),
+                style = typography().l.semiBold.color( colorPalette().text )
+            )
+        }
+    ) {
+        MoodsPage( navController = navController )
+    }
 }

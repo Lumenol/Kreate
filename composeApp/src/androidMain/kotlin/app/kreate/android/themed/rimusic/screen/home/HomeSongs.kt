@@ -1,5 +1,7 @@
 package app.kreate.android.themed.rimusic.screen.home
 
+import app.kreate.android.R
+import androidx.compose.ui.res.stringResource
 import it.fast4x.rimusic.ui.components.tab.toolbar.addAfter
 import it.fast4x.rimusic.ui.components.tab.toolbar.MenuHeader
 import androidx.compose.foundation.layout.fillMaxSize
@@ -148,7 +150,9 @@ fun HomeSongs(
      * > This variable should **_NOT_** be set to `false` while inside **first** phrase,
      * and should **_NOT_** be set to `true` while in **second** phrase.
      */
-    var isLoading by rememberSaveable { mutableStateOf(false) }
+    // True from the start: the first frame showed the "empty" message over a full library
+    var isLoading by rememberSaveable { mutableStateOf(true) }
+    var loadedOnce by remember { mutableStateOf( false ) }
 
     // This phrase loads all songs across types into [items]
     // No filtration applied to this stage, only sort
@@ -212,7 +216,14 @@ fun HomeSongs(
                       .distinctUntilChanged()
                       // Scroll list to top to prevent weird artifacts
                       .onEach { lazyListState.scrollToItem( 0, 0 ) }
-                      .collect { items = it }
+                      .collect {
+                          // Same list as before (two empty filters): the filtering below
+                          // won't run again, so loading must end here
+                          val unchanged = it == items
+                          items = it
+                          loadedOnce = true
+                          if( unchanged ) isLoading = false
+                      }
     }
 
     LaunchedEffect( items, search.input ) {
@@ -229,7 +240,9 @@ fun HomeSongs(
             itemsOnDisplay.clear()
             itemsOnDisplay.addAll( it )
 
-            isLoading = false
+            // Not before the database answered once: the empty list of the first
+            // frame would flash the "no songs" message
+            if( loadedOnce ) isLoading = false
         }
     }
 
@@ -356,6 +369,26 @@ fun HomeSongs(
                     )
                 }
             }
+
+            // An empty filter said nothing: tell what would show up here
+            if( !isLoading && itemsOnDisplay.isEmpty() )
+                item( "empty" ) {
+                    androidx.compose.foundation.text.BasicText(
+                        text = stringResource(
+                            // A search with no result isn't an empty library
+                            if( search.input.text.isNotBlank() ) R.string.no_results_found
+                            else when( builtInPlaylist ) {
+                                BuiltInPlaylist.Favorites  -> R.string.songs_empty_favorites
+                                BuiltInPlaylist.Offline    -> R.string.songs_empty_cached
+                                BuiltInPlaylist.Downloaded -> R.string.songs_empty_downloaded
+                                BuiltInPlaylist.Top        -> R.string.songs_empty_top
+                                else                       -> R.string.songs_empty_all
+                            }
+                        ),
+                        style = typography().s.color( colorPalette().textSecondary ),
+                        modifier = Modifier.padding( horizontal = 24.dp, vertical = 32.dp )
+                    )
+                }
         }
 
         // Letter bubble only when sorted by a name

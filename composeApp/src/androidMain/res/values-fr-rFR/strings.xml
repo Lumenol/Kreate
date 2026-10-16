@@ -163,7 +163,13 @@
     <string name="menu_section_display">Affichage</string>
     <string name="menu_edit_song">Modifier le titre…</string>
     <string name="quick_sleep_timer">Minuteur</string>
+    <string name="statistics_one_song_heard">1 titre écouté</string>
     <string name="open_random_item">Ouvrir au hasard</string>
+    <string name="songs_empty_all">Aucun titre pour l\'instant. Ceux que tu écoutes apparaissent ici.</string>
+    <string name="songs_empty_favorites">Aucun titre aimé. Touche le cœur d\'un titre pour le retrouver ici.</string>
+    <string name="songs_empty_cached">Aucun titre en cache. Les titres écoutés y sont gardés pour les relire sans réseau.</string>
+    <string name="songs_empty_downloaded">Aucun titre téléchargé. Télécharge un titre depuis son menu pour l\'écouter hors ligne.</string>
+    <string name="songs_empty_top">Rien pour l\'instant : ton top se remplit à mesure que tu écoutes.</string>
     <string name="downloads_resume">Reprendre</string>
     <string name="downloads_cancel_all">Tout annuler</string>
     <string name="downloads_cancel">Annuler</string>
@@ -181,7 +187,7 @@
     <string name="discovery">Découverte</string>
     <string name="mood">Ambiance</string>
     <string name="new_albums">Nouveautés</string>
-    <string name="moods_and_genres">Ambiance et Genres</string>
+    <string name="moods_and_genres">Ambiances et genres</string>
     <string name="search_queries">" requêtes de recherche"</string>
     <string name="not_find_battery_optimization_settings">Réglages d\'optimisation de la batterie introuvables : ajoute l\'app à la liste blanche à la main</string>
     <string name="no">Non</string>
@@ -280,7 +286,7 @@
     <string name="action_bar_show_lyrics_button">Afficher le bouton des paroles</string>
     <string name="action_bar_show_arrow_button_to_open_queue">Afficher le bouton de la flèche pour ouvrir la file d\'attente</string>
     <string name="listening_time">Durée d’écoute</string>
-    <string name="shows_the_number_of_songs_heard_and_their_listening_time">Affiche le nombre de titres écoutées et leur temps d\'écoute</string>
+    <string name="shows_the_number_of_songs_heard_and_their_listening_time">Affiche le nombre de titres écoutés et leur temps d\'écoute</string>
     <string name="app_update_dialog_new">La nouvelle version %s peut être téléchargée !</string>
     <string name="set_to">Régler sur</string>
     <string name="end_of_song">fin du titre</string>
@@ -908,6 +914,7 @@ Volume BAS : titre précédent</string>
     <string name="info_added_by_smart_recommendations">Ajouté par les recommandations intelligentes</string>
     <string name="info_delete_cache">Supprimer le cache</string>
     <string name="setting_description_storage_usage">%1$s - %2$s utilisé (%3$d%%)</string>
+    <string name="setting_description_storage_usage_unlimited">Sans limite : %1$s utilisés</string>
     <string name="word_license">Licence</string>
     <string name="word_licenses">Licences</string>
     <string name="view_license">Voir la licence</string>
