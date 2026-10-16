@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -29,6 +30,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -38,6 +40,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
@@ -142,15 +145,17 @@ fun StatisticsPage(
                 .distinctUntilChanged()
                 .map { (it / 1000).toDuration( DurationUnit.SECONDS ) }       // "6m 4s", not "6m 4.026s"
     }.collectAsState( Duration.ZERO, Dispatchers.IO )
-    val songs by remember {
+    // The list is the top of the period; "Show all" at its end lists every song heard
+    var showAllSongs by rememberSaveable( statisticsType ) { mutableStateOf( false ) }
+    val songs by remember( from, showAllSongs, maxStatisticsItems ) {
+        val limit = if( showAllSongs ) Int.MAX_VALUE else maxStatisticsItems.toInt()
         Database.eventTable
                 .findSongsMostPlayedBetween(
                     from = from,
                     to = Long.MAX_VALUE,
-                    limit = maxStatisticsItems.toInt()
+                    limit = limit
                 )
                 .distinctUntilChanged()
-                .map { it.take( maxStatisticsItems.toInt() ) }
     }.collectAsState( emptyList(), Dispatchers.IO )
 
     // Every song heard in the period, not the size of the top list (always 10)
@@ -322,6 +327,20 @@ fun StatisticsPage(
                             }
                         )
                     }
+
+                    if( !showAllSongs && songsHeard > songs.size && songs.isNotEmpty() )
+                        item(
+                            key = "showAllSongs",
+                            span = { GridItemSpan(maxLineSpan) }
+                        ) {
+                            BasicText(
+                                text = stringResource( R.string.statistics_show_all_songs, songsHeard ),
+                                style = typography().xs.semiBold.center.color( colorPalette().accent ),
+                                modifier = Modifier.fillMaxWidth()
+                                                   .clickable { showAllSongs = true }
+                                                   .padding( vertical = 16.dp )
+                            )
+                        }
                 }
 
                 if (statisticsCategory == StatisticsCategory.Artists)
