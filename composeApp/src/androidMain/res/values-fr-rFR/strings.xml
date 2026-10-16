@@ -157,8 +157,10 @@
     <string name="downloads_pause">Pause</string>
     <string name="downloads_retry_failed">Relancer (%1$d)</string>
     <string name="downloads_running_count">↓ %1$d en cours</string>
-    <string name="downloads_failed_count">%1$d en échec</string>
+    <string name="downloads_failed_count">%1$d en échec</string>
     <string name="downloads_paused_count">%1$d en pause</string>
+    <string name="menu_section_list">Avec la liste</string>
+    <string name="menu_section_display">Affichage</string>
     <string name="downloads_resume">Reprendre</string>
     <string name="downloads_cancel_all">Tout annuler</string>
     <string name="downloads_cancel">Annuler</string>
@@ -206,7 +208,7 @@
     <string name="ui_tab">Interface</string>
     <string name="tab_player">Lecteur</string>
     <string name="filter_all">Tous</string>
-    <string name="account_disconnect">Se déconnecter</string>
+    <string name="account_disconnect">Se déconnecter</string>
     <string name="account_connect">Se connecter</string>
     <string name="stats_period_today">Aujourd\'hui</string>
     <string name="stats_period_week">Semaine</string>
@@ -388,7 +390,7 @@
     <string name="info_remove_all_downloaded_songs">Supprimer tous les titres téléchargés</string>
     <string name="info_start_radio">Démarrer la radio</string>
     <string name="info_translation">Traduction</string>
-    <string name="info_find_the_song_that_is_playing">Trouver le titre qui est en cours de lecture</string>
+    <string name="info_find_the_song_that_is_playing">Aller au titre en cours</string>
     <string name="info_smart_recommendation">Recommandation intelligente</string>
     <string name="info_clean_cached_congs">Nettoyer les titres en cache</string>
     <string name="info_pin_unpin_playlist">Épingler/Désépingler la playlist</string>

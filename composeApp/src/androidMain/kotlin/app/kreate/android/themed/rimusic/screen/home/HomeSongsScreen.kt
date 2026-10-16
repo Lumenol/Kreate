@@ -1,5 +1,6 @@
 package app.kreate.android.themed.rimusic.screen.home
 
+import it.fast4x.rimusic.ui.components.tab.toolbar.MenuHeader
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.typography
@@ -141,19 +142,21 @@ fun HomeSongsScreen(
         // Disable checkboxes when category has changed
         itemSelector.isActive = false
 
-        mutableStateListOf<Button>() .apply {
-            this.add( search )
-            this.add( locator )
-            this.add( shuffle )
-            this.add( itemSelector )
-            this.add( playNext )
-            this.add( enqueue )
-            this.add( shareLinks )
-            this.add( addToFavorite )
-            this.add( addToPlaylist )
-            this.add( import )
-            if( builtInPlaylist != BuiltInPlaylist.OnDevice )
-                this.add( resetCache )
+        // Grouped: what to do with the list, then how it's shown, then what erases.
+        // Shuffle is already an icon; import is in the Playlists tab, the caches
+        // in Settings → Data. Each list screen adds its own after a heading.
+        mutableStateListOf<Button>().apply {
+            add( MenuHeader( MENU_LIST, R.string.menu_section_list ) )
+            add( itemSelector )
+            add( shareLinks )
+            add( addToPlaylist )
+            add( addToFavorite )
+            add( playNext )
+            add( enqueue )
+            add( MenuHeader( MENU_DISPLAY, R.string.menu_section_display ) )
+            add( search )
+            add( locator )
+            add( MenuHeader( MENU_ERASE, null ) )
         }
     }
 
@@ -294,3 +297,8 @@ fun HomeSongsScreen(
             )
     }
 }
+
+/** Keys of the menu headings, for the screens adding their own entries */
+const val MENU_LIST = "list"
+const val MENU_DISPLAY = "display"
+const val MENU_ERASE = "erase"
