@@ -58,13 +58,32 @@ internal data class SectionListRendererImpl(
             override val straplineTextOne: RunsImpl?,
             override val straplineThumbnail: ThumbnailImpl?,
             @Serializable(with = SkipInvalidListSerializer::class) override val subtitleBadge: List<BadgeImpl> = emptyList(),
-            override val secondSubtitle: RunsImpl?
+            override val secondSubtitle: RunsImpl?,
+            @Serializable(with = SkipInvalidListSerializer::class) override val buttons: List<ButtonImpl> = emptyList()
         ): SectionListRenderer.Content.MusicResponsiveHeaderRenderer {
 
             @Serializable
             internal data class DescriptionImpl(
                 override val musicDescriptionShelfRenderer: MusicDescriptionShelfRendererImpl
             ): SectionListRenderer.Content.MusicResponsiveHeaderRenderer.Description
+
+            @Serializable
+            internal data class ButtonImpl(
+                override val toggleButtonRenderer: ToggleButtonRendererImpl? = null
+            ): SectionListRenderer.Content.MusicResponsiveHeaderRenderer.Button {
+
+                @Serializable
+                internal data class ToggleButtonRendererImpl(
+                    override val isToggled: Boolean? = null,
+                    override val defaultIcon: IconImpl? = null
+                ): SectionListRenderer.Content.MusicResponsiveHeaderRenderer.Button.ToggleButtonRenderer {
+
+                    @Serializable
+                    internal data class IconImpl(
+                        override val iconType: String? = null
+                    ): SectionListRenderer.Content.MusicResponsiveHeaderRenderer.Button.ToggleButtonRenderer.Icon
+                }
+            }
         }
 
         @Serializable

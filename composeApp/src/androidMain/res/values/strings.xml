@@ -166,6 +166,7 @@
     <string name="downloaded">Downloaded</string>
     <string name="download">Download</string>
     <string name="menu_remove_download">Remove the download</string>
+    <string name="menu_downloading">Downloading…</string>
     <string name="downloads_in_progress_title">Downloads in progress</string>
     <string name="downloads_pause_all">Pause all</string>
     <string name="downloads_pause">Pause</string>
@@ -909,6 +910,7 @@
     <string name="playlist_saved_to_library">Playlist saved to your library</string>
     <string name="playlist_removed_from_library">Playlist removed from your library</string>
     <string name="playlist_save_failed">YouTube couldn\'t save the playlist</string>
+    <string name="playlist_remove_failed">YouTube couldn\'t remove the playlist</string>
     <string name="setting_entry_preview_start">Preview start</string>
     <string name="setting_entry_preview_length">Preview length</string>
     <string name="setting_description_preview">Tapping a song\'s thumbnail plays a bit of it, without changing your queue</string>

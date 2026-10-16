@@ -15,6 +15,12 @@ interface InnertubePlaylist: InnertubeItem, Descriptive, AccessibleViaUrl, Conti
      */
     val subtitle: Runs?
 
+    /**
+     * Whether the playlist is in the account's library (its bookmark toggle), `null` when
+     * the page doesn't offer to save it (the account's own playlists, "Liked music"...)
+     */
+    val isSavedToLibrary: Boolean? get() = null
+
     val subtitleText: String?
 
     val songs: List<InnertubeSong>

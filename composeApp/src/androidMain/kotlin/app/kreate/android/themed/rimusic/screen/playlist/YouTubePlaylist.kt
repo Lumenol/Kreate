@@ -1,7 +1,7 @@
 package app.kreate.android.themed.rimusic.screen.playlist
 
-import androidx.compose.runtime.collectAsState
-import app.kreate.database.models.Playlist
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.withContext
 import app.kreate.android.themed.common.component.DetailHeader
 import app.kreate.android.themed.common.component.DetailMenu
 import app.kreate.android.themed.common.component.DetailSkeleton
@@ -148,11 +148,14 @@ fun YouTubePlaylist(
         itemSelector.isActive = false
     }
     val radio = Radio( ::getSongs )
-    // Saved = in the database with its browse id (that's what removing deletes too)
-    val playlistId = remember( viewModel.browseId ) { viewModel.browseId.substringAfter( "VL" ) }
-    val savedPlaylist by remember( playlistId ) {
-        Database.playlistTable.findByBrowseId( playlistId )
-    }.collectAsState( null )
+    // Saved or not is what YouTube says (the page's bookmark toggle); null when the page
+    // doesn't offer to save it (own playlists, "Liked music"): no button then.
+    // Only the YouTube library changes: local playlists are never created nor deleted
+    // here (a linked local playlist with its songs used to be deleted by "remove").
+    val playlistId = remember( viewModel.browseId ) { viewModel.browseId.removePrefix( "VL" ) }
+    var savedToLibrary by remember( playlistPage?.id ) { mutableStateOf( playlistPage?.isSavedToLibrary ) }
+    var savingToLibrary by remember { mutableStateOf( false ) }
+    val saveScope = rememberCoroutineScope()
     val saveToYouTubeLibrary = remember {
         object: DualIcon, DynamicColor {
 
@@ -162,47 +165,36 @@ fun YouTubePlaylist(
             override var isFirstIcon: Boolean by mutableStateOf( true )
             override var isFirstColor: Boolean by mutableStateOf( false )
 
-            // It only ever removed, and showed "saved" whatever the state: tapping a
-            // Home mix took it out of the YouTube library and nothing seemed to happen
             override fun onShortClick() {
+                val saved = savedToLibrary ?: return
+                if( savingToLibrary ) return        // one at a time: taps don't race
                 if( !isNetworkAvailable( context ) ) {
                     Toaster.noInternet()
                     return
                 }
 
-                val saved = !isFirstIcon
-                CoroutineScope( Dispatchers.IO ).launch {
-                    if( saved )
-                        YtMusic.removelikePlaylistOrAlbum( playlistId )
-                               .onSuccess {
-                                   Database.playlistTable
-                                           .findByBrowseId( playlistId )
-                                           .first()
-                                           ?.let( Database.playlistTable::delete )
-                                   Toaster.i( R.string.playlist_removed_from_library )
-                               }
-                               .onFailure { Toaster.e( R.string.playlist_save_failed ) }
-                    else
-                        YtMusic.likePlaylistOrAlbum( playlistId )
-                               .onSuccess {
-                                   if( Database.playlistTable.findByBrowseId( playlistId ).first() == null )
-                                       Database.playlistTable.insert(
-                                           Playlist(
-                                               name = playlistPage?.name ?: playlistId,
-                                               browseId = playlistId,
-                                               isEditable = false,
-                                               isYoutubePlaylist = true
-                                           )
-                                       )
-                                   Toaster.s( R.string.playlist_saved_to_library )
-                               }
-                               .onFailure { Toaster.e( R.string.playlist_save_failed ) }
+                savingToLibrary = true
+                saveScope.launch {
+                    val result = withContext( Dispatchers.IO ) {
+                        if( saved )
+                            YtMusic.removelikePlaylistOrAlbum( playlistId )
+                        else
+                            YtMusic.likePlaylistOrAlbum( playlistId )
+                    }
+                    savingToLibrary = false
+                    result.onSuccess {
+                              savedToLibrary = !saved
+                              Toaster.s( if( saved ) R.string.playlist_removed_from_library else R.string.playlist_saved_to_library )
+                          }
+                          .onFailure {
+                              Toaster.e( if( saved ) R.string.playlist_remove_failed else R.string.playlist_save_failed )
+                          }
                 }
             }
         }
     }
-    // The icon follows the real state
-    LaunchedEffect( savedPlaylist ) { saveToYouTubeLibrary.isFirstIcon = savedPlaylist == null }
+    // The icon follows the state
+    LaunchedEffect( savedToLibrary ) { saveToYouTubeLibrary.isFirstIcon = savedToLibrary != true }
 
     exportDialog.Render()
     downloadAllDialog.Render()
@@ -248,7 +240,7 @@ fun YouTubePlaylist(
                         ) {
                             // "Liked music" (LM) and "Episodes for later" (SE) belong to the
                             // account: YouTube answers 404 to saving them
-                            if( isYouTubeSyncEnabled() && playlistId != "LM" && playlistId != "SE" )
+                            if( isYouTubeSyncEnabled() && savedToLibrary != null )
                                 LabeledAction( saveToYouTubeLibrary, stringResource( R.string.word_save ) )
                             LabeledAction( downloadAllDialog, stringResource( R.string.download ) )
                             LabeledAction( radio, stringResource( R.string.word_radio ) )

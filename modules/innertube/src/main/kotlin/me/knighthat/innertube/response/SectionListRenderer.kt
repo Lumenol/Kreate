@@ -53,10 +53,25 @@ interface SectionListRenderer {
             val straplineThumbnail: Thumbnail?
             val subtitleBadge: List<Badge>
             val secondSubtitle: Runs?
+            /** Header buttons: among them the bookmark toggle, on when the playlist is in the library */
+            val buttons: List<Button>
 
             interface Description {
 
                 val musicDescriptionShelfRenderer: MusicDescriptionShelfRenderer
+            }
+
+            interface Button {
+                val toggleButtonRenderer: ToggleButtonRenderer?
+
+                interface ToggleButtonRenderer {
+                    val isToggled: Boolean?
+                    val defaultIcon: Icon?
+
+                    interface Icon {
+                        val iconType: String?
+                    }
+                }
             }
         }
 
