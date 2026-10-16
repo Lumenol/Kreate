@@ -1787,7 +1787,7 @@ fun Lyrics(
                         Image(
                             painter = painterResource(if (player.isPlaying == true) R.drawable.pause else R.drawable.play),
                             contentDescription = null,
-                            colorFilter = ColorFilter.tint(if (colorPaletteName == ColorPaletteName.PureBlack) Color.Black else colorPalette().text),
+                            colorFilter = ColorFilter.tint(colorPalette().onAccent),
                             modifier = Modifier
                                 .clickable(
                                     indication = ripple(bounded = false),

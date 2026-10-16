@@ -586,7 +586,7 @@ object SettingComponents {
                 steps = steps,
                 onValueChangeFinished = { onValueChangeFinished( preference, realtimeValue ) },
                 colors = SliderColors(
-                    thumbColor = colorPalette().onAccent,
+                    thumbColor = colorPalette().accent,
                     activeTrackColor = colorPalette().accent,
                     activeTickColor = Color.Transparent,
                     inactiveTrackColor = colorPalette().text.copy( 0.75f ),
