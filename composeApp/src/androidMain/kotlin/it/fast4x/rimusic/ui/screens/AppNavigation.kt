@@ -1,5 +1,8 @@
 package it.fast4x.rimusic.ui.screens
 
+import app.kreate.android.service.player.PreviewPlayer
+import androidx.compose.runtime.DisposableEffect
+import androidx.navigation.NavController
 import android.app.Activity
 import android.net.Uri
 import androidx.activity.compose.BackHandler
@@ -179,6 +182,13 @@ fun AppNavigation(
                 TransitionEffect.SlideHorizontal -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right)
             }
         }
+
+    // A song preview (thumbnail tap) ends when leaving its page; scrolling keeps it
+    DisposableEffect( navController ) {
+        val listener = NavController.OnDestinationChangedListener { _, _, _ -> PreviewPlayer.stop() }
+        navController.addOnDestinationChangedListener( listener )
+        onDispose { navController.removeOnDestinationChangedListener( listener ) }
+    }
 
     NavHost(
         navController = navController,
