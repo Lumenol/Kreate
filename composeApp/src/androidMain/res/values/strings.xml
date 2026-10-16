@@ -165,6 +165,7 @@
     <string name="_light">Small</string>
     <string name="downloaded">Downloaded</string>
     <string name="download">Download</string>
+    <string name="menu_remove_download">Remove the download</string>
     <string name="downloads_in_progress_title">Downloads in progress</string>
     <string name="downloads_pause_all">Pause all</string>
     <string name="downloads_pause">Pause</string>
@@ -905,7 +906,6 @@
     <string name="settings_section_network">Proxy, secure DNS</string>
     <string name="settings_section_about">Version, source code, report an issue, licenses, contributors</string>
     <string name="content_description_back">Back</string>
-    <string name="menu_remove_download">Remove the download</string>
     <string name="setting_entry_preview_start">Preview start</string>
     <string name="setting_entry_preview_length">Preview length</string>
     <string name="setting_description_preview">Tapping a song\'s thumbnail plays a bit of it, without changing your queue</string>
