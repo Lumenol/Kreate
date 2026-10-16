@@ -101,7 +101,6 @@ import it.fast4x.rimusic.ui.components.themed.adaptiveThumbnailContent
 import it.fast4x.rimusic.ui.screens.settings.isYouTubeSyncEnabled
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.LocalAppearance
-import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.ui.styling.px
 import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.addToYtPlaylist
@@ -626,7 +625,7 @@ fun Podcast(
                                         IconButton(
                                             onClick = {},
                                             icon = R.drawable.search,
-                                            color = colorPalette().favoritesIcon,
+                                            color = colorPalette().accent,
                                             modifier = Modifier
                                                 .align(Alignment.CenterStart)
                                                 .size(16.dp)

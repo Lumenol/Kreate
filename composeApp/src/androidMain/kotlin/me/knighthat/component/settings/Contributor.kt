@@ -31,7 +31,6 @@ import app.kreate.android.R
 import app.kreate.android.coil3.ImageFactory
 import app.kreate.android.themed.common.component.settings.SettingComponents
 import it.fast4x.rimusic.ui.styling.LocalAppearance
-import it.fast4x.rimusic.ui.styling.favoritesIcon
 
 
 abstract class Contributor {
@@ -170,7 +169,7 @@ abstract class Contributor {
                         displayNameFontSize = typography.xs.fontSize,
                         handleColor = colorPalette.textSecondary,
                         handleFontSize = typography.xs.fontSize,
-                        trailingColor = colorPalette.favoritesIcon.copy( alpha = .8f ),
+                        trailingColor = colorPalette.accent.copy( alpha = .8f ),
                         trailingFontSize = typography.xs.fontSize,
                         avatarBorderColor = Color.White,
                         crownColor = Color(context.getColor( R.color.yellow_warning ))

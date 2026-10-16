@@ -281,7 +281,7 @@ fun MiniPlayer(
                     // read as a two-tone card rather than as progress
                     if (backgroundProgress == BackgroundProgress.Both || backgroundProgress == BackgroundProgress.MiniPlayer) {
                         drawRect(
-                            color = colorPalette.favoritesIcon,
+                            color = colorPalette.accent,
                             topLeft = Offset.Zero,
                             size = Size(
                                 width = positionAndDuration.first.toFloat() /

@@ -23,7 +23,6 @@ import app.kreate.android.themed.common.component.settings.SettingComponents
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.SliderControl
-import it.fast4x.rimusic.ui.styling.favoritesIcon
 import me.knighthat.component.dialog.Dialog
 
 class BlurAdjuster private constructor(
@@ -71,7 +70,7 @@ class BlurAdjuster private constructor(
                 IconButton(
                     onClick = { strength = 25f },
                     icon = R.drawable.drop_blur,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier.size(24.dp)
                 )
 
@@ -93,7 +92,7 @@ class BlurAdjuster private constructor(
                 IconButton(
                     onClick = { backdrop = 0f },
                     icon = R.drawable.drop_half_fill,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier.size( 24.dp )
                 )
 
@@ -114,7 +113,7 @@ class BlurAdjuster private constructor(
                 IconButton(
                     onClick = { backdrop = 0f },
                     icon = R.drawable.image,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier.size( 24.dp )
                 )
 

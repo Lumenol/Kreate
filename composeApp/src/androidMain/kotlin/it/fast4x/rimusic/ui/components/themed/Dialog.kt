@@ -1147,7 +1147,7 @@ fun BlurParamsDialog(
                     blurStrength = defaultStrength
                 },
                 icon = R.drawable.droplet,
-                color = colorPalette().favoritesIcon,
+                color = colorPalette().accent,
                 modifier = Modifier
                     .size(24.dp)
             )
@@ -1179,7 +1179,7 @@ fun BlurParamsDialog(
                         color = Color.Transparent,
                         size = 40.dp,
                         modifier = Modifier.background(
-                            brush = Brush.linearGradient(listOf(colorPalette.background1, colorPalette.favoritesIcon)),
+                            brush = Brush.linearGradient(listOf(colorPalette.background1, colorPalette.accent)),
                             shape = CircleShape
                         )
                     )
@@ -1203,8 +1203,8 @@ fun BlurParamsDialog(
                                 .background(
                                     brush = Brush.linearGradient(
                                         listOf(
-                                            colorPalette.favoritesIcon,
-                                            Color.Red
+                                            colorPalette.accent,
+                                            colorPalette.accent
                                         )
                                     )
                                 )
@@ -1259,7 +1259,7 @@ fun BlurParamsDialog(
                             imageCoverSize = defaultImageCoverSize
                         },
                         icon = R.drawable.album,
-                        color = colorPalette().favoritesIcon,
+                        color = colorPalette().accent,
                         modifier = Modifier
                             .size(24.dp)
                     )
@@ -1290,7 +1290,7 @@ fun BlurParamsDialog(
                                 thumbnailFadeEx = defaultFade
                             },
                             icon = R.drawable.droplet,
-                            color = colorPalette().favoritesIcon,
+                            color = colorPalette().accent,
                             modifier = Modifier
                                 .size(24.dp)
                         )
@@ -1325,7 +1325,7 @@ fun BlurParamsDialog(
                                 brush = Brush.linearGradient(
                                     listOf(
                                         colorPalette.background1,
-                                        colorPalette.favoritesIcon
+                                        colorPalette.accent
                                     )
                                 ),
                                 shape = CircleShape
@@ -1351,8 +1351,8 @@ fun BlurParamsDialog(
                                     .background(
                                         brush = Brush.linearGradient(
                                             listOf(
-                                                colorPalette.favoritesIcon,
-                                                Color.Red
+                                                colorPalette.accent,
+                                                colorPalette.accent
                                             )
                                         )
                                     )
@@ -1374,7 +1374,7 @@ fun BlurParamsDialog(
                                 thumbnailFade = defaultFade
                             },
                             icon = R.drawable.droplet,
-                            color = colorPalette().favoritesIcon,
+                            color = colorPalette().accent,
                             modifier = Modifier
                                 .size(24.dp)
                         )
@@ -1402,7 +1402,7 @@ fun BlurParamsDialog(
                             thumbnailSpacing = defaultSpacing
                         },
                         icon = R.drawable.burger,
-                        color = colorPalette().favoritesIcon,
+                        color = colorPalette().accent,
                         modifier = Modifier
                             .size(24.dp)
                     )
@@ -1436,7 +1436,7 @@ fun BlurParamsDialog(
                                 brush = Brush.linearGradient(
                                     listOf(
                                         colorPalette.background1,
-                                        colorPalette.favoritesIcon
+                                        colorPalette.accent
                                     )
                                 ),
                                 shape = CircleShape
@@ -1462,8 +1462,8 @@ fun BlurParamsDialog(
                                     .background(
                                         brush = Brush.linearGradient(
                                             listOf(
-                                                colorPalette.favoritesIcon,
-                                                Color.Red
+                                                colorPalette.accent,
+                                                colorPalette.accent
                                             )
                                         )
                                     )
@@ -1486,7 +1486,7 @@ fun BlurParamsDialog(
                             thumbnailSpacingL = defaultSpacing
                         },
                         icon = R.drawable.burger,
-                        color = colorPalette().favoritesIcon,
+                        color = colorPalette().accent,
                         modifier = Modifier
                             .size(24.dp)
                             .rotate(90f)
@@ -1628,7 +1628,7 @@ fun LyricsSizeDialog(
                         lyricsSize = 20f
                     },
                     icon = R.drawable.text,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier
                         .size(24.dp)
                 )
@@ -1655,7 +1655,7 @@ fun LyricsSizeDialog(
                         lyricsSizeL = 20f
                     },
                     icon = R.drawable.text,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier
                         .size(24.dp)
                 )
@@ -2030,7 +2030,7 @@ fun SongMatchingDialog(
                       blurStrength2 = defaultStrength2
                   },
                   icon = R.drawable.droplet,
-                  color = colorPalette.favoritesIcon,
+                  color = colorPalette.accent,
                   modifier = Modifier
                       .size(24.dp)
               )
@@ -2055,7 +2055,7 @@ fun SongMatchingDialog(
                               brush = Brush.linearGradient(
                                   listOf(
                                       colorPalette.background1,
-                                      colorPalette.favoritesIcon
+                                      colorPalette.accent
                                   )
                               ),
                               shape = CircleShape
@@ -2081,8 +2081,8 @@ fun SongMatchingDialog(
                                   .background(
                                       brush = Brush.linearGradient(
                                           listOf(
-                                              colorPalette.favoritesIcon,
-                                              Color.Red
+                                              colorPalette.accent,
+                                              colorPalette.accent
                                           )
                                       )
                                   )
@@ -2109,7 +2109,7 @@ fun SongMatchingDialog(
                     blurDarkenFactor = defaultDarkenFactor
                 },
                 icon = R.drawable.moon,
-                color = colorPalette.favoritesIcon,
+                color = colorPalette.accent,
                 modifier = Modifier
                     .size(20.dp)
             )
@@ -2131,7 +2131,7 @@ fun SongMatchingDialog(
                         color = Color.Transparent,
                         size = 40.dp,
                         modifier = Modifier.background(
-                            brush = Brush.linearGradient(listOf(colorPalette.background1, colorPalette.favoritesIcon)),
+                            brush = Brush.linearGradient(listOf(colorPalette.background1, colorPalette.accent)),
                             shape = CircleShape
                         )
                     )
@@ -2153,7 +2153,7 @@ fun SongMatchingDialog(
                             modifier = Modifier
                                 .progress(sliderPositions = sliderPositions)
                                 .background(
-                                    brush = Brush.linearGradient(listOf(colorPalette.favoritesIcon, Color.Red))
+                                    brush = Brush.linearGradient(listOf(colorPalette.accent, colorPalette.accent))
                                 )
                         )
                     }
@@ -2218,7 +2218,7 @@ fun PlaybackParamsDialog(
                     blurStrength = defaultStrength
                 },
                 icon = R.drawable.droplet,
-                color = colorPalette().favoritesIcon,
+                color = colorPalette().accent,
                 modifier = Modifier
                     .size(20.dp)
             )
@@ -2247,7 +2247,7 @@ fun PlaybackParamsDialog(
                         color = Color.Transparent,
                         size = 40.dp,
                         modifier = Modifier.background(
-                            brush = Brush.linearGradient(listOf(colorPalette.background1, colorPalette.favoritesIcon)),
+                            brush = Brush.linearGradient(listOf(colorPalette.background1, colorPalette.accent)),
                             shape = CircleShape
                         )
                     )
@@ -2271,8 +2271,8 @@ fun PlaybackParamsDialog(
                                 .background(
                                     brush = Brush.linearGradient(
                                         listOf(
-                                            colorPalette.favoritesIcon,
-                                            Color.Red
+                                            colorPalette.accent,
+                                            colorPalette.accent
                                         )
                                     )
                                 )
@@ -2302,7 +2302,7 @@ fun PlaybackParamsDialog(
                     playbackDuration = defaultDuration
                 },
                 icon = R.drawable.playbackduration,
-                color = colorPalette().favoritesIcon,
+                color = colorPalette().accent,
                 modifier = Modifier
                     .size(20.dp)
             )
@@ -2337,7 +2337,7 @@ fun PlaybackParamsDialog(
                             brush = Brush.linearGradient(
                                 listOf(
                                     colorPalette.background1,
-                                    colorPalette.favoritesIcon
+                                    colorPalette.accent
                                 )
                             ),
                             shape = CircleShape
@@ -2363,8 +2363,8 @@ fun PlaybackParamsDialog(
                                 .background(
                                     brush = Brush.linearGradient(
                                         listOf(
-                                            colorPalette.favoritesIcon,
-                                            Color.Red
+                                            colorPalette.accent,
+                                            colorPalette.accent
                                         )
                                     )
                                 )
@@ -2396,7 +2396,7 @@ fun PlaybackParamsDialog(
                             PlaybackParameters(playbackSpeed, playbackPitch)
                     },
                     icon = R.drawable.slow_motion,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier
                         .size(20.dp)
                 )
@@ -2437,7 +2437,7 @@ fun PlaybackParamsDialog(
                                 brush = Brush.linearGradient(
                                     listOf(
                                         colorPalette.background1,
-                                        colorPalette.favoritesIcon
+                                        colorPalette.accent
                                     )
                                 ),
                                 shape = CircleShape
@@ -2463,8 +2463,8 @@ fun PlaybackParamsDialog(
                                     .background(
                                         brush = Brush.linearGradient(
                                             listOf(
-                                                colorPalette.favoritesIcon,
-                                                Color.Red
+                                                colorPalette.accent,
+                                                colorPalette.accent
                                             )
                                         )
                                     )
@@ -2496,7 +2496,7 @@ fun PlaybackParamsDialog(
                             PlaybackParameters(playbackSpeed, playbackPitch)
                     },
                     icon = R.drawable.equalizer,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier
                         .size(20.dp)
                 )
@@ -2537,7 +2537,7 @@ fun PlaybackParamsDialog(
                                 brush = Brush.linearGradient(
                                     listOf(
                                         colorPalette.background1,
-                                        colorPalette.favoritesIcon
+                                        colorPalette.accent
                                     )
                                 ),
                                 shape = CircleShape
@@ -2563,8 +2563,8 @@ fun PlaybackParamsDialog(
                                     .background(
                                         brush = Brush.linearGradient(
                                             listOf(
-                                                colorPalette.favoritesIcon,
-                                                Color.Red
+                                                colorPalette.accent,
+                                                colorPalette.accent
                                             )
                                         )
                                     )
@@ -2596,7 +2596,7 @@ fun PlaybackParamsDialog(
                         player.setGlobalVolume(playbackVolume)
                     },
                     icon = R.drawable.volume_up,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier
                         .size(20.dp)
                 )
@@ -2636,7 +2636,7 @@ fun PlaybackParamsDialog(
                                 brush = Brush.linearGradient(
                                     listOf(
                                         colorPalette.background1,
-                                        colorPalette.favoritesIcon
+                                        colorPalette.accent
                                     )
                                 ),
                                 shape = CircleShape
@@ -2662,8 +2662,8 @@ fun PlaybackParamsDialog(
                                     .background(
                                         brush = Brush.linearGradient(
                                             listOf(
-                                                colorPalette.favoritesIcon,
-                                                Color.Red
+                                                colorPalette.accent,
+                                                colorPalette.accent
                                             )
                                         )
                                     )
@@ -2694,7 +2694,7 @@ fun PlaybackParamsDialog(
                         setDeviceVolume(context, playbackDeviceVolume)
                     },
                     icon = R.drawable.master_volume,
-                    color = colorPalette().favoritesIcon,
+                    color = colorPalette().accent,
                     modifier = Modifier
                         .size(20.dp)
                 )
@@ -2732,7 +2732,7 @@ fun PlaybackParamsDialog(
                     setDeviceVolume(context, playbackDeviceVolume)
                 },
                 icon = R.drawable.musical_notes,
-                color = colorPalette().favoritesIcon,
+                color = colorPalette().accent,
                 modifier = Modifier
                     .size(20.dp)
             )

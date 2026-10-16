@@ -15,7 +15,6 @@ import app.kreate.android.R
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.ui.components.themed.Button
-import it.fast4x.rimusic.ui.styling.favoritesIcon
 
 @SuppressLint("ComposableNaming")
 abstract class AbstractNavigationBar(
@@ -27,7 +26,7 @@ abstract class AbstractNavigationBar(
     @ReadOnlyComposable
     @Composable
     internal open fun BackButton(): NavigationButton {
-        val button = NavigationButton( navController, R.drawable.chevron_back, colorPalette().favoritesIcon )
+        val button = NavigationButton( navController, R.drawable.chevron_back, colorPalette().accent )
         button.clickEvent {
             if ( navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED )
                 navController.popBackStack()
@@ -41,7 +40,7 @@ abstract class AbstractNavigationBar(
         return NavigationButton(
             navController,
             R.drawable.settings,
-            colorPalette().favoritesIcon,
+            colorPalette().accent,
             NavRoutes.settings.name
         )
     }

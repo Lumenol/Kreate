@@ -34,7 +34,6 @@ import it.fast4x.rimusic.enums.SearchType
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.Skeleton
 import it.fast4x.rimusic.ui.components.themed.IconButton
-import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.utils.secondary
 
 @ExperimentalTextApi
@@ -79,7 +78,7 @@ fun SearchTypeScreen(
                     IconButton(
                         onClick = {},
                         icon = R.drawable.search,
-                        color = colorPalette().favoritesIcon,
+                        color = colorPalette().accent,
                         modifier = Modifier
                             .align(Alignment.CenterStart)
                             .size(24.dp)

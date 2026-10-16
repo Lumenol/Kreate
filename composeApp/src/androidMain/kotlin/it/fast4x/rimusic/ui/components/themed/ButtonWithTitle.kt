@@ -18,7 +18,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
@@ -40,12 +39,13 @@ fun ButtonWithTitle(
             modifier = Modifier
                 .size(48.dp)
                 .clip(RoundedCornerShape(16.dp))
-                .background(colorPalette().favoritesIcon)
+                .background(colorPalette().accent)
                 .clickable(onClick = onClick)
         ) {
             Icon(
                 painter = painterResource(icon),
                 contentDescription = null,
+                tint = colorPalette().onAccent,
                 modifier = Modifier.size(24.dp)
             )
         }

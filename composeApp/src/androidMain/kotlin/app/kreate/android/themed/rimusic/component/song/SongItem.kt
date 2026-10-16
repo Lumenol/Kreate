@@ -66,7 +66,7 @@ import it.fast4x.rimusic.ui.styling.ColorPalette
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.Typography
 import it.fast4x.rimusic.ui.styling.favoritesIcon
-import it.fast4x.rimusic.ui.styling.favoritesOverlay
+import it.fast4x.rimusic.ui.styling.activeWash
 import it.fast4x.rimusic.ui.styling.onOverlay
 import it.fast4x.rimusic.ui.styling.overlay
 import it.fast4x.rimusic.utils.asSong
@@ -694,7 +694,7 @@ object SongItem: Visual() {
 
             fun from( colorPalette: ColorPalette, typography: Typography ) =
                 Values(
-                    nowPlayingOverlayColor = colorPalette.favoritesOverlay,
+                    nowPlayingOverlayColor = colorPalette.activeWash.copy( alpha = .4f ),
                     nowPlayingIndicatorColor = colorPalette.onOverlay,
                     titleTextStyle = typography.xs.semiBold,
                     titleColor = colorPalette.text,
