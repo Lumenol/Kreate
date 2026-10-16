@@ -908,6 +908,7 @@ Volume BAS : titre précédent</string>
     <string name="settings_section_network">Proxy, DNS sécurisé</string>
     <string name="settings_section_about">Version, code source, signaler un problème, licences, contributeurs</string>
     <string name="content_description_back">Retour</string>
+    <string name="menu_remove_download">Supprimer le téléchargement</string>
     <string name="setting_entry_preview_start">Début de l\'extrait</string>
     <string name="setting_entry_preview_length">Durée de l\'extrait</string>
     <string name="setting_description_preview">Toucher la vignette d\'un titre l\'écoute un instant, sans changer ta file</string>

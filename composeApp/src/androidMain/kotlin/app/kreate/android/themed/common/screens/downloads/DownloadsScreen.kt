@@ -78,11 +78,18 @@ private fun rememberPendingDownloads(): List<Download> {
             delay( 1_000 )
         }
     }
-    // Running ones with their progress, then the failed ones the manager no longer tracks
+    // Running ones with their progress, then everything else the header pill counts
+    // (waiting, paused, failed) that the manager doesn't report: the page and the pill
+    // must show the same downloads, or a counted one can't be seen nor cancelled
     val running = current.filter { it.state != Download.STATE_REMOVING }
-    val failed = known.values.filter { it.state == Download.STATE_FAILED && running.none { r -> r.request.id == it.request.id } }
+    val counted = setOf(
+        Download.STATE_QUEUED, Download.STATE_DOWNLOADING, Download.STATE_RESTARTING,
+        Download.STATE_STOPPED, Download.STATE_FAILED
+    )
+    val others = known.values.filter { it.state in counted && running.none { r -> r.request.id == it.request.id } }
     // Those downloading first, then waiting, then failed
-    return running.sortedBy { if( it.state == Download.STATE_DOWNLOADING ) 0 else 1 } + failed
+    return running.sortedBy { if( it.state == Download.STATE_DOWNLOADING ) 0 else 1 } +
+           others.sortedBy { if( it.state == Download.STATE_FAILED ) 1 else 0 }
 }
 
 /** Downloads in progress, waiting, paused or failed: the finished ones are in Library → Downloaded */

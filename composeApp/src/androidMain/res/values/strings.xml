@@ -905,6 +905,7 @@
     <string name="settings_section_network">Proxy, secure DNS</string>
     <string name="settings_section_about">Version, source code, report an issue, licenses, contributors</string>
     <string name="content_description_back">Back</string>
+    <string name="menu_remove_download">Remove the download</string>
     <string name="setting_entry_preview_start">Preview start</string>
     <string name="setting_entry_preview_length">Preview length</string>
     <string name="setting_description_preview">Tapping a song\'s thumbnail plays a bit of it, without changing your queue</string>

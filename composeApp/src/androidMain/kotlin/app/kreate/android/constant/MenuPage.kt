@@ -1,5 +1,12 @@
 package app.kreate.android.constant
 
+import app.kreate.android.themed.common.component.menu.SongDownloadButton
+import app.kreate.android.service.DownloadCacheState
+import it.fast4x.rimusic.service.MyDownloadHelper
+import androidx.media3.datasource.cache.Cache
+import app.kreate.di.CacheType
+import org.koin.java.KoinJavaComponent.get
+import it.fast4x.rimusic.service.modern.isLocal
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -71,8 +78,17 @@ sealed interface MenuPage {
     data class PlayerSong(override val song: MediaItem) : MenuPage, SongMenu {
 
         override suspend fun getButtons(): List<MenuButton<*>> =
-            listOf(
-                SongRadioButton(), app.kreate.android.themed.common.component.menu.EqualizerButton(),
+            listOfNotNull(
+                SongRadioButton(),
+                // Download or remove the download, as the song stands now (not for local files)
+                if( song.isLocal ) null else SongDownloadButton(
+                    DownloadCacheState.isDownloaded(
+                        MyDownloadHelper.instance.downloads.value[song.mediaId]?.state,
+                        get<Cache>( Cache::class.java, CacheType.DOWNLOAD ),
+                        song.mediaId
+                    )
+                ),
+                app.kreate.android.themed.common.component.menu.EqualizerButton(),
                 GoToArtistButton(), GoToAlbumButton(), ViewSongDetailsButton(),
                 app.kreate.android.themed.common.component.menu.EditSongButton()
             )
