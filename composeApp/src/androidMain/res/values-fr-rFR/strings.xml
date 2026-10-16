@@ -165,6 +165,7 @@
     <string name="quick_sleep_timer">Minuteur</string>
     <string name="statistics_one_song_heard">1 titre écouté</string>
     <string name="open_random_item">Ouvrir au hasard</string>
+    <string name="settings_search_in">Rechercher dans %1$s</string>
     <string name="songs_empty_all">Aucun titre pour l\'instant. Ceux que tu écoutes apparaissent ici.</string>
     <string name="songs_empty_favorites">Aucun titre aimé. Touche le cœur d\'un titre pour le retrouver ici.</string>
     <string name="songs_empty_cached">Aucun titre en cache. Les titres écoutés y sont gardés pour les relire sans réseau.</string>
