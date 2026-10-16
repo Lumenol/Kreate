@@ -1,5 +1,8 @@
 package app.kreate.android.themed.rimusic.component.artist
 
+import app.kreate.android.themed.common.component.PreviewButton
+import app.kreate.android.themed.common.component.PreviewSongs
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -160,7 +163,15 @@ object ArtistItem: Visual(), MultiplatformItem {
             widthDp = sizeDp.width,
             modifier = modifier,
             thumbnail = {
-                Thumbnail( artist.id, artist.thumbnailUrl, sizeDp = sizeDp )
+                Box {
+                    Thumbnail( artist.id, artist.thumbnailUrl, sizeDp = sizeDp )
+                    // A preview of their most popular song (YouTube artists only)
+                    if( artist.id.startsWith( "UC" ) )
+                        // Moved in, to sit on the round photo
+                        PreviewButton( artist.id, Modifier.padding( bottom = VERTICAL_SPACING.dp ), inset = 6.dp ) {
+                            PreviewSongs.artist( artist.id )
+                        }
+                }
             },
             firstLine = st@ {
                 val cleanedName = artist.cleanName()

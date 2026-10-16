@@ -1,5 +1,7 @@
 package app.kreate.android.themed.rimusic.component.playlist
 
+import app.kreate.android.themed.common.component.PreviewButton
+import app.kreate.android.themed.common.component.PreviewSongs
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
@@ -424,12 +426,19 @@ object PlaylistItem: Visual(), MultiplatformItem {
             widthDp = sizeDp.width,
             modifier = modifier,
             thumbnail = {
-                Thumbnail(
-                    browseId = innertubePlaylist.key,
-                    thumbnailUrl = innertubePlaylist.thumbnail?.url,
-                    sizeDp = sizeDp,
-                    showPlatformIcon = showPlatformIcon
-                )
+                Box {
+                    Thumbnail(
+                        browseId = innertubePlaylist.key,
+                        thumbnailUrl = innertubePlaylist.thumbnail?.url,
+                        sizeDp = sizeDp,
+                        showPlatformIcon = showPlatformIcon
+                    )
+                    // A preview of its first song
+                    if( PreviewSongs.isPlaylist( innertubePlaylist.key ) )
+                    PreviewButton( innertubePlaylist.key, Modifier.padding( bottom = VERTICAL_SPACING.dp ) ) {
+                        PreviewSongs.playlist( innertubePlaylist.key )
+                    }
+                }
             },
             firstLine = {
                 Title(
@@ -464,12 +473,19 @@ object PlaylistItem: Visual(), MultiplatformItem {
             widthDp = sizeDp.width,
             modifier = modifier,
             thumbnail = {
-                Thumbnail(
-                    browseId = innertubePlaylist.id,
-                    thumbnailUrl = innertubePlaylist.thumbnails.firstOrNull()?.url,
-                    sizeDp = sizeDp,
-                    showPlatformIcon = showPlatformIcon
-                )
+                Box {
+                    Thumbnail(
+                        browseId = innertubePlaylist.id,
+                        thumbnailUrl = innertubePlaylist.thumbnails.firstOrNull()?.url,
+                        sizeDp = sizeDp,
+                        showPlatformIcon = showPlatformIcon
+                    )
+                    // A preview of its first song
+                    if( PreviewSongs.isPlaylist( innertubePlaylist.id ) )
+                    PreviewButton( innertubePlaylist.id, Modifier.padding( bottom = VERTICAL_SPACING.dp ) ) {
+                        PreviewSongs.playlist( innertubePlaylist.id )
+                    }
+                }
             },
             firstLine = {
                 Title(
