@@ -176,7 +176,13 @@
     <string name="menu_section_display">Display</string>
     <string name="menu_edit_song">Edit song…</string>
     <string name="quick_sleep_timer">Timer</string>
+    <string name="statistics_one_song_heard">1 song heard</string>
     <string name="open_random_item">Open one at random</string>
+    <string name="songs_empty_all">No songs yet. The ones you play show up here.</string>
+    <string name="songs_empty_favorites">No liked songs. Tap a song\'s heart to find it here.</string>
+    <string name="songs_empty_cached">No cached songs. Played songs are kept here to play again offline.</string>
+    <string name="songs_empty_downloaded">No downloaded songs. Download one from its menu to listen offline.</string>
+    <string name="songs_empty_top">Nothing yet: your top fills up as you listen.</string>
     <string name="downloads_resume">Resume</string>
     <string name="downloads_cancel_all">Cancel all</string>
     <string name="downloads_cancel">Cancel</string>
@@ -905,6 +911,7 @@
     <string name="info_added_by_smart_recommendations">Added by smart recommendations</string>
     <string name="info_delete_cache">Delete cache</string>
     <string name="setting_description_storage_usage">%1$s - %2$s used (%3$d%%)</string>
+    <string name="setting_description_storage_usage_unlimited">No limit: %1$s used</string>
     <string name="word_license">License</string>
     <string name="word_licenses">Licenses</string>
     <string name="view_license">View license</string>

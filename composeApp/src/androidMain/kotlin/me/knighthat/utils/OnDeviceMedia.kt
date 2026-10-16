@@ -1,5 +1,6 @@
 package me.knighthat.utils
 
+import it.fast4x.rimusic.utils.formatDuration
 import android.content.ContentUris
 import android.content.Context
 import android.provider.MediaStore
@@ -140,13 +141,7 @@ fun Context.getLocalSongs(
             val durationText =
                 cursor.getInt( durationColumn )
                     .takeIf { it > 0 }
-                    ?.milliseconds
-                    ?.toComponents { hrs, mins, secs, _ ->
-                        if( hrs > 0 )
-                            "%02d:%02d:%02d".format( hrs, mins, secs )
-                        else
-                            "%02d:%02d".format( mins, secs )
-                    }
+                    ?.let { ms -> formatDuration( ms.toLong() ) }
             val id = cursor.getLong( idColumn )
             val title = cursor.getString( titleColumn ) ?: cursor.getString( nameColumn )
             val artist = cursor.getString( artistColumn )

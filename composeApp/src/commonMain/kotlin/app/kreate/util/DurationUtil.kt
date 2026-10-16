@@ -1,6 +1,5 @@
 package app.kreate.util
 
-import java.util.StringJoiner
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -70,32 +69,20 @@ fun String?.toDuration(): Duration {
  * Examples:
  * - 128:20:06:28
  * - 7:32:01
+ * - 1:02
  *
- * **Hours**, **minutes**, and **seconds** are always shown in
- * 2-digit format. **Days** have no limit
+ * The first unit has no leading zero, the others always 2 digits.
  */
 fun Duration.readableText(): String {
-    val joiner = StringJoiner(":")
-    this.toComponents { days, hours, minutes, seconds, nanoseconds ->
-        if( days > 0 )
-            // Allow single digit
-            joiner.add( "$days" )
-        // If [days] is a non-zero number,
-        // this number must be added too
-        if( hours > 0 || days > 0 )
-            joiner.add(
-                // Always shows 2-digit number
-                "%02d".format( hours )
-            )
-        joiner.add(
-            // Always shows 2-digit number
-            "%02d".format( minutes )
-        )
-        joiner.add(
-            // Always shows 2-digit number
-            "%02d".format( seconds )
-        )
+    // The first unit as is, the next ones on 2 digits: "1:02", "2:03:35", like
+    // the song lists (it was "01:02", "02:03:35")
+    val parts = mutableListOf<Long>()
+    this.toComponents { days, hours, minutes, seconds, _ ->
+        if( days > 0 ) parts.add( days )
+        if( hours > 0 || days > 0 ) parts.add( hours.toLong() )
+        parts.add( minutes.toLong() )
+        parts.add( seconds.toLong() )
     }
-
-    return joiner.toString()
+    return parts.mapIndexed { i, v -> if( i == 0 ) "$v" else "%02d".format( v ) }
+                .joinToString( ":" )
 }

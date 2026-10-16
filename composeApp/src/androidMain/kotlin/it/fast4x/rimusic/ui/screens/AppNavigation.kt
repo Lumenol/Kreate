@@ -383,7 +383,8 @@ fun AppNavigation(
             route = NavRoutes.moodsPage.name
         ) { navBackStackEntry ->
             MoodsPageScreen(
-                navController = navController
+                navController = navController,
+                miniPlayer = miniPlayer
             )
         }
 

@@ -233,7 +233,10 @@ fun StatisticsPage(
                             span = { GridItemSpan(maxLineSpan) }
                         ) {
                             val title by remember { derivedStateOf {
-                                "$songsHeard ${context.getString( R.string.statistics_songs_heard )}"
+                                // "1 titre écouté": only where it's translated, the others keep their own wording
+                                if( songsHeard == 1 && context.resources.configuration.locales[0].language in setOf( "fr", "en" ) )
+                                    context.getString( R.string.statistics_one_song_heard )
+                                else "$songsHeard ${context.getString( R.string.statistics_songs_heard )}"
                             }}
                             val subtitle by remember { derivedStateOf {
                                 "${totalDuration.listeningTime()} ${context.getString( R.string.statistics_of_time_taken )}"

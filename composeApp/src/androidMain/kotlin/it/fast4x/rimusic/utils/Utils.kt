@@ -1,6 +1,8 @@
 package it.fast4x.rimusic.utils
 
 
+import kotlin.time.Duration.Companion.milliseconds
+import app.kreate.util.readableText
 import android.content.ContentUris
 import android.content.Context
 import android.content.pm.PackageManager
@@ -52,12 +54,25 @@ import me.knighthat.utils.Toaster
 
 const val EXPLICIT_BUNDLE_TAG = "is_explicit"
 
+/** A duration as the song lists write it ("2:19", "1:02:03"), see [Duration.readableText] */
+fun formatDuration( millis: Long ): String = millis.coerceAtLeast( 0 ).milliseconds.readableText()
+
 /**
  * What YouTube puts between artists, in the content language: punctuation or a
  * conjunction ("&", "et", "y", "und", "и", "ve"…).
  */
 private val ARTIST_SEPARATOR = Regex(
     "^[\\s,，&·•、/+]*$|^(et|and|y|und|e|en|i|og|och|x|vs\\.?|feat\\.?|ft\\.?|with|avec|и|і|ve|dan|và|a|és|și|και|및|و|和|と)$",
+    RegexOption.IGNORE_CASE
+)
+
+/** A view or play count YouTube appends after the artists: "38 k vues", "1.2M views" */
+private val PLAY_COUNT = Regex(
+    // A unit or a word is required, so an artist called "112" stays; YouTube's
+    // localized counts use no-break spaces ("38\u00A0k\u00A0vues")
+    "^\\d[\\d\\s\\u00A0\\u202F.,]*[\\s\\u00A0\\u202F]*" +
+        "(?:(?:k|m|md|mrd|b|bn|mio|mln)\\.?([\\s\\u00A0\\u202F]*(de[\\s\\u00A0\\u202F]+)?(vues?|views?|lectures?|plays?|écoutes?))?" +
+        "|(de[\\s\\u00A0\\u202F]+)?(vues?|views?|lectures?|plays?|écoutes?))$",
     RegexOption.IGNORE_CASE
 )
 
@@ -69,8 +84,13 @@ private val ARTIST_SEPARATOR = Regex(
  */
 fun List<Innertube.Info<*>>.joinedNames(): String =
     filterIndexed { index, info ->
+        val name = info.name?.trim().orEmpty()
         val between = index in 1 until lastIndex
-        !(between && info.endpoint == null && ARTIST_SEPARATOR.matches( info.name?.trim().orEmpty() ))
+        // Separators sit between names; a view count ("38 k vues") comes last
+        !(info.endpoint == null && (
+            (between && ARTIST_SEPARATOR.matches( name ))
+                    || (index > 0 && index == lastIndex && PLAY_COUNT.matches( name ))
+        ))
     }
         .mapNotNull { it.name?.trim()?.takeIf( String::isNotEmpty ) }
         .joinToString( ", " )
@@ -240,7 +260,7 @@ val MediaItem.asSong: Song
         id = mediaId,
         title = mediaMetadata.title.toString(),
         artistsText = mediaMetadata.artist.toString(),
-        durationText = mediaMetadata.durationMs?.let { DateUtils.formatElapsedTime(it / 1000) },
+        durationText = mediaMetadata.durationMs?.let( ::formatDuration ),
         thumbnailUrl = mediaMetadata.artworkUri.toString(),
         isLocal = isLocal
     )

@@ -128,11 +128,10 @@ object SettingComponents {
                 .alpha(if (isEnabled) 1f else 0.5f)
         ) {
             Column( Modifier.weight( 1f ) ) {
-                // Up to 2 lines instead of scrolling: long titles (French) were cut
+                // Whole title, on as many lines as it needs: at 2, long French
+                // titles ended in "…"
                 BasicText(
                     text = title,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
                     style = typography().xs
                                         .semiBold
                                         .copy( colorPalette().text ),

@@ -150,7 +150,14 @@ class DurationUtlTest {
 
     @Test
     fun zeroDurationReadableText() {
-        assertEquals( "00:00", Duration.ZERO.readableText() )
+        assertEquals( "0:00", Duration.ZERO.readableText() )
+    }
+
+    @Test
+    fun firstUnitHasNoLeadingZero() {
+        // Like the song lists: "1:02", "2:03:35", not "01:02", "02:03:35"
+        assertEquals( "1:02", 62.toDuration( DurationUnit.SECONDS ).readableText() )
+        assertEquals( "2:03:35", 7415.toDuration( DurationUnit.SECONDS ).readableText() )
     }
 
     @Test

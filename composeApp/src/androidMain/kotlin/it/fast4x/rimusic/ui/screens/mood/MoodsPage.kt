@@ -43,7 +43,6 @@ import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.models.toUiMood
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.HeaderPlaceholder
-import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
 import it.fast4x.rimusic.ui.screens.home.MoodGridItemColored
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.utils.center
@@ -85,7 +84,6 @@ fun MoodsPage(
             )
     ) {
         if( discoverPage == null ) {
-            HeaderPlaceholder( Modifier.shimmerEffect() )
             repeat(4) {
                 Row {
                     repeat(6) {
@@ -107,20 +105,6 @@ fun MoodsPage(
                         .background(colorPalette().background0)
                         .fillMaxSize()
                 ) {
-                    item(
-                        key = "header",
-                        contentType = 0,
-                        span = { GridItemSpan(maxLineSpan) }
-                    ) {
-                        HeaderWithIcon(
-                            title = stringResource(R.string.moods_and_genres),
-                            iconId = R.drawable.search,
-                            enabled = true,
-                            showIcon = false,
-                            modifier = Modifier,
-                            onClick = {}
-                        )
-                    }
 
                     discoverPage?.getOrNull()?.let { page ->
                         if (page.moods.isNotEmpty()) {
@@ -151,8 +135,7 @@ fun MoodsPage(
 
                 }
                 FastScroller( moodAngGenresLazyGridState ) { index ->
-                    // Item 0 is the header
-                    initialOf( sortedMoods.getOrNull( index - 1 )?.title )
+                    initialOf( sortedMoods.getOrNull( index )?.title )
                 }
               }
             },
