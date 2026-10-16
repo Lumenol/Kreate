@@ -128,10 +128,12 @@ import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.shimmerEffect
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -242,6 +244,10 @@ fun HomeQuickPicks(
 
         if (loadedData) return@coroutineScope
 
+        // "Loaded" makes the page show the saved copy of the quick picks: it must
+        // wait for their first answer too, or the saved copy replaces the new one
+        val relatedReady = CompletableDeferred<Unit>()
+
         runCatching {
             refreshScope.launch(Dispatchers.IO) {
                 when (playEventType) {
@@ -262,6 +268,7 @@ fun HomeQuickPicks(
                                         )
                                     }
                                     trending = song
+                                    relatedReady.complete( Unit )
                                 }
 
                     PlayEventsType.LastPlayed, PlayEventsType.CasualPlayed -> {
@@ -287,6 +294,7 @@ fun HomeQuickPicks(
                                             )
                                     }
                                     trending = song
+                                    relatedReady.complete( Unit )
                                 }
                     }
 
@@ -295,7 +303,21 @@ fun HomeQuickPicks(
 
             val home = if (isYouTubeLoggedIn())
                 launch {
-                    homePageResult = withContext( Dispatchers.IO ) { YtMusic.getHomePage() }
+                    var partial = false
+                    val result = withContext( Dispatchers.IO ) {
+                        // YouTube sends the home in parts: show each as it comes
+                        YtMusic.getHomePage(
+                            onPage = { page ->
+                                withContext( Dispatchers.Main ) {
+                                    homePageResult = Result.success( page )
+                                    partial = true
+                                }
+                            }
+                        )
+                    }
+                    // A later part failing doesn't wipe the sections already shown
+                    if( result.isSuccess || !partial )
+                        homePageResult = result
                 }
             else null
 
@@ -308,8 +330,12 @@ fun HomeQuickPicks(
             // Each section shows as soon as its own answer is in; "loaded" once all are
             home?.join()
             discover?.join()
+            // Bounded: if that collector died, Home would stay "loading" (and refresh stuck)
+            withTimeoutOrNull( 15_000 ) { relatedReady.await() }
 
         }.onFailure {
+            // Leaving Home while it loads cancels this: not a failure
+            if( it is CancellationException ) throw it
             Logger.e( tag = "HomeQuickPicks" ) { "loadData failed!" }
             loadedData = false
         }.onSuccess {

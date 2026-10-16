@@ -128,8 +128,14 @@ object YtMusic {
 
     /**
      * @param params of a [HomePage.Chip] to get the home filtered by it
+     * @param onPage called with the page so far after its first part and after each
+     * continuation: the top sections show without waiting for all the others
      */
-    suspend fun getHomePage(setLogin: Boolean = false, params: String? = null): Result<HomePage> = runCatching {
+    suspend fun getHomePage(
+        setLogin: Boolean = false,
+        params: String? = null,
+        onPage: (suspend (HomePage) -> Unit)? = null
+    ): Result<HomePage> = runCatching {
 
         var response = Innertube.browse(browseId = "FEmusic_home", params = params, setLogin = setLogin).body<BrowseResponse>()
 
@@ -143,10 +149,6 @@ object YtMusic {
             }
             .orEmpty()
 
-        println("homePage() response sections: ${response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
-            ?.tabRenderer?.content?.sectionListRenderer?.contents}" )
-
-
         var continuation = response.contents?.singleColumnBrowseResultsRenderer?.tabs?.firstOrNull()
             ?.tabRenderer?.content?.sectionListRenderer?.continuations?.getContinuation()
 
@@ -156,6 +158,7 @@ object YtMusic {
             .mapNotNull {
                 HomePage.Section.fromMusicCarouselShelfRenderer(it)
             }.toMutableList()
+        onPage?.invoke( HomePage( sections = sections.toList(), chips = chips ) )
         while (continuation != null) {
             println("gethomePage() continuation before:  ${continuation}" )
             response = Innertube.browse(continuation = continuation).body<BrowseResponse>()
@@ -167,6 +170,8 @@ object YtMusic {
                 ?.mapNotNull {
                     HomePage.Section.fromMusicCarouselShelfRenderer(it)
                 }.orEmpty()
+            if( continuation != null )
+                onPage?.invoke( HomePage( sections = sections.toList(), chips = chips ) )
 
         }
         HomePage( sections = sections, chips = chips )
