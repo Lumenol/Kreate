@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -28,7 +27,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -40,7 +42,6 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.offline.Download
@@ -145,15 +146,16 @@ fun StatisticsPage(
                 .distinctUntilChanged()
                 .map { (it / 1000).toDuration( DurationUnit.SECONDS ) }       // "6m 4s", not "6m 4.026s"
     }.collectAsState( Duration.ZERO, Dispatchers.IO )
-    // The list is the top of the period; "Show all" at its end lists every song heard
-    var showAllSongs by rememberSaveable( statisticsType ) { mutableStateOf( false ) }
-    val songs by remember( from, showAllSongs, maxStatisticsItems ) {
-        val limit = if( showAllSongs ) Int.MAX_VALUE else maxStatisticsItems.toInt()
+    // The top of the period first, then 50 more each time the end of the list shows:
+    // a year can hold thousands of songs, never load (nor queue) them all at once
+    var moreSongs by rememberSaveable( statisticsType ) { mutableIntStateOf( 0 ) }
+    val songsLimit = maxStatisticsItems.toInt() + moreSongs
+    val songs by remember( from, songsLimit ) {
         Database.eventTable
                 .findSongsMostPlayedBetween(
                     from = from,
                     to = Long.MAX_VALUE,
-                    limit = limit
+                    limit = songsLimit
                 )
                 .distinctUntilChanged()
     }.collectAsState( emptyList(), Dispatchers.IO )
@@ -206,6 +208,17 @@ fun StatisticsPage(
         }
 
             val lazyGridState = rememberLazyGridState()
+            LaunchedEffect( lazyGridState, statisticsCategory ) {
+                if( statisticsCategory != StatisticsCategory.Songs ) return@LaunchedEffect
+                snapshotFlow {
+                    val info = lazyGridState.layoutInfo
+                    (info.visibleItemsInfo.lastOrNull()?.index ?: -1) to info.totalItemsCount
+                }.collect { (lastVisible, total) ->
+                    // Previous page loaded (no double step) and more songs left in the period
+                    if( lastVisible >= total - 3 && songs.size >= songsLimit && songsHeard > songs.size )
+                        moreSongs += 50
+                }
+            }
             LazyVerticalGrid(
                 state = lazyGridState,
                 columns = GridCells.Adaptive(
@@ -327,20 +340,6 @@ fun StatisticsPage(
                             }
                         )
                     }
-
-                    if( !showAllSongs && songsHeard > songs.size && songs.isNotEmpty() )
-                        item(
-                            key = "showAllSongs",
-                            span = { GridItemSpan(maxLineSpan) }
-                        ) {
-                            BasicText(
-                                text = stringResource( R.string.statistics_show_all_songs, songsHeard ),
-                                style = typography().xs.semiBold.center.color( colorPalette().accent ),
-                                modifier = Modifier.fillMaxWidth()
-                                                   .clickable { showAllSongs = true }
-                                                   .padding( vertical = 16.dp )
-                            )
-                        }
                 }
 
                 if (statisticsCategory == StatisticsCategory.Artists)

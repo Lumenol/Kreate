@@ -264,7 +264,6 @@
     <string name="by_last_played_song">Par les titres joués dernièrement</string>
     <string name="audio_quality_automatic">Automatique</string>
     <string name="statistics_songs_heard">titres écoutés</string>
-    <string name="statistics_show_all_songs">Afficher les %1$d titres</string>
     <string name="statistics_of_time_taken">d\'écoute</string>
     <string name="statistics_max_number_of_items">Nombre maximum d\'éléments</string>
     <string name="do_you_really_want_to_download_all">Tout télécharger vraiment ?</string>
