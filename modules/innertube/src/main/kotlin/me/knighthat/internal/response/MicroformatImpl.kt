@@ -53,7 +53,8 @@ internal data class MicroformatImpl(
     @Serializable
     internal data class PlayerImpl(
         override val thumbnail: ThumbnailsImpl?,
-        override val embed: EmbedImpl,
+        // Not in every answer: required, it made the whole player answer unreadable
+        override val embed: EmbedImpl = EmbedImpl(),
         override val title: SimpleTextImpl?,
         override val description: SimpleTextImpl?,
         override val lengthSeconds: String = "",

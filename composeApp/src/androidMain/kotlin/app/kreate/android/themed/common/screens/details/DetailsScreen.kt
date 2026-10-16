@@ -139,9 +139,12 @@ private fun statsOf( context: android.content.Context, info: SongYoutubeInfo?, d
         )
     } ?: details?.viewCount?.short?.takeIf( String::isNotBlank )
     val date = info?.publishedAt?.let {
-        java.text.DateFormat.getDateInstance( java.text.DateFormat.MEDIUM, locale )
-            .apply { timeZone = java.util.TimeZone.getTimeZone( "UTC" ) }
-            .format( java.util.Date( it ) )
+        val day = java.time.Instant.ofEpochMilli( it ).atZone( java.time.ZoneOffset.UTC ).toLocalDate()
+        // A January 1st is a year alone (the "℗" year, or a label giving only the year)
+        if( day.dayOfYear == 1 ) day.year.toString()
+        else java.text.DateFormat.getDateInstance( java.text.DateFormat.MEDIUM, locale )
+                 .apply { timeZone = java.util.TimeZone.getTimeZone( "UTC" ) }
+                 .format( java.util.Date( it ) )
     } ?: details?.releaseDate?.takeIf( String::isNotBlank )
     return listOfNotNull( views, date ).joinToString( " · " ).ifBlank { null }
 }

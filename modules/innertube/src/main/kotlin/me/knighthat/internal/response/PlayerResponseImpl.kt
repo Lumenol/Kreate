@@ -83,7 +83,8 @@ internal data class PlayerResponseImpl(
         override val isPrivate: Boolean = false,
         override val isUnpluggedCorpus: Boolean = false,
         override val musicVideoType: String?,
-        override val isLiveContent: Boolean = false
+        override val isLiveContent: Boolean = false,
+        override val shortDescription: String? = null
     ): PlayerResponse.VideoDetails
 
     @Serializable

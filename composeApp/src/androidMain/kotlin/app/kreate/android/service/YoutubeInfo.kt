@@ -22,6 +22,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import me.knighthat.innertube.Innertube
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -41,6 +42,9 @@ object YoutubeInfo {
     private val scope = CoroutineScope(
         SupervisorJob() + Dispatchers.IO + CoroutineExceptionHandler { _, e -> logger.e( e ) { "YouTube info failed" } }
     )
+
+    /** What is saved: 2 = release date read from the description (1 was the upload date) */
+    private const val FORMAT = 2
 
     /** Asked again past this (Settings → Data); `null`: never */
     private val refreshAfter: Long? get() = Preferences.YOUTUBE_INFO_REFRESH.value.asMillis
@@ -62,7 +66,9 @@ object YoutubeInfo {
      * known before stays. [FAILED]: no answer (network) or the song is gone.
      */
     private suspend fun ask( songId: String ): Result {
-        val response = Innertube.player( songId, InnertubeContext.WEB_REMIX_DEFAULT, CURRENT_LOCALE, null, null )
+        // WEB, not WEB_REMIX: same views and upload date, plus the whole description
+        // where the labels write the real release date
+        val response = Innertube.player( songId, InnertubeContext.WEB_DEFAULT, CURRENT_LOCALE, null, null )
                                 .getOrElse {
                                     if( it is CancellationException ) throw it
                                     logger.w( it ) { "no YouTube info for $songId" }
@@ -70,14 +76,41 @@ object YoutubeInfo {
                                 }
         val data = response.microformat?.microformatDataRenderer
         val player = response.microformat?.playerMicroformatRenderer
-        val date = data?.publishDate ?: player?.publishDate ?: data?.uploadDate
-        val publishedAt = date?.take( 10 )?.let {
-            runCatching { LocalDate.parse( it ).atStartOfDay().toInstant( ZoneOffset.UTC ).toEpochMilli() }.getOrNull()
-        }
-        val views = (response.videoDetails?.viewCount ?: data?.viewCount)?.toLongOrNull()
+        val uploaded = (data?.publishDate ?: player?.publishDate?.ifBlank { null } ?: data?.uploadDate)
+            ?.take( 10 )
+            ?.let { runCatching { LocalDate.parse( it ) }.getOrNull() }
+        val publishedAt = releaseDate( response.videoDetails?.shortDescription, uploaded )
+            ?.atStartOfDay()?.toInstant( ZoneOffset.UTC )?.toEpochMilli()
+        val views = (response.videoDetails?.viewCount?.ifBlank { null } ?: data?.viewCount ?: player?.viewCount)?.toLongOrNull()
         if( publishedAt == null && views == null ) return Result.NOTHING
 
         return if( save( SongYoutubeInfo( songId, publishedAt, views, System.currentTimeMillis() ) ) ) Result.SAVED else Result.FAILED
+    }
+
+    private val RELEASED_ON = Regex( """Released on: (\d{4}-\d{2}-\d{2})""" )
+    private val PHONOGRAM_YEAR = Regex( """℗[^\n]*?((?:19|20)\d\d)""" )
+
+    /**
+     * When the song came out. Songs "Provided to YouTube" carry it in their description
+     * ("Released on: 2018-10-16", 85 % of them; Warner's never do) and a "℗ 1982"
+     * line; videos only have their upload date, often years after the release.
+     * 1. "Released on", unless the ℗ year is older: a reissue or a best-of ("Billie
+     *    Jean": released 2007 on HIStory, ℗ 1982), the ℗ year is then the original one
+     * 2. the oldest ℗ year
+     * 3. the upload date
+     * A year alone is kept as its January 1st.
+     */
+    internal fun releaseDate( description: String?, uploaded: LocalDate? ): LocalDate? {
+        val text = description.orEmpty()
+        val released = RELEASED_ON.find( text )?.groupValues?.get( 1 )
+            ?.let { runCatching { LocalDate.parse( it ) }.getOrNull() }
+        val phonogram = PHONOGRAM_YEAR.findAll( text ).mapNotNull { it.groupValues[1].toIntOrNull() }.minOrNull()
+        return when {
+            released != null && phonogram != null && phonogram < released.year -> LocalDate.of( phonogram, 1, 1 )
+            released != null  -> released
+            phonogram != null -> LocalDate.of( phonogram, 1, 1 )
+            else              -> uploaded
+        }
     }
 
     /** `false` when the song isn't (or no longer) in the database */
@@ -98,7 +131,9 @@ object YoutubeInfo {
      */
     fun runIfDue( context: Context ) {
         val last = Preferences.YOUTUBE_INFO_LAST_FILL.value
-        if( System.currentTimeMillis() - last < 86_400_000L ) return
+        // Dates saved before the release date was read are upload dates: all asked again once
+        val outdated = Preferences.YOUTUBE_INFO_FORMAT.value < FORMAT
+        if( !outdated && System.currentTimeMillis() - last < 86_400_000L ) return
         // Called each time the app comes to the front: one waiting run at a time
         if( !dailyPending.compareAndSet( false, true ) ) return
         scope.launch {
@@ -106,7 +141,7 @@ object YoutubeInfo {
                 // Leave the start of the app alone
                 delay( 30.seconds )
                 if( isNetworkAvailable( context ) && !context.isConnectionMetered() )
-                    fillLibrary( context, wifiOnly = true )
+                    fillLibrary( context, everything = outdated, wifiOnly = true )
             } finally {
                 dailyPending.set( false )
             }
@@ -180,7 +215,11 @@ object YoutubeInfo {
                     delay( 1500 )
                 }
                 // Done for today: the daily run waits until tomorrow
-                if( complete ) Preferences.YOUTUBE_INFO_LAST_FILL.value = System.currentTimeMillis()
+                // Preferences are written on the main thread
+                if( complete ) withContext( Dispatchers.Main ) {
+                    Preferences.YOUTUBE_INFO_LAST_FILL.value = System.currentTimeMillis()
+                    if( everything ) Preferences.YOUTUBE_INFO_FORMAT.value = FORMAT
+                }
             } finally {
                 if( filler === coroutineContext[Job] ) isFilling = false
             }
