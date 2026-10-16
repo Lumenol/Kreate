@@ -770,6 +770,8 @@
     <string name="cannot_delete_from_online_playlists">Cannot Delete Songs from an Online Playlist</string>
     <string name="ytm_playlists">YTM Playlists</string>
     <string name="no_connection">No Connection</string>
+    <string name="home_offline">No network: Home will load as soon as it\'s back.</string>
+    <string name="home_open_library">Open the Library</string>
     <string name="unlink_from_ytm">Unlink from Youtube Library</string>
     <string name="unlink_from_yt">Unlink from Youtube</string>
     <string name="songs_added_in_yt">songs are added in the YouTube Playlist. Repeat the process if there are any Missing Songs</string>

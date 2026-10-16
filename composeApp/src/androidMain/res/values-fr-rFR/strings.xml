@@ -773,6 +773,8 @@ Volume BAS : titre précédent</string>
     <string name="cannot_delete_from_online_playlists">Impossible de supprimer des titres d\'une playlist en ligne</string>
     <string name="ytm_playlists">Playlists YouTube Music</string>
     <string name="no_connection">Pas de connexion</string>
+    <string name="home_offline">Pas de réseau : l\'Accueil se chargera dès qu\'il reviendra.</string>
+    <string name="home_open_library">Ouvrir la Bibliothèque</string>
     <string name="unlink_from_ytm">Supprimer le lien de la bibliothèque YouTube</string>
     <string name="unlink_from_yt">Se déconnecter de YouTube</string>
     <string name="songs_added_in_yt">Titres ajoutés à la playlist YouTube. Recommence s\'il en manque.</string>

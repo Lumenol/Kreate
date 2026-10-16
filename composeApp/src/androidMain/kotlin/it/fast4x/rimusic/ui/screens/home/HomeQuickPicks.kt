@@ -5,6 +5,8 @@ import android.annotation.SuppressLint
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.ScrollableDefaults
 import androidx.compose.foundation.layout.Arrangement
@@ -71,6 +73,7 @@ import app.kreate.android.themed.rimusic.component.album.AlbumItem
 import app.kreate.android.themed.rimusic.component.artist.ArtistItem
 import app.kreate.android.themed.rimusic.component.playlist.PlaylistItem
 import app.kreate.android.themed.rimusic.component.song.SongItem
+import app.kreate.android.utils.ConnectivityUtils
 import app.kreate.android.utils.ItemUtils
 import app.kreate.android.utils.innertube.CURRENT_LOCALE
 import app.kreate.android.utils.innertube.toMediaItem
@@ -93,6 +96,7 @@ import it.fast4x.innertube.requests.relatedPage
 import it.fast4x.rimusic.Database
 import it.fast4x.rimusic.LocalPlayerAwareWindowInsets
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.enums.HomeScreenTabs
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import it.fast4x.rimusic.enums.PlayEventsType
@@ -231,6 +235,8 @@ fun HomeQuickPicks(
     val parentalControlEnabled by Preferences.PARENTAL_CONTROL
 
     var loadedData by Preferences.IS_DATA_KEY_LOADED
+    // Offline, Home says so; it loads by itself when the network is back
+    val online by ConnectivityUtils.isAvailable.collectAsState()
 
     // The page's requests run side by side: one after the other, the account's own
     // home (top of the screen) waited for the charts and Discover first
@@ -248,6 +254,9 @@ fun HomeQuickPicks(
         // wait for their first answer too, or the saved copy replaces the new one
         val relatedReady = CompletableDeferred<Unit>()
 
+        // "Loaded" only if every request got an answer, or it would never retry
+        var allOk = true
+
         runCatching {
             refreshScope.launch(Dispatchers.IO) {
                 when (playEventType) {
@@ -260,7 +269,7 @@ fun HomeQuickPicks(
                                 .distinctUntilChanged()
                                 .collect { songs ->
                                     val song = songs.firstOrNull()
-                                    if (relatedPageResult == null || trending?.id != song?.id) {
+                                    if (relatedPageResult?.isSuccess != true || trending?.id != song?.id) {
                                         relatedPageResult = Innertube.relatedPage(
                                             NextBody(
                                                 videoId = (song?.id ?: "HZnNt9nnEhw")
@@ -285,7 +294,7 @@ fun HomeQuickPicks(
                                             songs.firstOrNull()
                                         else
                                             songs.shuffled().firstOrNull()
-                                    if (relatedPageResult == null || trending?.id != song?.id) {
+                                    if (relatedPageResult?.isSuccess != true || trending?.id != song?.id) {
                                         relatedPageResult =
                                             Innertube.relatedPage(
                                                 NextBody(
@@ -318,12 +327,15 @@ fun HomeQuickPicks(
                     // A later part failing doesn't wipe the sections already shown
                     if( result.isSuccess || !partial )
                         homePageResult = result
+                    if( result.isFailure ) allOk = false
                 }
             else null
 
             val discover = if (showNewAlbums || showNewAlbumsArtists || showMoodsAndGenres)
                 launch {
-                    discoverPageResult = withContext( Dispatchers.IO ) { Innertube.discoverPage() }
+                    val result = withContext( Dispatchers.IO ) { Innertube.discoverPage() }
+                    discoverPageResult = result
+                    if( result.isFailure ) allOk = false
                 }
             else null
 
@@ -332,6 +344,8 @@ fun HomeQuickPicks(
             discover?.join()
             // Bounded: if that collector died, Home would stay "loading" (and refresh stuck)
             withTimeoutOrNull( 15_000 ) { relatedReady.await() }
+            if( relatedPageResult?.isSuccess != true ) allOk = false
+            check( allOk ) { "a Home request failed" }
 
         }.onFailure {
             // Leaving Home while it loads cancels this: not a failure
@@ -339,12 +353,18 @@ fun HomeQuickPicks(
             Logger.e( tag = "HomeQuickPicks" ) { "loadData failed!" }
             loadedData = false
         }.onSuccess {
+            // Once "loaded", the page shows the saved copies: save the full answers
+            // first, or a partial one (the home before its last part) would come back
+            homePageResult?.getOrNull()?.let { homePagePreference = it }
+            discoverPageResult?.getOrNull()?.let { discoverPagePreference = it }
+            relatedPageResult?.getOrNull()?.let { relatedPreference = it }
+            trending?.let { trendingPreference = it }
             loadedData = true
         }
     }
 
-    LaunchedEffect( Unit, playEventType, countryCode ) {
-        loadData()
+    LaunchedEffect( Unit, playEventType, countryCode, online ) {
+        if( online ) loadData()
     }
 
     var refreshing by remember { mutableStateOf(false) }
@@ -638,7 +658,36 @@ fun HomeQuickPicks(
                         .clickable {
                             NavRoutes.settings.navigateHere( navController )
                         }
-                ) else {
+                ) else if( !online ) {
+                    // Offline: say so instead of loading forever, and offer the songs on the device
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy( 12.dp ),
+                        modifier = Modifier.fillMaxWidth().padding( 16.dp, 32.dp )
+                    ) {
+                        BasicText(
+                            text = stringResource( R.string.home_offline ),
+                            style = typography().s.secondary.center
+                        )
+                        BasicText(
+                            text = stringResource( R.string.home_open_library ),
+                            style = typography().s.semiBold.color( colorPalette().text ),
+                            modifier = Modifier.clip( CircleShape )
+                                               .background( colorPalette().background2 )
+                                               .clickable { Preferences.HOME_TAB_INDEX.value = HomeScreenTabs.Songs.index }
+                                               .padding( 16.dp, 10.dp )
+                        )
+                    }
+                } else if( homePageResult?.isFailure == true ) {
+                    // Online but YouTube didn't answer: a way to try again
+                    BasicText(
+                        text = stringResource( R.string.page_not_been_loaded ),
+                        style = typography().s.secondary.center,
+                        modifier = Modifier.fillMaxWidth()
+                                           .clickable { refresh() }
+                                           .padding( 16.dp, 32.dp )
+                    )
+                } else {
                     repeat(3) {
                         SongItem.Placeholder()
                     }
