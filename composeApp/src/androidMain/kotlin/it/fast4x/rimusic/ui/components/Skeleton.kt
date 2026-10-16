@@ -53,6 +53,8 @@ fun Skeleton(
     detailActions: (@Composable RowScope.() -> Unit)? = null,
     /** Next to "back" on those pages, e.g. the search field */
     detailTitle: (@Composable () -> Unit)? = null,
+    /** What "back" in that bar does, when it's not leaving the page (a sub-page going up) */
+    detailOnBack: (() -> Unit)? = null,
     content: @Composable AnimatedVisibilityScope.(Int) -> Unit
 ) {
     val navigationBar: AbstractNavigationBar =
@@ -70,7 +72,7 @@ fun Skeleton(
             modifier = Modifier.fillMaxWidth()
         ) {
             if( detailActions != null || detailTitle != null )
-                DetailTopBar( navController, detailActions ?: {}, detailTitle ?: {} )
+                DetailTopBar( navController, detailActions ?: {}, detailTitle ?: {}, detailOnBack )
             else if( UiType.RiMusic.isCurrent() )
                 AppHeader( navController ).Draw()
 
