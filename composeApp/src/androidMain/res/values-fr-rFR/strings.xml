@@ -1147,5 +1147,6 @@ Volume BAS : titre précédent</string>
     <string name="library_filters_refresh_now">Tout actualiser maintenant</string>
     <string name="library_filters_refresh_now_description">%1$d / %2$d titres ont leurs infos. Les redemande toutes à YouTube maintenant, un titre toutes les 1,5 s, en arrière-plan</string>
     <string name="library_filters_refresh_running">Actualisation en arrière-plan…</string>
+    <string name="library_filters_refresh_already">Actualisation déjà en cours : elle continue là où elle en est</string>
     <string name="library_filters_refresh_never">Jamais</string>
 </resources>

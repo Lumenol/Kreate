@@ -1144,5 +1144,6 @@
     <string name="library_filters_refresh_now">Refresh everything now</string>
     <string name="library_filters_refresh_now_description">%1$d / %2$d songs have their info. Asks YouTube again for all of them now, one every 1.5 s, in the background</string>
     <string name="library_filters_refresh_running">Refreshing in the background…</string>
+    <string name="library_filters_refresh_already">Already refreshing: it goes on where it is</string>
     <string name="library_filters_refresh_never">Never</string>
 </resources>
