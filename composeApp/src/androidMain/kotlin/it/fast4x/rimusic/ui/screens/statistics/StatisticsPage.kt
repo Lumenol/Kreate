@@ -27,8 +27,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -74,6 +78,22 @@ import it.fast4x.rimusic.utils.color
 import it.fast4x.rimusic.utils.forcePlayAtIndex
 import it.fast4x.rimusic.utils.semiBold
 import kotlinx.coroutines.Dispatchers
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.media3.common.MediaItem
+import it.fast4x.rimusic.ui.components.themed.IconButton
+import it.fast4x.rimusic.ui.components.themed.Menu
+import it.fast4x.rimusic.ui.components.themed.MenuEntry
+import it.fast4x.rimusic.ui.components.themed.PlaylistsMenu
+import it.fast4x.rimusic.utils.addNext
+import it.fast4x.rimusic.utils.enqueue
+import it.fast4x.rimusic.utils.forcePlayFromBeginning
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import co.touchlab.kermit.Logger
+import androidx.compose.ui.res.stringResource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -142,16 +162,38 @@ fun StatisticsPage(
                 .distinctUntilChanged()
                 .map { (it / 1000).toDuration( DurationUnit.SECONDS ) }       // "6m 4s", not "6m 4.026s"
     }.collectAsState( Duration.ZERO, Dispatchers.IO )
-    val songs by remember {
+    // The top of the period first, then 50 more each time the end of the list shows:
+    // a year can hold thousands of songs, never load (nor queue) them all at once
+    var moreSongs by rememberSaveable( statisticsType ) { mutableIntStateOf( 0 ) }
+    val songsLimit = maxStatisticsItems.toInt() + moreSongs
+    val songs by remember( from, songsLimit ) {
         Database.eventTable
                 .findSongsMostPlayedBetween(
                     from = from,
                     to = Long.MAX_VALUE,
-                    limit = maxStatisticsItems.toInt()
+                    limit = songsLimit
                 )
                 .distinctUntilChanged()
-                .map { it.take( maxStatisticsItems.toInt() ) }
     }.collectAsState( emptyList(), Dispatchers.IO )
+
+    // Play, queue or save every song of the period: read once, when asked
+    val coroutineScope = rememberCoroutineScope()
+    fun withAllSongs( action: (List<MediaItem>) -> Unit ) {
+        coroutineScope.launch {
+            val items = withContext( Dispatchers.IO ) {
+                Database.eventTable.allSongsMostPlayedBetween( from ).map( Song::asMediaItem )
+            }
+            if( items.isNotEmpty() ) action( items )
+        }
+    }
+    val addAllToPlaylist = PlaylistsMenu.init(
+        navController = navController,
+        mediaItems = { _ -> Database.eventTable.allSongsMostPlayedBetween( from ).map( Song::asMediaItem ) },
+        onFailure = { throwable, preview ->
+            Logger.e( throwable ) { "Failed to add the period's songs to playlist ${preview.playlist.name}" }
+        },
+        finalAction = {}
+    )
 
     // Every song heard in the period, not the size of the top list (always 10)
     val songsHeard by remember {
@@ -201,6 +243,17 @@ fun StatisticsPage(
         }
 
             val lazyGridState = rememberLazyGridState()
+            LaunchedEffect( lazyGridState, statisticsCategory ) {
+                if( statisticsCategory != StatisticsCategory.Songs ) return@LaunchedEffect
+                snapshotFlow {
+                    val info = lazyGridState.layoutInfo
+                    (info.visibleItemsInfo.lastOrNull()?.index ?: -1) to info.totalItemsCount
+                }.collect { (lastVisible, total) ->
+                    // Previous page loaded (no double step) and more songs left in the period
+                    if( lastVisible >= total - 3 && songs.size >= songsLimit && songsHeard > songs.size )
+                        moreSongs += 50
+                }
+            }
             LazyVerticalGrid(
                 state = lazyGridState,
                 columns = GridCells.Adaptive(
@@ -243,6 +296,52 @@ fun StatisticsPage(
                                 "${totalDuration.listeningTime()} ${context.getString( R.string.statistics_of_time_taken )}"
                             }}
 
+                            // Long press: the usual actions, on every song of the period
+                            val onLongClick = {
+                                hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
+                                menuState.display {
+                                    Menu {
+                                        MenuEntry(
+                                            icon = R.drawable.play,
+                                            text = stringResource( R.string.play_all ),
+                                            onClick = {
+                                                menuState.hide()
+                                                withAllSongs { player.stopRadio(); player.forcePlayFromBeginning( it ) }
+                                            }
+                                        )
+                                        MenuEntry(
+                                            icon = R.drawable.shuffle,
+                                            text = stringResource( R.string.shuffle ),
+                                            onClick = {
+                                                menuState.hide()
+                                                withAllSongs { player.stopRadio(); player.forcePlayFromBeginning( it.shuffled() ) }
+                                            }
+                                        )
+                                        MenuEntry(
+                                            icon = R.drawable.play_skip_forward,
+                                            text = stringResource( R.string.play_next ),
+                                            onClick = {
+                                                menuState.hide()
+                                                withAllSongs { player.addNext( it, context ) }
+                                            }
+                                        )
+                                        MenuEntry(
+                                            icon = R.drawable.enqueue,
+                                            text = stringResource( R.string.enqueue ),
+                                            onClick = {
+                                                menuState.hide()
+                                                withAllSongs { player.enqueue( it, context ) }
+                                            }
+                                        )
+                                        MenuEntry(
+                                            icon = R.drawable.add_in_playlist,
+                                            text = stringResource( R.string.add_to_playlist ),
+                                            onClick = addAllToPlaylist::onShortClick
+                                        )
+                                    }
+                                }
+                            }
+
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
                                 modifier = Modifier.padding(
@@ -251,10 +350,12 @@ fun StatisticsPage(
                                                        bottom = 8.dp
                                                    )
                                                    .fillMaxWidth()
+                                                   .clip( thumbnailRoundness.shape )
                                                    .background(
                                                        color = colorPalette().background4,
                                                        shape = thumbnailRoundness.shape
                                                    )
+                                                   .combinedClickable( onClick = {}, onLongClick = onLongClick )
                                                    .padding( all =  12.dp )
                             ) {
                                 Column( Modifier.weight( 1f ) ) {
@@ -276,11 +377,15 @@ fun StatisticsPage(
                                     )
                                 }
 
-                                Icon(
-                                    painter = painterResource( R.drawable.musical_notes ),
-                                    contentDescription = null,
-                                    tint = colorPalette().shimmer,
-                                    modifier = Modifier.size( 34.dp )
+                                // Plays every song of the period, most listened first
+                                IconButton(
+                                    icon = R.drawable.play,
+                                    color = colorPalette().accent,
+                                    onClick = {
+                                        withAllSongs { player.stopRadio(); player.forcePlayFromBeginning( it ) }
+                                    },
+                                    onLongClick = onLongClick,
+                                    modifier = Modifier.size( 28.dp )
                                 )
                             }
                         }
