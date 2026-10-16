@@ -21,7 +21,8 @@ internal data class InnertubePlaylistImpl(
     override var continuations: List<Continuation>,
     override var songs: List<InnertubeSong>,
     override var songContinuation: String?,
-    override var visitorData: String?
+    override var visitorData: String?,
+    override val isSavedToLibrary: Boolean? = null
 ): InnertubePlaylist {
 
     companion object {
@@ -75,7 +76,14 @@ internal data class InnertubePlaylistImpl(
                                          sectionListRenderer.continuations,
                                          continuedPlaylist.songs,
                                          continuedPlaylist.continuation,
-                                         visitorData
+                                         visitorData,
+                // The bookmark toggle of the header; only playlists one can save have it
+                content?.musicResponsiveHeaderRenderer
+                       ?.buttons
+                       ?.firstNotNullOfOrNull { button ->
+                           button.toggleButtonRenderer?.takeIf { it.defaultIcon?.iconType?.startsWith( "BOOKMARK" ) == true }
+                       }
+                       ?.isToggled
             )
         }
 

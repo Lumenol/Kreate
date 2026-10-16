@@ -2,6 +2,7 @@
 
 package app.kreate.android.themed.common.screens.downloads
 
+import kotlinx.coroutines.flow.update
 import android.content.Context
 import app.kreate.android.service.player.StatefulPlayer
 import it.fast4x.rimusic.utils.asMediaItem
@@ -196,8 +197,13 @@ fun DownloadsScreen( navController: NavController, miniPlayer: @Composable () ->
     }
 }
 
-private fun cancel( context: Context, download: Download ) =
+private fun cancel( context: Context, download: Download ) {
     DownloadService.sendRemoveDownload( context, MyDownloadService::class.java, download.request.id, false )
+    // One the manager doesn't track anymore gets no "removed" callback: drop it here,
+    // or it stays on this page and in the header pill whatever the taps
+    if( MyDownloadHelper.instance.downloadManager.currentDownloads.none { it.request.id == download.request.id } )
+        MyDownloadHelper.instance.downloads.update { it - download.request.id }
+}
 
 /** Any non-zero reason keeps a single download stopped until it's lifted */
 private const val STOP_REASON_USER = 1

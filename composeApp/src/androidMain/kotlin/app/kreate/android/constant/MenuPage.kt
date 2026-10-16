@@ -1,5 +1,6 @@
 package app.kreate.android.constant
 
+import androidx.media3.exoplayer.offline.Download
 import app.kreate.android.themed.common.component.menu.SongDownloadButton
 import app.kreate.android.service.DownloadCacheState
 import it.fast4x.rimusic.service.MyDownloadHelper
@@ -81,13 +82,19 @@ sealed interface MenuPage {
             listOfNotNull(
                 SongRadioButton(),
                 // Download or remove the download, as the song stands now (not for local files)
-                if( song.isLocal ) null else SongDownloadButton(
-                    DownloadCacheState.isDownloaded(
-                        MyDownloadHelper.instance.downloads.value[song.mediaId]?.state,
-                        get<Cache>( Cache::class.java, CacheType.DOWNLOAD ),
-                        song.mediaId
+                if( song.isLocal ) null else {
+                    val downloadState = MyDownloadHelper.instance.downloads.value[song.mediaId]?.state
+                    SongDownloadButton(
+                        when {
+                            DownloadCacheState.isDownloaded( downloadState, get<Cache>( Cache::class.java, CacheType.DOWNLOAD ), song.mediaId ) ->
+                                SongDownloadButton.State.Downloaded
+                            downloadState == Download.STATE_QUEUED || downloadState == Download.STATE_DOWNLOADING
+                                    || downloadState == Download.STATE_RESTARTING ->
+                                SongDownloadButton.State.InProgress
+                            else -> SongDownloadButton.State.NotDownloaded
+                        }
                     )
-                ),
+                },
                 app.kreate.android.themed.common.component.menu.EqualizerButton(),
                 GoToArtistButton(), GoToAlbumButton(), ViewSongDetailsButton(),
                 app.kreate.android.themed.common.component.menu.EditSongButton()

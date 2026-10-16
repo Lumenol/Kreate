@@ -14,8 +14,8 @@ import me.knighthat.innertube.Innertube
 
 /**
  * Plays the playlist of a `watch?v=…&list=…` link (`shuffle=1` shuffles it),
- * from the linked song when it's in the first page. Mixes (`RD…`) aren't
- * playlists: they're left to the caller.
+ * from the linked song when it's in the first page. Radios (`RD…`, except
+ * YouTube's own playlists) aren't playlists: they're left to the caller.
  *
  * @return `false` when the link isn't a playlist or it couldn't be loaded
  */
@@ -25,7 +25,7 @@ suspend fun playYouTubePlaylistLink(
     videoId: String?,
     shuffle: Boolean
 ): Boolean {
-    if( listId.startsWith( "RD" ) ) return false
+    if( PlaylistIds.isRadio( listId ) ) return false
 
     val songs = Innertube.browsePlaylist( "VL$listId", CURRENT_LOCALE, isYouTubeLoggedIn() )
                          .onFailure { Logger.e( it ) { "failed to load playlist $listId of a link" } }

@@ -15,6 +15,7 @@ import app.kreate.android.Preferences
 import app.kreate.android.R
 import app.kreate.android.themed.common.component.LoadMoreContentType
 import app.kreate.android.themed.rimusic.component.Search
+import app.kreate.android.utils.PlaylistIds
 import app.kreate.android.utils.innertube.CURRENT_LOCALE
 import app.kreate.android.utils.innertube.toSong
 import app.kreate.database.models.Song
@@ -49,16 +50,17 @@ class YouTubePlaylistViewModel(
     private val _continued = MutableStateFlow(emptyList<InnertubeSong>())
     private val _continuation = MutableStateFlow<String?>(null)
 
-    // browseId must not be empty or null in any case. A bare playlist id (a Home mix
-    // "RDTMAK...", "PL...", "OLAK...", "LM") gets the "VL" the browse call needs: without
-    // it YouTube answers with an empty page and the playlist showed nothing
-    val browseId: String = savedStateHandle.get<String>( "browseId" )!!.let { id ->
-        if( listOf( "PL", "RD", "OLAK", "LM", "UU" ).any( id::startsWith ) ) "VL$id" else id
-    }
+    // browseId must not be empty or null in any case. A bare playlist id gets the "VL"
+    // the browse call needs: without it YouTube answers with an empty page
+    val browseId: String = PlaylistIds.browseId( savedStateHandle.get<String>( "browseId" )!! )
     val params: String? = savedStateHandle["params"]
     // Logged in, always ask with the account, like YouTube Music: the Home's mixes
     // ("Replay mix", "Discover mix"...) are made for it and come back empty without it
-    val useLogin: Boolean = savedStateHandle.get<Boolean>( "useLogin" )!! || isYouTubeLoggedIn()
+    // Turned off when YouTube refuses the account (session expired): the playlist is then
+    // read without it. Kreate stays logged in, the user is told to log in again
+    @Volatile
+    var useLogin: Boolean = savedStateHandle.get<Boolean>( "useLogin" )!! || isYouTubeLoggedIn()
+        private set
     val listState = LazyListState()
     val search = Search(listState)
     val playlistPage = _playlistPage.asStateFlow()
@@ -115,15 +117,25 @@ class YouTubePlaylistViewModel(
             return@launch
         }
 
-        Innertube.browsePlaylist( browseId, CURRENT_LOCALE, useLogin )
-                 .onSuccess { page ->
-                     _playlistPage.update { page }
-                     _continuation.update { page.songContinuation }
-                 }
-                 .onFailure { err ->
-                     Logger.e( "", err, "YouTubePlaylist" )
-                     Toaster.e( R.string.error_failed_to_load_playlist )
-                 }
+        var result = Innertube.browsePlaylist( browseId, CURRENT_LOCALE, useLogin )
+        if( result.isFailure && useLogin ) {
+            Logger.w( result.exceptionOrNull() ) { "playlist $browseId refused with the account, trying without it" }
+            val anonymous = Innertube.browsePlaylist( browseId, CURRENT_LOCALE, false )
+            if( anonymous.isSuccess ) {
+                useLogin = false
+                result = anonymous
+                if( isYouTubeLoggedIn() ) Toaster.w( R.string.youtube_login_refused )
+            }
+        }
+
+        result.onSuccess { page ->
+                  _playlistPage.update { page }
+                  _continuation.update { page.songContinuation }
+              }
+              .onFailure { err ->
+                  Logger.e( "", err, "YouTubePlaylist" )
+                  Toaster.e( R.string.error_failed_to_load_playlist )
+              }
     }
 
     @AnyThread

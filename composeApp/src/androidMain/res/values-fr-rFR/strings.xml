@@ -153,6 +153,7 @@
     <string name="downloaded">Téléchargés</string>
     <string name="download">Télécharger</string>
     <string name="menu_remove_download">Supprimer le téléchargement</string>
+    <string name="menu_downloading">Téléchargement en cours…</string>
     <string name="downloads_in_progress_title">Téléchargements en cours</string>
     <string name="downloads_pause_all">Tout mettre en pause</string>
     <string name="downloads_pause">Pause</string>
@@ -912,6 +913,7 @@ Volume BAS : titre précédent</string>
     <string name="playlist_saved_to_library">Playlist enregistrée dans ta bibliothèque</string>
     <string name="playlist_removed_from_library">Playlist retirée de ta bibliothèque</string>
     <string name="playlist_save_failed">YouTube n\'a pas pu enregistrer la playlist</string>
+    <string name="playlist_remove_failed">YouTube n\'a pas pu retirer la playlist</string>
     <string name="setting_entry_preview_start">Début de l\'extrait</string>
     <string name="setting_entry_preview_length">Durée de l\'extrait</string>
     <string name="setting_description_preview">Toucher la vignette d\'un titre l\'écoute un instant, sans changer ta file</string>
@@ -988,6 +990,7 @@ Volume BAS : titre précédent</string>
     <string name="error_failed_to_decipher_signature">Impossible de déchiffrer la signature</string>
     <string name="error_failed_to_update_discord_activity">Échec de la mise à jour de l\'activité Discord</string>
     <string name="error_failed_to_load_playlist">Échec du chargement de la playlist</string>
+    <string name="youtube_login_refused">YouTube a refusé ton compte (session expirée ?) : la playlist est affichée sans connexion. Reconnecte-toi dans Paramètres → Comptes</string>
     <string name="error_failed_to_get_playlists_next_songs">Impossible d\'obtenir plus de titres</string>
     <string name="error_failed_to_load_artist">Impossible d\'obtenir l\'artiste</string>
     <string name="error_failed_to_load_album">Échec du chargement de l\'album</string>
