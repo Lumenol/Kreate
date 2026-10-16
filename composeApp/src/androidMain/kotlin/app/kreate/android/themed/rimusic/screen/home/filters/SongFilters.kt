@@ -12,6 +12,8 @@ import app.kreate.database.models.Song
 import co.touchlab.kermit.Logger
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.jsonArray
 
 /** A range over one of the [Scales]: indexes, both ends included */
 @Serializable
@@ -45,8 +47,26 @@ data class SongFilters(
     val isActive get() = activeCount > 0
     /** Downloaded or cached ones are looked up only when asked for */
     val needsSources get() = downloaded || cached
-    /** These pick songs never played in Kreate too, like the lists they replace */
-    val widensLibrary get() = downloaded || cached || liked
+    /**
+     * These pick songs never played in Kreate too: downloaded and liked ones (the lists
+     * they replace showed them all) and "never played". Cached keeps the usual list and
+     * its hidden songs switch, like the cached list did.
+     */
+    val widensLibrary get() = downloaded || liked || (playsActive && plays.from == 0)
+
+    /** Indexes back inside the scales: a preference from another version can't crash the list */
+    fun clamped(): SongFilters {
+        fun Span.fit( last: Int ): Span {
+            val a = from.coerceIn( 0, last )
+            return Span( a, to.coerceIn( a, last ) )
+        }
+        return copy(
+            explicit = explicit.coerceIn( 0, 2 ),
+            plays = plays.fit( Scales.PLAYS.lastIndex ),
+            lastPlayed = lastPlayed.fit( Scales.AGO_DAYS.lastIndex ),
+            firstPlayed = firstPlayed.fit( Scales.AGO_DAYS.lastIndex )
+        )
+    }
 
     fun matches(
         song: Song,
@@ -62,14 +82,14 @@ data class SongFilters(
         if( explicit == 1 && song.isExplicit ) return false
         if( explicit == 2 && !song.isExplicit ) return false
 
-        if( playsActive && !Scales.inSpan( Scales.PLAYS, plays, stats?.plays ?: 0 ) ) return false
+        if( playsActive && !Scales.inPlays( plays, stats?.plays ?: 0 ) ) return false
         if( lastPlayedActive ) {
             val at = stats?.lastPlayed ?: return false
-            if( !Scales.inSpan( Scales.AGO_DAYS, lastPlayed, Scales.daysAgo( at, now ) ) ) return false
+            if( !Scales.inAgo( lastPlayed, Scales.daysAgo( at, now ) ) ) return false
         }
         if( firstPlayedActive ) {
             val at = stats?.firstPlayed ?: return false
-            if( !Scales.inSpan( Scales.AGO_DAYS, firstPlayed, Scales.daysAgo( at, now ) ) ) return false
+            if( !Scales.inAgo( firstPlayed, Scales.daysAgo( at, now ) ) ) return false
         }
         return true
     }
@@ -83,9 +103,21 @@ object Scales {
 
     fun daysAgo( at: Long, now: Long ): Int = ((now - at) / 86_400_000L).toInt().coerceAtLeast( 0 )
 
-    /** The last step is open ("100 and more", "3 years and more") */
-    fun inSpan( scale: IntArray, span: Span, value: Int ): Boolean =
-        value >= scale[span.from] && (span.to == scale.lastIndex || value <= scale[span.to])
+    /** Counts, both ends included ("5 to 20 plays"); the last step is open ("100 and more") */
+    fun inPlays( span: Span, plays: Int ): Boolean =
+        plays >= PLAYS[span.from] && (span.to == PLAYS.lastIndex || plays <= PLAYS[span.to])
+
+    /**
+     * Durations, end excluded so that ranges side by side don't overlap ("less than 1
+     * week" / "more than 1 week"). Both handles on one step take that whole step
+     * ("3 months ago" = from 3 to 4 months); the last step is open ("3 years and more").
+     */
+    fun inAgo( span: Span, days: Int ): Boolean {
+        if( days < AGO_DAYS[span.from] ) return false
+        if( span.to == AGO_DAYS.lastIndex ) return true
+        val end = if( span.from == span.to ) span.to + 1 else span.to
+        return days < AGO_DAYS[end]
+    }
 }
 
 /** A named set of filters, one touch away */
@@ -113,17 +145,27 @@ object SongFiltersStore {
 
     private fun decode( text: String ): SongFilters? =
         if( text.isBlank() ) null
-        else runCatching { json.decodeFromString<SongFilters>( text ) }
+        else runCatching { json.decodeFromString<SongFilters>( text ).clamped() }
                 .onFailure { Logger.w( it ) { "unreadable library filters, reset" } }
                 .getOrNull()
 
     /** The user's shortcuts; the first time, a few useful ones */
     fun shortcuts( context: Context ): List<FilterShortcut> {
         val text = Preferences.LIBRARY_FILTER_SHORTCUTS.value
-        if( text.isNotBlank() )
-            runCatching { return json.decodeFromString<List<FilterShortcut>>( text ) }
-                .onFailure { Logger.w( it ) { "unreadable filter shortcuts, back to the defaults" } }
-        return defaults( context ).also( ::saveShortcuts )
+        if( text.isBlank() ) return defaults( context ).also( ::saveShortcuts )
+
+        // One by one: an unreadable shortcut is left out, never the others. Nothing is
+        // written back until the user changes the list
+        val entries = runCatching { json.parseToJsonElement( text ).jsonArray }
+            .onFailure { Logger.w( it ) { "unreadable filter shortcuts" } }
+            .getOrNull()
+            ?: return emptyList()
+        return entries.mapNotNull { entry ->
+            runCatching { json.decodeFromJsonElement<FilterShortcut>( entry ) }
+                .onFailure { Logger.w( it ) { "unreadable filter shortcut left out" } }
+                .getOrNull()
+                ?.let { it.copy( filters = it.filters.clamped() ) }
+        }
     }
 
     fun saveShortcuts( list: List<FilterShortcut> ) {

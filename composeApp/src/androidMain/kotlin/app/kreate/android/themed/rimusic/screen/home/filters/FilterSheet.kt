@@ -77,8 +77,8 @@ object FilterTexts {
         val last = Scales.AGO_DAYS.lastIndex
         return when {
             span.from == 0 && span.to == 0 -> context.getString( R.string.library_filters_today )
-            span.from == 0                 -> context.getString( R.string.library_filters_ago_less, ago( context, span.to ) )
             span.to == last                -> context.getString( R.string.library_filters_ago_more, ago( context, span.from ) )
+            span.from == 0                 -> context.getString( R.string.library_filters_ago_less, ago( context, span.to ) )
             span.from == span.to           -> context.getString( R.string.library_filters_ago_exact, ago( context, span.from ) )
             else -> {
                 // "3 months to 5 months" reads "3 to 5 months"
@@ -95,10 +95,11 @@ object FilterTexts {
         val last = Scales.PLAYS.lastIndex
         return when {
             span.from == 0 && span.to == 0 -> context.getString( R.string.library_filters_plays_never )
+            // The last step is open: "100 plays or more", even with both handles on it
+            span.to == last                -> context.getString( R.string.library_filters_plays_at_least, plays( span.from ) )
             span.from == span.to           -> if( Scales.PLAYS[span.from] == 1 ) context.getString( R.string.library_filters_plays_one )
                                               else context.getString( R.string.library_filters_plays_exact, plays( span.from ) )
             span.from == 0                 -> context.getString( R.string.library_filters_plays_at_most, plays( span.to ) )
-            span.to == last                -> context.getString( R.string.library_filters_plays_at_least, plays( span.from ) )
             else                           -> context.getString( R.string.library_filters_plays_between, plays( span.from ), plays( span.to ) )
         }
     }

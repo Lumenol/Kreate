@@ -237,10 +237,11 @@ fun HomeSongs(
     val useFilters = builtInPlaylist == BuiltInPlaylist.All && filters.isActive
     // Each source of data is read only while a filter needs it
     val needsStats = useFilters && (filters.playsActive || filters.lastPlayedActive || filters.firstPlayedActive)
+    // null until the database answered: the list waits, rather than show nothing for a moment
     val playStats by remember( needsStats ) {
         if( needsStats ) Database.eventTable.playStats().map { list -> list.associateBy( SongPlayStats::songId ) }
         else flowOf( emptyMap<String, SongPlayStats>() )
-    }.collectAsState( emptyMap(), Dispatchers.IO )
+    }.collectAsState( null, Dispatchers.IO )
     val needsDownloaded = useFilters && filters.downloaded
     val downloadedIds by remember( needsDownloaded ) {
         if( needsDownloaded )
@@ -248,7 +249,7 @@ fun HomeSongs(
                 all.values.filter { it.state == Download.STATE_COMPLETED }.mapTo( HashSet() ) { it.request.id }
             }
         else flowOf( emptySet<String>() )
-    }.collectAsState( emptySet(), Dispatchers.IO )
+    }.collectAsState( null, Dispatchers.IO )
     val needsCached = useFilters && filters.cached
     val cachedIds by remember( needsCached ) {
         if( needsCached )
@@ -261,15 +262,22 @@ fun HomeSongs(
                         }.mapTo( HashSet() ) { it.song.id }
                     }
         else flowOf( emptySet<String>() )
-    }.collectAsState( emptySet(), Dispatchers.IO )
+    }.collectAsState( null, Dispatchers.IO )
     //</editor-fold>
 
     LaunchedEffect( items, search.input, useFilters, filters, playStats, downloadedIds, cachedIds ) {
+    val stats = playStats
+    val downloaded = downloadedIds
+    val cached = cachedIds
+    if( stats == null || downloaded == null || cached == null ) {
+        isLoading = true
+        return@LaunchedEffect
+    }
     val now = System.currentTimeMillis()
     val allowed = items.filter { !parentalControlEnabled || !it.isExplicit }
     // "12 / 51" only against the usual list, not against every song known
     SongFiltersStore.totalCount = if( everySong ) -1 else allowed.size
-    allowed.filter { !useFilters || filters.matches( it, playStats[it.id], downloadedIds, cachedIds, now ) }
+    allowed.filter { !useFilters || filters.matches( it, stats[it.id], downloaded, cached, now ) }
          .also { SongFiltersStore.resultCount = it.size }
          .filter {
              // Without cleaning, user can search explicit songs with "e:"

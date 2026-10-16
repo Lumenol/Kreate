@@ -1,6 +1,7 @@
 package app.kreate.android.themed.rimusic.screen.home
 
 import androidx.compose.runtime.LaunchedEffect
+import app.kreate.android.themed.rimusic.screen.home.filters.SongFilters
 import app.kreate.android.themed.rimusic.screen.home.filters.SongFiltersStore
 import app.kreate.android.themed.rimusic.screen.home.filters.FilterSheet
 import app.kreate.android.themed.rimusic.screen.home.filters.FilterButton
@@ -101,11 +102,11 @@ fun HomeSongsScreen(
     var builtInPlaylist by Preferences.HOME_SONGS_TYPE
     // Favorites, cached and downloaded are filters now: open the same songs, filtered
     LaunchedEffect( Unit ) {
-        val filters = SongFiltersStore.filters
+        // The same view as before: these filters alone
         when( builtInPlaylist ) {
-            BuiltInPlaylist.Favorites  -> SongFiltersStore.filters = filters.copy( liked = true )
-            BuiltInPlaylist.Offline    -> SongFiltersStore.filters = filters.copy( cached = true )
-            BuiltInPlaylist.Downloaded -> SongFiltersStore.filters = filters.copy( downloaded = true )
+            BuiltInPlaylist.Favorites  -> SongFiltersStore.filters = SongFilters( liked = true )
+            BuiltInPlaylist.Offline    -> SongFiltersStore.filters = SongFilters( cached = true )
+            BuiltInPlaylist.Downloaded -> SongFiltersStore.filters = SongFilters( downloaded = true )
             else                       -> return@LaunchedEffect
         }
         builtInPlaylist = BuiltInPlaylist.All
@@ -251,12 +252,14 @@ fun HomeSongsScreen(
             ) {
                 Column {
 
-                    when (builtInPlaylist) {
+                    // The downloads line also shows with the "downloaded" filter, which replaced the list
+                    when {
                         // No storage bar here: unlabelled, it read as a stray line (it's in Settings → Data)
-                        BuiltInPlaylist.Downloaded, BuiltInPlaylist.Offline -> {
+                        builtInPlaylist == BuiltInPlaylist.Downloaded || builtInPlaylist == BuiltInPlaylist.Offline
+                                || (builtInPlaylist == BuiltInPlaylist.All && SongFiltersStore.filters.downloaded) -> {
                             // The finished ones are listed here; one quiet line leads to the
                             // others, only when some are running or failed
-                            if( builtInPlaylist === BuiltInPlaylist.Downloaded ) {
+                            if( builtInPlaylist === BuiltInPlaylist.Downloaded || SongFiltersStore.filters.downloaded ) {
                                 val counts = app.kreate.android.service.rememberDownloadCounts()
                                 if( counts.total > 0 )
                                     androidx.compose.foundation.layout.Row(
