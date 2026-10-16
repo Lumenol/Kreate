@@ -321,6 +321,7 @@ fun AccountSettings(
                     DiscordLoginAndGetToken( discord ) { loginDiscord = false }
                 }
             }
+            resetEntry( search, R.string.tab_accounts, { SettingsReset.ACCOUNTS } )
         }
     }
 }

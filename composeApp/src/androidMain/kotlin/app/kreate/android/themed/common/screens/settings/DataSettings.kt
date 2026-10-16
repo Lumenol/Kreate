@@ -426,6 +426,7 @@ fun DataSettings( paddingValues: PaddingValues ) {
                     }
                 )
             }
+            resetEntry( search, R.string.tab_data, { SettingsReset.DATA } )
         }
     }
 }
