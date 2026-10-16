@@ -1,5 +1,7 @@
 package app.kreate.android.utils
 
+import app.kreate.android.themed.common.component.PreviewButton
+import app.kreate.util.toDuration
 import it.fast4x.rimusic.utils.joinedNames
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -151,7 +153,12 @@ object ItemUtils {
                     is Innertube.SongItem -> AlbumItem.VerticalStructure(
                         widthDp = AlbumItem.thumbnailSize().width,
                         thumbnail = {
-                            AlbumItem.Thumbnail( childItem.key, childItem.thumbnail?.url )
+                            Box {
+                                AlbumItem.Thumbnail( childItem.key, childItem.thumbnail?.url )
+                                PreviewButton( childItem.key, Modifier.padding( bottom = AlbumItem.VERTICAL_SPACING.dp ) ) {
+                                    childItem.asMediaItem to childItem.durationText.toDuration().inWholeMilliseconds
+                                }
+                            }
                         },
                         firstLine = {
                             AlbumItem.Title(
@@ -181,11 +188,16 @@ object ItemUtils {
                         widthDp = AlbumItem.thumbnailSize().width,
                         thumbnail = {
                             // Videos come as 16:9: crop them square like the other cards
-                            AlbumItem.Thumbnail(
-                                url = childItem.thumbnail?.url,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.padding( bottom = AlbumItem.VERTICAL_SPACING.dp )
-                            )
+                            Box {
+                                AlbumItem.Thumbnail(
+                                    url = childItem.thumbnail?.url,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.padding( bottom = AlbumItem.VERTICAL_SPACING.dp )
+                                )
+                                PreviewButton( childItem.key, Modifier.padding( bottom = AlbumItem.VERTICAL_SPACING.dp ) ) {
+                                    childItem.asMediaItem to childItem.durationText.toDuration().inWholeMilliseconds
+                                }
+                            }
                         },
                         firstLine = {
                             AlbumItem.Title(

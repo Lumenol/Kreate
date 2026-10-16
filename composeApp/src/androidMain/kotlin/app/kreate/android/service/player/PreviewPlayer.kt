@@ -46,7 +46,7 @@ import org.koin.java.KoinJavaComponent.get
 @UnstableApi
 object PreviewPlayer {
 
-    /** Id of the song being previewed, to show it on its thumbnail */
+    /** What is being previewed (a song's id, or the album, artist or playlist it comes from), to show it on its thumbnail */
     var previewingId: String? by mutableStateOf( null )
         private set
     /** 0 to 1 over the preview's length, for the ring around the thumbnail */
@@ -130,10 +130,19 @@ object PreviewPlayer {
                         }
     }
 
-    /** Starts [mediaItem]'s preview, or stops it if it's the one playing */
+    /**
+     * Starts [mediaItem]'s preview, or stops it if [key] is the one playing. [key] is
+     * what the user tapped: the song itself, or the album, artist or playlist it's from.
+     */
     @MainThread
-    fun toggle( context: Context, mediaItem: MediaItem, durationMs: Long, isLocal: Boolean ) {
-        if( previewingId == mediaItem.mediaId ) {
+    fun toggle(
+        context: Context,
+        mediaItem: MediaItem,
+        durationMs: Long,
+        isLocal: Boolean,
+        key: String = mediaItem.mediaId
+    ) {
+        if( previewingId == key ) {
             stop()
             return
         }
@@ -147,7 +156,7 @@ object PreviewPlayer {
 
         val player = this.player ?: build( context.applicationContext ).also { this.player = it }
         previewOnlyId = mediaItem.mediaId.takeIf { it != main.currentMediaItem?.mediaId }
-        previewingId = mediaItem.mediaId
+        previewingId = key
         progress = 0f
 
         val startMs = durationMs * Preferences.PREVIEW_START.value.percent / 100

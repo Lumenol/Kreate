@@ -1,5 +1,7 @@
 package app.kreate.android.themed.rimusic.component.album
 
+import app.kreate.android.themed.common.component.PreviewButton
+import app.kreate.android.themed.common.component.PreviewSongs
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -255,7 +257,14 @@ object AlbumItem: Visual(), MultiplatformItem {
             widthDp = sizeDp.width,
             modifier = modifier,
             thumbnail = {
-                Thumbnail( album.id, album.cleanThumbnailUrl(), sizeDp = sizeDp )
+                Box {
+                    Thumbnail( album.id, album.cleanThumbnailUrl(), sizeDp = sizeDp )
+                    // A preview of its first song (YouTube albums only)
+                    if( album.id.startsWith( "MPREb_" ) )
+                        PreviewButton( album.id, Modifier.padding( bottom = VERTICAL_SPACING.dp ) ) {
+                            PreviewSongs.album( album.id )
+                        }
+                }
             },
             firstLine = {
                 Title(
