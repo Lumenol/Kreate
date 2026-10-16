@@ -23,7 +23,6 @@ import app.kreate.android.themed.common.component.settings.SettingComponents
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.ui.components.themed.IconButton
 import it.fast4x.rimusic.ui.components.themed.SliderControl
-import it.fast4x.rimusic.ui.styling.favoritesIcon
 import me.knighthat.component.dialog.Dialog
 
 class BlurAdjuster private constructor(

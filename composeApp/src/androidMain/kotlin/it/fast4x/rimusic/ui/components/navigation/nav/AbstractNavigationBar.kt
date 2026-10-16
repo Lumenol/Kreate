@@ -15,7 +15,6 @@ import app.kreate.android.R
 import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.NavRoutes
 import it.fast4x.rimusic.ui.components.themed.Button
-import it.fast4x.rimusic.ui.styling.favoritesIcon
 
 @SuppressLint("ComposableNaming")
 abstract class AbstractNavigationBar(

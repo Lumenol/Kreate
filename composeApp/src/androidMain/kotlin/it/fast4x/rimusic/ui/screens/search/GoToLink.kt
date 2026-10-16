@@ -140,21 +140,21 @@ fun GoToLink(
                     IconButton(
                         onClick = onAction1,
                         icon = R.drawable.globe,
-                        color = colorPalette().favoritesIcon,
+                        color = colorPalette().accent,
                         modifier = Modifier
                             .size(24.dp)
                     )
                     IconButton(
                         onClick = onAction2,
                         icon = R.drawable.library,
-                        color = colorPalette().favoritesIcon,
+                        color = colorPalette().accent,
                         modifier = Modifier
                             .size(24.dp)
                     )
                     IconButton(
                         onClick = onAction3,
                         icon = R.drawable.link,
-                        color = colorPalette().favoritesIcon,
+                        color = colorPalette().accent,
                         modifier = Modifier
                             .size(24.dp)
                     )
@@ -162,7 +162,7 @@ fun GoToLink(
                     IconButton(
                         onClick = onAction4,
                         icon = R.drawable.chevron_back,
-                        color = colorPalette().favoritesIcon,
+                        color = colorPalette().accent,
                         modifier = Modifier
                             .size(24.dp)
                     )

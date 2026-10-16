@@ -44,7 +44,6 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.enums.ColorPaletteMode
 import it.fast4x.rimusic.enums.PauseBetweenSongs
 import it.fast4x.rimusic.typography
-import it.fast4x.rimusic.ui.styling.favoritesIcon
 import it.fast4x.rimusic.utils.DURATION_INDICATOR_HEIGHT
 import it.fast4x.rimusic.utils.positionAndDurationState
 import it.fast4x.rimusic.utils.rememberPreference

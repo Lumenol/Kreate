@@ -56,6 +56,7 @@ import androidx.compose.ui.unit.dp
 import app.kreate.android.Preferences
 import app.kreate.android.R
 import it.fast4x.rimusic.colorPalette
+import it.fast4x.rimusic.ui.styling.activeWash
 import it.fast4x.rimusic.ui.styling.favoritesIcon
 
 enum class MultiFabState {
@@ -129,7 +130,7 @@ fun MultiFloatingActionsButton (
             contentAlignment = Alignment.BottomEnd
         ) {
             if (currentState == MultiFabState.Expanded) {
-                val color = colorPalette().accent.copy(0.85f)
+                val color = colorPalette().activeWash.copy(0.85f)
                 Canvas(modifier = Modifier
                     //.border(BorderStroke(1.dp, Color.Green))
                     .fillMaxSize()

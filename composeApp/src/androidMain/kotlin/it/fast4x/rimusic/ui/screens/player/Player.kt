@@ -171,7 +171,7 @@ import it.fast4x.rimusic.ui.components.themed.animateBrushRotation
 import it.fast4x.rimusic.ui.styling.Dimensions
 import it.fast4x.rimusic.ui.styling.collapsedPlayerProgressBar
 import it.fast4x.rimusic.ui.styling.dynamicColorPaletteOf
-import it.fast4x.rimusic.ui.styling.favoritesOverlay
+import it.fast4x.rimusic.ui.styling.activeWash
 import it.fast4x.rimusic.utils.AppLifecycleTracker
 import it.fast4x.rimusic.utils.DisposableListener
 import it.fast4x.rimusic.utils.SearchYoutubeEntity
@@ -1189,7 +1189,7 @@ fun Player(
                     .drawBehind {
                         if (backgroundProgress == BackgroundProgress.Both || backgroundProgress == BackgroundProgress.Player) {
                             drawRect(
-                                color = color.accent.copy( alpha = .4f ),
+                                color = color.activeWash.copy( alpha = .4f ),
                                 topLeft = Offset.Zero,
                                 size = Size(
                                     width = positionAndDuration.value.first.toFloat() /
@@ -1740,7 +1740,7 @@ fun Player(
                     .drawBehind {
                         if (backgroundProgress == BackgroundProgress.Both || backgroundProgress == BackgroundProgress.Player) {
                             drawRect(
-                                color = color.accent.copy( alpha = .4f ),
+                                color = color.activeWash.copy( alpha = .4f ),
                                 topLeft = Offset.Zero,
                                 size = Size(
                                     width = positionAndDuration.value.first.toFloat() /

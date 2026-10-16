@@ -27,7 +27,6 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.thumbnailShape
 import it.fast4x.rimusic.ui.components.tab.toolbar.Descriptive
 import it.fast4x.rimusic.ui.components.tab.toolbar.MenuIcon
-import it.fast4x.rimusic.ui.styling.favoritesIcon
 
 class Search(
     private val scrollableState: ScrollableState?

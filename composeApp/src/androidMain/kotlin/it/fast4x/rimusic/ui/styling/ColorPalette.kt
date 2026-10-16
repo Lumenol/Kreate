@@ -5,6 +5,7 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
 import androidx.palette.graphics.Palette
@@ -257,12 +258,12 @@ inline val ColorPalette.primaryButton: Color
     }
 
 
-inline val ColorPalette.favoritesOverlay: Color
-    get() = if (this === DefaultDarkColorPalette || this === DefaultLightColorPalette || this === PureBlackColorPalette) {
-        red.copy(alpha = 0.4f)
-    } else {
-        accent.copy(alpha = 0.4f)
-    }
+/**
+ * Behind "now playing" and progress washes: the accent, except when it's near-white
+ * (Pure black), where a white wash would grey the text out: red there, as before
+ */
+inline val ColorPalette.activeWash: Color
+    get() = if( accent.luminance() > .6f ) red else accent
 
 inline val ColorPalette.overlay: Color
     get() = PureBlackColorPalette.background0.copy(alpha = 0.5f)
