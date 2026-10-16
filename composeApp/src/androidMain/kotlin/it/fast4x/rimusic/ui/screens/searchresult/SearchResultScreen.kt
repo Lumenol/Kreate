@@ -1,5 +1,7 @@
 package it.fast4x.rimusic.ui.screens.searchresult
 
+import app.kreate.android.service.player.PreviewPlayer
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.Spacer
 import it.fast4x.rimusic.ui.screens.search.ArtistRow
@@ -102,6 +104,8 @@ fun SearchResultScreen(
     val menu = LocalBottomMenu.current
     val saveableStateHolder = rememberSaveableStateHolder()
     val (tabIndex, onTabIndexChanges) = Preferences.SEARCH_RESULTS_TAB_INDEX
+    // Another tab of results: a song preview started on the previous one ends
+    LaunchedEffect( tabIndex ) { PreviewPlayer.stop() }
 
     val hapticFeedback = LocalHapticFeedback.current
 

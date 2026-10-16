@@ -1,5 +1,7 @@
 package app.kreate.android.themed.rimusic.screen.player
 
+import app.kreate.android.service.player.PreviewPlayer
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -47,6 +49,8 @@ import org.koin.compose.koinInject
 fun RelatedSheet( mediaItem: MediaItem, onDismiss: () -> Unit ) {
     val player: StatefulPlayer = koinInject()
     val bottomMenu = LocalBottomMenu.current
+    // Closing the sheet ends a preview started from it
+    DisposableEffect( Unit ) { onDispose { PreviewPlayer.stop() } }
     val hapticFeedback = LocalHapticFeedback.current
     val colorPalette = colorPalette()
     val typography = typography()

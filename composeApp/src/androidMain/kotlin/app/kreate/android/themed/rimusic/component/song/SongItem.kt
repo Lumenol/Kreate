@@ -1,5 +1,8 @@
 package app.kreate.android.themed.rimusic.component.song
 
+import android.content.Context
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.material3.CircularProgressIndicator
 import app.kreate.util.toDuration
 import androidx.compose.ui.platform.LocalContext
@@ -437,18 +440,13 @@ object SongItem: Visual() {
             thumbnail = {
                 // Tap the thumbnail: a bit of the song, without touching the queue (tap
                 // again to stop); the rest of the row still plays it. Long press: the menu.
-                val previewing = PreviewPlayer.previewingId == song.id
                 Box(
-                    Modifier.combinedClickable(
-                        onClickLabel = stringResource( if( previewing ) R.string.preview_stop else R.string.preview_play ),
-                        onClick = {
-                            PreviewPlayer.toggle(
-                                context,
-                                song.asMediaItem,
-                                song.durationText.toDuration().inWholeMilliseconds,
-                                song.isLocal
-                            )
-                        },
+                    Modifier.previewOnTap(
+                        id = song.id,
+                        mediaItem = { song.asMediaItem },
+                        durationText = song.durationText,
+                        isLocal = song.isLocal,
+                        context = context,
                         onLongClick = {
                             hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
                             onLongClick.invoke()
@@ -463,26 +461,7 @@ object SongItem: Visual() {
                         values = values,
                         thumbnailOverlay = {
                             thumbnailOverlay()
-                            if( previewing )
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier.matchParentSize()
-                                                       .background( Color.Black.copy( alpha = .55f ) )
-                                ) {
-                                    // How far the preview is
-                                    CircularProgressIndicator(
-                                        progress = { PreviewPlayer.progress },
-                                        color = Color.White,
-                                        trackColor = Color.White.copy( alpha = .25f ),
-                                        strokeWidth = 3.dp,
-                                        modifier = Modifier.matchParentSize().padding( 6.dp )
-                                    )
-                                    // Stop
-                                    Box(
-                                        Modifier.size( 12.dp )
-                                                .background( Color.White, RoundedCornerShape( 2.dp ) )
-                                    )
-                                }
+                            PreviewOverlay( song.id )
                         }
                     )
                 }
@@ -657,6 +636,21 @@ object SongItem: Visual() {
                                    horizontal = 16.dp
                                )
         ) {
+            // Same as song rows: tap the thumbnail for a preview, long press for the menu
+            val context = LocalContext.current
+            Box(
+                Modifier.previewOnTap(
+                    id = innertubeVideo.key,
+                    mediaItem = { innertubeVideo.asMediaItem },
+                    durationText = innertubeVideo.durationText,
+                    isLocal = false,
+                    context = context,
+                    onLongClick = {
+                        hapticFeedback.performHapticFeedback( HapticFeedbackType.LongPress )
+                        onLongClick?.invoke()
+                    }
+                )
+            ) {
             Thumbnail(
                 showThumbnail = showThumbnail,
                 thumbnailUrl = innertubeVideo.thumbnail?.url,
@@ -664,6 +658,7 @@ object SongItem: Visual() {
                 values = values,
                 sizeDp = thumbnailSizeDp,
                 thumbnailOverlay = {
+                    PreviewOverlay( innertubeVideo.key )
                     Duration(
                         duration = innertubeVideo.durationText.orEmpty(),
                         values = values,
@@ -677,6 +672,7 @@ object SongItem: Visual() {
                     )
                 }
             )
+            }
 
             Column(
                 horizontalAlignment = Alignment.Start,
@@ -763,5 +759,52 @@ object SongItem: Visual() {
             fun from( appearance: Appearance ) =
                 from( appearance.colorPalette, appearance.typography )
         }
+    }
+}
+
+/**
+ * Tap on a thumbnail: a preview of the song, without touching the queue (tap again to
+ * stop); long press: [onLongClick] (the row's menu).
+ */
+@OptIn(UnstableApi::class)
+@Composable
+private fun Modifier.previewOnTap(
+    id: String,
+    mediaItem: () -> MediaItem,
+    durationText: String?,
+    isLocal: Boolean,
+    context: Context,
+    onLongClick: () -> Unit
+): Modifier = combinedClickable(
+    onClickLabel = stringResource( if( PreviewPlayer.previewingId == id ) R.string.preview_stop else R.string.preview_play ),
+    onClick = {
+        PreviewPlayer.toggle( context, mediaItem(), durationText.toDuration().inWholeMilliseconds, isLocal )
+    },
+    onLongClick = onLongClick
+)
+
+/** While [id] is previewed: the thumbnail dimmed, a ring for how far it is, and "stop" */
+@OptIn(UnstableApi::class)
+@Composable
+private fun BoxScope.PreviewOverlay( id: String ) {
+    if( PreviewPlayer.previewingId != id ) return
+
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier.matchParentSize()
+                           .background( Color.Black.copy( alpha = .55f ) )
+    ) {
+        // Kept round on wide (video) thumbnails
+        CircularProgressIndicator(
+            progress = { PreviewPlayer.progress },
+            color = Color.White,
+            trackColor = Color.White.copy( alpha = .25f ),
+            strokeWidth = 3.dp,
+            modifier = Modifier.fillMaxHeight().aspectRatio( 1f ).padding( 6.dp )
+        )
+        Box(
+            Modifier.size( 12.dp )
+                    .background( Color.White, RoundedCornerShape( 2.dp ) )
+        )
     }
 }

@@ -1,5 +1,7 @@
 package it.fast4x.rimusic.ui.screens.home
 
+import app.kreate.android.service.player.PreviewPlayer
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -64,6 +66,8 @@ fun HomeScreen(
     PersistMapCleanup("home/")
 
     val (tabIndex, onTabChanged) = Preferences.HOME_TAB_INDEX
+    // Another tab is another page: a song preview started on this one ends
+    LaunchedEffect( tabIndex ) { PreviewPlayer.stop() }
 
     // Three tabs like most music apps: Home (the account's content), Discover
     // (new releases, moods, charts) and Library, where songs, artists, albums
