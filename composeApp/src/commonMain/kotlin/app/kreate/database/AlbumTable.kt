@@ -341,4 +341,24 @@ interface AlbumTable: DatabaseTable<Album> {
         AlbumSortBy.RANDOM          -> allInLibraryRandomized()
     }.map( sortOrder::applyTo ).take( 4 )
     //</editor-fold>
+
+    /**
+     * Albums without a cover take the one most of their songs have. In one query:
+     * done album by album when the screen opened, the list wasn't loaded yet and
+     * nothing was filled (2191 of 2205 albums had no cover).
+     * A song cover the user changed carries [app.kreate.util.MODIFIED_PREFIX]: it's
+     * dropped, or the album would read as changed by the user too.
+     */
+    @Query("""
+        UPDATE albums SET thumbnail_url = (
+            SELECT CASE WHEN s.thumbnail_url LIKE 'modified:%'
+                        THEN substr( s.thumbnail_url, 10 )
+                        ELSE s.thumbnail_url END AS url
+            FROM song_album_map m JOIN songs s ON s.id = m.song_id
+            WHERE m.album_id = albums.id AND s.thumbnail_url IS NOT NULL AND s.thumbnail_url != ''
+            GROUP BY url ORDER BY COUNT(*) DESC LIMIT 1
+        )
+        WHERE thumbnail_url IS NULL
+    """)
+    fun fillMissingCovers(): Int
 }

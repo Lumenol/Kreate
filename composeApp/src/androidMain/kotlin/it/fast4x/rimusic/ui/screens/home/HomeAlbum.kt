@@ -162,37 +162,8 @@ fun HomeAlbums(
     }
 
     LaunchedEffect( Unit ) {
-        // TODO Convert to fetch from the internet
-        Database.asyncTransaction {
-            // Only occurs when album doesn't have thumbnailUrl assigned
-            items.filter { it.thumbnailUrl == null }
-                 .forEach { album ->
-                     /**
-                      * Topology:
-                      *
-                      * Return the most frequently occurring [Song.thumbnailUrl]
-                      * among all songs of this album.
-                      *
-                      * Explanation:
-                      *
-                      * [Song.thumbnailUrl] can be changed by user.
-                      * If 1 song has its thumbnail changed, the result
-                      * remains the same because all others have the same url.
-                      *
-                      * Even when most changed to different urls, it only needs
-                      * 2 songs to have the same [Song.thumbnailUrl] to return
-                      * the same result.
-                      */
-                     runBlocking {
-                         songAlbumMapTable.allSongsOf( album.id )
-                                          .first()
-                                          .groupingBy( Song::cleanThumbnailUrl )
-                                          .eachCount()
-                                          .maxByOrNull { it.value }
-                                          ?.key
-                     }?.let { albumTable.updateCover( album.id, it ) }
-                 }
-        }
+        // Covers taken from the songs, for every album missing one
+        Database.asyncTransaction { albumTable.fillMissingCovers() }
     }
 
     val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
