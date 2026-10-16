@@ -1,5 +1,10 @@
 package app.kreate.android.themed.rimusic.screen.home
 
+import androidx.compose.runtime.LaunchedEffect
+import app.kreate.android.themed.rimusic.screen.home.filters.SongFiltersStore
+import app.kreate.android.themed.rimusic.screen.home.filters.FilterSheet
+import app.kreate.android.themed.rimusic.screen.home.filters.FilterButton
+import app.kreate.android.themed.rimusic.screen.home.filters.ActiveFilters
 import it.fast4x.rimusic.ui.components.tab.toolbar.MenuHeader
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.color
@@ -94,6 +99,17 @@ fun HomeSongsScreen(
     val menuState = LocalMenuState.current
 
     var builtInPlaylist by Preferences.HOME_SONGS_TYPE
+    // Favorites, cached and downloaded are filters now: open the same songs, filtered
+    LaunchedEffect( Unit ) {
+        val filters = SongFiltersStore.filters
+        when( builtInPlaylist ) {
+            BuiltInPlaylist.Favorites  -> SongFiltersStore.filters = filters.copy( liked = true )
+            BuiltInPlaylist.Offline    -> SongFiltersStore.filters = filters.copy( cached = true )
+            BuiltInPlaylist.Downloaded -> SongFiltersStore.filters = filters.copy( downloaded = true )
+            else                       -> return@LaunchedEffect
+        }
+        builtInPlaylist = BuiltInPlaylist.All
+    }
 
     val itemsOnDisplayState = remember { mutableStateListOf<Song>() }
 
@@ -172,20 +188,13 @@ fun HomeSongsScreen(
     ) {
         Column( Modifier.fillMaxSize() ) {
             //<editor-fold defaultstate="collapsed" desc="Chips">
-            val showFavoritesPlaylist by Preferences.HOME_SONGS_SHOW_FAVORITES_CHIP
-            val showCachedPlaylist by Preferences.HOME_SONGS_SHOW_CACHED_CHIP
-            val showDownloadedPlaylist by Preferences.HOME_SONGS_SHOW_DOWNLOADED_CHIP
+            // Favorites, cached and downloaded are in the filters: only the lists of
+            // their own kind are left here (the top of a period, the device's files)
             val showMyTopPlaylist by Preferences.HOME_SONGS_SHOW_MOST_PLAYED_CHIP
             val showOnDevice by Preferences.HOME_SONGS_SHOW_ON_DEVICE_CHIP
-            val chips = remember( showFavoritesPlaylist, showCachedPlaylist, showMyTopPlaylist, showDownloadedPlaylist) {
+            val chips = remember( showMyTopPlaylist, showOnDevice ) {
                 buildList {
                     add( BuiltInPlaylist.All )
-                    if( showFavoritesPlaylist )
-                        add( BuiltInPlaylist.Favorites )
-                    if( showCachedPlaylist )
-                        add( BuiltInPlaylist.Offline )
-                    if( showDownloadedPlaylist )
-                        add( BuiltInPlaylist.Downloaded )
                     if( showMyTopPlaylist )
                         add( BuiltInPlaylist.Top )
                     if( showOnDevice )
@@ -199,6 +208,8 @@ fun HomeSongsScreen(
             TabToolBar.Compact(
                 buttons,
                 trailing = {
+                    if( builtInPlaylist == BuiltInPlaylist.All )
+                        FilterButton { menuState.display { FilterSheet( menuState::hide ) } }
                     TabToolBar.IconPill(
                         iconId = R.drawable.play,
                         description = stringResource( R.string.play_all ),
@@ -214,7 +225,12 @@ fun HomeSongsScreen(
                 }
             ) {
                 // The count, like on the other Library tabs
-                HeaderInfo( itemsOnDisplayState.size.toString(), R.drawable.musical_notes )
+                val filtered = builtInPlaylist == BuiltInPlaylist.All && SongFiltersStore.filters.isActive && SongFiltersStore.totalCount >= 0
+                HeaderInfo(
+                    if( filtered ) "${itemsOnDisplayState.size} / ${SongFiltersStore.totalCount}" else itemsOnDisplayState.size.toString(),
+                    R.drawable.musical_notes
+                )
+                if( chips.size > 1 )
                 TabToolBar.FilterPill(
                     options = chips,
                     current = builtInPlaylist,
@@ -222,6 +238,9 @@ fun HomeSongsScreen(
                     onSelect = { builtInPlaylist = it }
                 )
             }
+
+            if( builtInPlaylist == BuiltInPlaylist.All )
+                ActiveFilters()
 
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,

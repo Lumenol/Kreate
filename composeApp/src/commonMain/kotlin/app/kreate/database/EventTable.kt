@@ -1,5 +1,6 @@
 package app.kreate.database
 
+import androidx.room.ColumnInfo
 import androidx.room.Dao
 import androidx.room.Query
 import androidx.room.RewriteQueriesToDropUnusedColumns
@@ -13,9 +14,25 @@ import app.kreate.database.models.Song
 import app.kreate.database.table.DatabaseTable
 import kotlinx.coroutines.flow.Flow
 
+/** How a song was listened to, from the whole history: what the library filters read */
+data class SongPlayStats(
+    @ColumnInfo(name = "song_id") val songId: String,
+    @ColumnInfo(name = "plays") val plays: Int,
+    @ColumnInfo(name = "first_played") val firstPlayed: Long,
+    @ColumnInfo(name = "last_played") val lastPlayed: Long
+)
+
 @Dao
 @RewriteQueriesToDropUnusedColumns
 interface EventTable: DatabaseTable<Event> {
+
+    /** Plays, first and last listen of every song ever listened to */
+    @Query("""
+        SELECT song_id, COUNT(*) AS plays, MIN(created_at) AS first_played, MAX(created_at) AS last_played
+        FROM playback_history
+        GROUP BY song_id
+    """)
+    fun playStats(): Flow<List<SongPlayStats>>
 
     override val tableName: String
         get() = "playback_history"

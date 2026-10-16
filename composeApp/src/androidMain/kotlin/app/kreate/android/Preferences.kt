@@ -560,6 +560,14 @@ sealed class Preferences<T>(
         val HOME_SONGS_TYPE by lazy {
             Enum( preferences, Key.HOME_SONGS_TYPE, "builtInPlaylist", BuiltInPlaylist.Favorites )
         }
+        /** The library's song filters, as JSON (see SongFilters) */
+        val LIBRARY_SONG_FILTERS by lazy {
+            String( preferences, Key.LIBRARY_SONG_FILTERS, "", "" )
+        }
+        /** The library's filter shortcuts, as JSON; empty until first shown */
+        val LIBRARY_FILTER_SHORTCUTS by lazy {
+            String( preferences, Key.LIBRARY_FILTER_SHORTCUTS, "", "" )
+        }
         val HISTORY_PAGE_TYPE by lazy {
             Enum( preferences, Key.HISTORY_PAGE_TYPE, "historyType", HistoryType.History )
         }
@@ -1932,6 +1940,8 @@ sealed class Preferences<T>(
         const val HOME_ARTIST_TYPE = "HomeArtistType"
         const val HOME_ALBUM_TYPE = "HomeAlbumType"
         const val HOME_SONGS_TYPE = "HomeSongsType"
+        const val LIBRARY_SONG_FILTERS = "LibrarySongFilters"
+        const val LIBRARY_FILTER_SHORTCUTS = "LibraryFilterShortcuts"
         const val HISTORY_PAGE_TYPE = "HistoryPageType"
         const val HOME_LIBRARY_TYPE = "HomePlaylistType"
         const val AUDIO_FADE_DURATION = "AudioFadeDuration"
