@@ -294,30 +294,6 @@ fun UiSettings( paddingValues: PaddingValues ) {
 
             header( R.string.songs )
             item {
-                val showFavorites = stringResource( R.string.setting_entry_show_chip, stringResource( R.string.favorites ) )
-                if( search appearsIn showFavorites )
-                    SettingComponents.BooleanEntry(
-                        Preferences.HOME_SONGS_SHOW_FAVORITES_CHIP,
-                        showFavorites
-                    )
-            }
-            item {
-                val showCached = stringResource( R.string.setting_entry_show_chip, stringResource( R.string.cached ) )
-                if( search appearsIn showCached )
-                    SettingComponents.BooleanEntry(
-                        Preferences.HOME_SONGS_SHOW_CACHED_CHIP,
-                        showCached
-                    )
-            }
-            item {
-                val showDownloaded = stringResource( R.string.setting_entry_show_chip, stringResource( R.string.downloaded ) )
-                if ( search appearsIn showDownloaded )
-                    SettingComponents.BooleanEntry(
-                        Preferences.HOME_SONGS_SHOW_DOWNLOADED_CHIP,
-                        showDownloaded
-                    )
-            }
-            item {
                 val showMostPlayed = stringResource(
                     R.string.setting_entry_show_chip,
                     stringResource( R.string.my_playlist_top, Preferences.MAX_NUMBER_OF_TOP_PLAYED.value )

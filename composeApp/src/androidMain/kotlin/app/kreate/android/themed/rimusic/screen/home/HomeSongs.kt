@@ -1,5 +1,7 @@
 package app.kreate.android.themed.rimusic.screen.home
 
+import app.kreate.database.SongPlayStats
+import app.kreate.android.themed.rimusic.screen.home.filters.SongFiltersStore
 import app.kreate.android.R
 import androidx.compose.ui.res.stringResource
 import it.fast4x.rimusic.ui.components.tab.toolbar.addAfter
@@ -154,14 +156,18 @@ fun HomeSongs(
     var isLoading by rememberSaveable { mutableStateOf(true) }
     var loadedOnce by remember { mutableStateOf( false ) }
 
+    // Downloaded, cached or liked songs are in the library even never played here (the
+    // lists they replace showed them): the filters then start from every song
+    val everySong = builtInPlaylist == BuiltInPlaylist.All && SongFiltersStore.filters.widensLibrary
+
     // This phrase loads all songs across types into [items]
     // No filtration applied to this stage, only sort
-    LaunchedEffect( builtInPlaylist, topPlaylists.period, songSort.sortBy, songSort.sortOrder, hiddenSongs.isFirstIcon ) {
+    LaunchedEffect( builtInPlaylist, topPlaylists.period, songSort.sortBy, songSort.sortOrder, hiddenSongs.isFirstIcon, everySong ) {
         isLoading = true
 
         val retrievedSongs = when( builtInPlaylist ) {
             BuiltInPlaylist.All -> Database.songTable
-                                           .sortAll( songSort.sortBy, songSort.sortOrder, excludeHidden = hiddenSongs.isHiddenExcluded() )
+                                           .sortAll( songSort.sortBy, songSort.sortOrder, excludeHidden = hiddenSongs.isHiddenExcluded() && !everySong )
                                            .map { list ->
                                                // Include local songs if enabled
                                                list.fastFilter {
@@ -226,8 +232,53 @@ fun HomeSongs(
                       }
     }
 
-    LaunchedEffect( items, search.input ) {
-    items.filter { !parentalControlEnabled || !it.isExplicit }
+    //<editor-fold desc="Library filters (the "All" list only)">
+    val filters = SongFiltersStore.filters
+    val useFilters = builtInPlaylist == BuiltInPlaylist.All && filters.isActive
+    // Each source of data is read only while a filter needs it
+    val needsStats = useFilters && (filters.playsActive || filters.lastPlayedActive || filters.firstPlayedActive)
+    // null until the database answered: the list waits, rather than show nothing for a moment
+    val playStats by remember( needsStats ) {
+        if( needsStats ) Database.eventTable.playStats().map { list -> list.associateBy( SongPlayStats::songId ) }
+        else flowOf( emptyMap<String, SongPlayStats>() )
+    }.collectAsState( null, Dispatchers.IO )
+    val needsDownloaded = useFilters && filters.downloaded
+    val downloadedIds by remember( needsDownloaded ) {
+        if( needsDownloaded )
+            MyDownloadHelper.instance.downloads.map { all ->
+                all.values.filter { it.state == Download.STATE_COMPLETED }.mapTo( HashSet() ) { it.request.id }
+            }
+        else flowOf( emptySet<String>() )
+    }.collectAsState( null, Dispatchers.IO )
+    val needsCached = useFilters && filters.cached
+    val cachedIds by remember( needsCached ) {
+        if( needsCached )
+            Database.formatTable
+                    .sortAllWithSongs( songSort.sortBy, songSort.sortOrder )
+                    .map { list ->
+                        list.filter {
+                            val contentLength = it.format.contentLength ?: return@filter false
+                            cache.isCached( it.song.id, 0, contentLength )
+                        }.mapTo( HashSet() ) { it.song.id }
+                    }
+        else flowOf( emptySet<String>() )
+    }.collectAsState( null, Dispatchers.IO )
+    //</editor-fold>
+
+    LaunchedEffect( items, search.input, useFilters, filters, playStats, downloadedIds, cachedIds ) {
+    val stats = playStats
+    val downloaded = downloadedIds
+    val cached = cachedIds
+    if( stats == null || downloaded == null || cached == null ) {
+        isLoading = true
+        return@LaunchedEffect
+    }
+    val now = System.currentTimeMillis()
+    val allowed = items.filter { !parentalControlEnabled || !it.isExplicit }
+    // "12 / 51" only against the usual list, not against every song known
+    SongFiltersStore.totalCount = if( everySong ) -1 else allowed.size
+    allowed.filter { !useFilters || filters.matches( it, stats[it.id], downloaded, cached, now ) }
+         .also { SongFiltersStore.resultCount = it.size }
          .filter {
              // Without cleaning, user can search explicit songs with "e:"
              // I kinda want this to be a feature, but it seems unnecessary
@@ -377,6 +428,7 @@ fun HomeSongs(
                         text = stringResource(
                             // A search with no result isn't an empty library
                             if( search.input.text.isNotBlank() ) R.string.no_results_found
+                            else if( useFilters ) R.string.library_filters_empty
                             else when( builtInPlaylist ) {
                                 BuiltInPlaylist.Favorites  -> R.string.songs_empty_favorites
                                 BuiltInPlaylist.Offline    -> R.string.songs_empty_cached
