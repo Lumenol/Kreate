@@ -2,7 +2,6 @@ package app.kreate.android.themed.common.screens.settings
 
 import android.content.Context
 import android.content.Intent
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -10,7 +9,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.core.os.LocaleListCompat
 import app.kreate.android.Preferences
 import app.kreate.android.R
 import app.kreate.android.themed.common.component.settings.SettingComponents
@@ -26,8 +24,11 @@ import me.knighthat.component.dialog.RestartAppDialog
  * Only what the user can change on the page goes back to its default. Never touched:
  * the YouTube and Discord logins (credentials live in the encrypted store, and the two
  * "log in" switches are left out: resetting them hides the account without logging
- * out), the auto-backup folder (its storage permission would stay granted), and
- * everything in the database (playlists, history, downloads, statistics).
+ * out), the auto-backup folder (its storage permission would stay granted), the cache
+ * location (downloads live there: they would be lost), the app language (a deliberate
+ * choice; below Android 13 AppCompat may not save it before the restart), parental
+ * control (one tap must not turn it off), and everything in the database (playlists,
+ * history, downloads, statistics).
  *
  * Many settings only apply at startup (theme, caches, logs, DNS, player service), so
  * Kreate restarts afterwards, the same way as the debug settings, and opens again.
@@ -38,7 +39,6 @@ object SettingsReset {
         listOf(
             Preferences.CHECK_UPDATE,
             Preferences.SHOW_CHECK_UPDATE_STATUS,
-            Preferences.APP_LANGUAGE,
             Preferences.APP_REGION,
             Preferences.AUDIO_QUALITY,
             Preferences.DOWNLOAD_QUALITY,
@@ -242,7 +242,9 @@ object SettingsReset {
             Preferences.PLAYER_BACKGROUND_BLUR_STRENGTH,
             Preferences.PLAYER_THUMBNAIL_FADE,
             Preferences.PLAYER_THUMBNAIL_FADE_EX,
-            Preferences.PLAYER_THUMBNAIL_SPACING
+            Preferences.PLAYER_THUMBNAIL_SPACING,
+            // Edited next to the portrait spacing, in the same dialog
+            Preferences.PLAYER_THUMBNAIL_SPACING_LANDSCAPE
         )
     }
 
@@ -267,7 +269,6 @@ object SettingsReset {
             Preferences.IMAGE_CACHE_SIZE,
             Preferences.EXO_CACHE_SIZE,
             Preferences.EXO_DOWNLOAD_SIZE,
-            Preferences.EXO_CACHE_LOCATION,
             Preferences.AUTO_BACKUP,
             Preferences.AUTO_BACKUP_INTERVAL,
             Preferences.AUTO_BACKUP_KEEP,
@@ -293,7 +294,6 @@ object SettingsReset {
             Preferences.LOCAL_SONGS_FOLDER,
             Preferences.PLAYER_EXTRA_SPACE,
             Preferences.KEEP_SCREEN_ON,
-            Preferences.PARENTAL_CONTROL,
             Preferences.RUNTIME_LOG,
             Preferences.RUNTIME_LOG_SHARED,
             Preferences.RUNTIME_LOG_SEVERITY,
@@ -316,12 +316,9 @@ object SettingsReset {
     }
 
     fun reset( context: Context, preferences: List<Preferences<*>> ) {
-        if( Preferences.APP_LANGUAGE in preferences )
-            AppCompatDelegate.setApplicationLocales( LocaleListCompat.getEmptyLocaleList() )
-
         preferences.forEach { it.reset() }
         // Values are saved in the background: write them now, the process is about to end
-        Preferences.preferences.edit().commit()
+        Preferences.unload()
 
         // Open Kreate again once it's closed, then close it like the debug settings do
         context.packageManager

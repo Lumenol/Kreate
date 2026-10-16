@@ -891,10 +891,10 @@
     <string name="setting_confirm_reset_appearance">Restore the default appearance? Your account, downloads and history are kept.</string>
     <string name="setting_entry_reset_page">Reset this page</string>
     <string name="setting_description_reset_page">Puts the settings of “%1$s” back to their defaults. Kreate restarts afterwards.</string>
-    <string name="setting_confirm_reset_page">Put the %1$d settings of “%2$s” back to their defaults?\n\nYour account, playlists, history and downloads don\'t change.\n\nKreate will restart.</string>
+    <string name="setting_confirm_reset_page">Put the %1$d settings of “%2$s” back to their defaults?\n\nYour account, language, parental control, playlists, history and downloads don\'t change.\n\nKreate will restart.</string>
     <string name="setting_entry_reset_all">Reset everything</string>
-    <string name="setting_description_reset_all">Puts every setting of every page back to its default. Kreate restarts afterwards.</string>
-    <string name="setting_confirm_reset_all">Put Kreate\'s %1$d settings back to their defaults?\n\nYour account, playlists, history and downloads don\'t change.\n\nKreate will restart.</string>
+    <string name="setting_description_reset_all">Puts the settings of every Settings page back to their defaults. Kreate restarts afterwards.</string>
+    <string name="setting_confirm_reset_all">Put the %1$d settings of the Settings pages back to their defaults?\n\nYour account, language, parental control, playlists, history and downloads don\'t change.\n\nKreate will restart.</string>
     <string name="setting_entry_player_tabs">Up next · Lyrics · Related tabs</string>
     <string name="setting_description_player_tabs">Show these three tabs at the bottom of the player instead of the row of icons</string>
     <string name="player_tab_up_next">Up next</string>
