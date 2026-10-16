@@ -225,12 +225,9 @@ fun HomeSongsScreen(
                     )
                 }
             ) {
-                // The count, like on the other Library tabs
-                val filtered = builtInPlaylist == BuiltInPlaylist.All && SongFiltersStore.filters.isActive && SongFiltersStore.totalCount >= 0
-                HeaderInfo(
-                    if( filtered ) "${itemsOnDisplayState.size} / ${SongFiltersStore.totalCount}" else itemsOnDisplayState.size.toString(),
-                    R.drawable.musical_notes
-                )
+                // The count, like on the other Library tabs. Only what's shown: "1234 / 1800"
+                // made this part too long, it scrolled sideways (the total is with the filters)
+                HeaderInfo( itemsOnDisplayState.size.toString(), R.drawable.musical_notes )
                 if( chips.size > 1 )
                 TabToolBar.FilterPill(
                     options = chips,
