@@ -626,13 +626,14 @@ sealed class Preferences<T>(
             Boolean( preferences, Key.YOUTUBE_LOGIN, "enableYoutubeLogin", false )
         }
         val YOUTUBE_PLAYLISTS_SYNC by lazy {
-            Boolean( preferences, Key.YOUTUBE_PLAYLISTS_SYNC, "enableYoutubeSync", false )
+            // On by default: logged in, the Library showed nothing of the account until these were found
+            Boolean( preferences, Key.YOUTUBE_PLAYLISTS_SYNC, "enableYoutubeSync", true )
         }
         val YOUTUBE_ARTISTS_SYNC by lazy {
-            Boolean(preferences, Key.YOUTUBE_ARTISTS_SYNC, "", false)
+            Boolean(preferences, Key.YOUTUBE_ARTISTS_SYNC, "", true)
         }
         val YOUTUBE_ALBUMS_SYNC by lazy {
-            Boolean(preferences, Key.YOUTUBE_ALBUMS_SYNC, "", false)
+            Boolean(preferences, Key.YOUTUBE_ALBUMS_SYNC, "", true)
         }
         val YOUTUBE_REPORT_PLAYBACK by lazy {
             Boolean(preferences, Key.YOUTUBE_REPORT_PLAYBACK, "", false)
@@ -809,7 +810,8 @@ sealed class Preferences<T>(
             Int(preferences, Key.RUNTIME_LOG_LEVEL, "", Log.INFO)
         }
         val RUNTIME_LOG_SEVERITY by lazy {
-            Enum(preferences, Key.RUNTIME_LOG_SEVERITY, "", Severity.Info)
+            // Warn: the log file is written even with the runtime log off, and Info logged every request
+            Enum(preferences, Key.RUNTIME_LOG_SEVERITY, "", Severity.Warn)
         }
         val RUNTIME_LOG_FILE_COUNT by lazy {
             Int(preferences, Key.RUNTIME_LOG_FILE_COUNT, "", 5)
@@ -885,7 +887,8 @@ sealed class Preferences<T>(
             Enum( preferences, Key.THEME_MODE, "colorPaletteMode", ColorPaletteMode.Dark )
         }
         val STARTUP_SCREEN by lazy {
-            Enum( preferences, Key.STARTUP_SCREEN, "indexNavigationTab", HomeScreenTabs.Songs )
+            // Home, the first tab since the 3-tab redesign (falls back to Songs if Home is off)
+            Enum( preferences, Key.STARTUP_SCREEN, "indexNavigationTab", HomeScreenTabs.QuickPics )
         }
         val FONT by lazy {
             Enum( preferences, Key.FONT, "fontType", FontType.Rubik )
@@ -1029,7 +1032,8 @@ sealed class Preferences<T>(
             Boolean( preferences, Key.ENABLE_DISCOVER, "discover", false )
         }
         val ENABLE_PERSISTENT_QUEUE by lazy {
-            Boolean( preferences, Key.ENABLE_PERSISTENT_QUEUE, "persistentQueue", false )
+            // On: without it the queue and position are lost whenever Android closes the app
+            Boolean( preferences, Key.ENABLE_PERSISTENT_QUEUE, "persistentQueue", true )
         }
         val RESUME_PLAYBACK_ON_STARTUP by lazy {
             Boolean( preferences, Key.RESUME_PLAYBACK_ON_STARTUP, "resumePlaybackOnStart", false )
