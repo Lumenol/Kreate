@@ -128,6 +128,7 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.shimmerEffect
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -984,6 +985,9 @@ fun HomeQuickPicks(
                         withContext( Dispatchers.IO ) {
                             me.knighthat.innertube.Innertube.charts( CURRENT_LOCALE, countryCode, null )
                                 .onFailure { err ->
+                                    // runCatching also catches the cancel of a replaced request:
+                                    // that's no failure, no toast
+                                    if( err is CancellationException ) throw err
                                     Logger.e( "", err, "HomeQuickPicks" )
                                     Toaster.e( R.string.error_failed_to_get_charts )
                                 }
@@ -1012,7 +1016,8 @@ fun HomeQuickPicks(
                                 ?: menu.items.firstOrNull()
                             if( current != null )
                                 TabToolBar.FilterPill(
-                                    options = menu.items,
+                                    // Current country on top, so the list opens on it
+                                    options = listOf( current ) + (menu.items - current),
                                     current = current,
                                     label = { item -> item.countryDisplayName },
                                     onSelect = { item -> countryCode = item.countryCode },
