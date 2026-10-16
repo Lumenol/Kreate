@@ -158,10 +158,11 @@ private fun BoxScope.FastScroller(
         }
 
         val bubble = if( isDragging ) label( (dragFraction * (total() - 1)).roundToInt() ) else null
+        // Left of the durations and download icons, so it hides no text that matters
         if( bubble != null )
             Box(
                 contentAlignment = Alignment.Center,
-                modifier = Modifier.offset { IntOffset( -with( density ) { 64.dp.roundToPx() }, thumbY - with( density ) { 4.dp.roundToPx() } ) }
+                modifier = Modifier.offset { IntOffset( -with( density ) { 128.dp.roundToPx() }, thumbY - with( density ) { 4.dp.roundToPx() } ) }
                                    .size( 56.dp )
                                    .clip( CircleShape )
                                    .background( colorPalette().text )

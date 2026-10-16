@@ -104,12 +104,19 @@ fun HistoryList(
      * and **remember** it.
      */
     val events by remember {
-        val today = LocalDate.now()
-
         Database.eventTable
                 .allWithSong()
                 .distinctUntilChanged()
                 .map { list ->
+                    // Computed on each update: a page left open past midnight stays right
+                    val today = LocalDate.now()
+                    // Calendar weeks: "This week" starts on the locale's first day of the week
+                    val weekStart = today.with(
+                        java.time.temporal.TemporalAdjusters.previousOrSame(
+                            java.time.temporal.WeekFields.of( Locale.getDefault() ).firstDayOfWeek
+                        )
+                    )
+                    val monthFormat = java.time.format.DateTimeFormatter.ofPattern( "LLLL yyyy", Locale.getDefault() )
                     // Parental control hides explicit songs (it used to keep only them)
                     list.filter { !parentalControlEnabled || !it.song.isExplicit }
                         // The query has no order: newest first, explicitly
@@ -121,12 +128,13 @@ fun HistoryList(
                                              .toLocalDate()
                             val daysAgo = ChronoUnit.DAYS.between( day, today )
 
-                            when (daysAgo) {
-                                0L -> context.getString( R.string.today )
-                                1L -> context.getString( R.string.yesterday )
-                                in 2..6 -> context.getString( R.string.this_week )
-                                in 7..13 -> context.getString( R.string.last_week )
-                                else -> SimpleDateFormat( "MMM yyyy", Locale.getDefault() ).format( Date(it.event.timestamp) )
+                            when {
+                                daysAgo == 0L -> context.getString( R.string.today )
+                                daysAgo == 1L -> context.getString( R.string.yesterday )
+                                !day.isBefore( weekStart ) -> context.getString( R.string.this_week )
+                                !day.isBefore( weekStart.minusWeeks( 1 ) ) -> context.getString( R.string.last_week )
+                                // "Septembre 2026", not "sept. 2026"
+                                else -> monthFormat.format( day ).replaceFirstChar { c -> c.titlecase( Locale.getDefault() ) }
                             }
                         }
                 }

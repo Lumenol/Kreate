@@ -36,7 +36,7 @@ class DeleteAllDownloadedDialog(
 ) : AbstractMediaDownloadDialog(), MenuIcon, Descriptive {
 
     override val messageId: Int = R.string.info_remove_all_downloaded_songs
-    override val iconId: Int = R.drawable.download
+    override val iconId: Int = R.drawable.trash
     override val dialogTitle: String
         @Composable
         get() = stringResource( R.string.dialog_title_are_you_sure )

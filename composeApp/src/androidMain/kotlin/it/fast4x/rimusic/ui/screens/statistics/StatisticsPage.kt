@@ -138,7 +138,7 @@ fun StatisticsPage(
     // in the list, whatever the period
     val totalDuration by remember {
         Database.eventTable
-                .totalTimeSpentBetween( from )
+                .totalTimeSpentBetween( from, Long.MAX_VALUE )      // "now" would freeze at opening
                 .distinctUntilChanged()
                 .map { (it / 1000).toDuration( DurationUnit.SECONDS ) }       // "6m 4s", not "6m 4.026s"
     }.collectAsState( Duration.ZERO, Dispatchers.IO )
@@ -146,11 +146,17 @@ fun StatisticsPage(
         Database.eventTable
                 .findSongsMostPlayedBetween(
                     from = from,
+                    to = Long.MAX_VALUE,
                     limit = maxStatisticsItems.toInt()
                 )
                 .distinctUntilChanged()
                 .map { it.take( maxStatisticsItems.toInt() ) }
     }.collectAsState( emptyList(), Dispatchers.IO )
+
+    // Every song heard in the period, not the size of the top list (always 10)
+    val songsHeard by remember {
+        Database.eventTable.countSongsBetween( from ).distinctUntilChanged()
+    }.collectAsState( 0, Dispatchers.IO )
 
     var downloadState by remember {
         mutableStateOf(Download.STATE_STOPPED)
@@ -241,10 +247,10 @@ fun StatisticsPage(
                             span = { GridItemSpan(maxLineSpan) }
                         ) {
                             val title by remember { derivedStateOf {
-                                "${songs.size} ${context.getString( R.string.statistics_songs_heard )}"
+                                "$songsHeard ${context.getString( R.string.statistics_songs_heard )}"
                             }}
                             val subtitle by remember { derivedStateOf {
-                                "$totalDuration ${context.getString( R.string.statistics_of_time_taken )}"
+                                "${totalDuration.listeningTime()} ${context.getString( R.string.statistics_of_time_taken )}"
                             }}
 
                             Row(
@@ -390,4 +396,10 @@ fun StatisticsPage(
             Spacer(modifier = Modifier.height(Dimensions.bottomSpacer))
 
         }
+}
+
+/** "162 h 05" or "45 min": Duration.toString() wrote "6d 18h", in English */
+private fun Duration.listeningTime(): String {
+    val minutes = inWholeMinutes
+    return if( minutes >= 60 ) "%d h %02d".format( minutes / 60, minutes % 60 ) else "$minutes min"
 }

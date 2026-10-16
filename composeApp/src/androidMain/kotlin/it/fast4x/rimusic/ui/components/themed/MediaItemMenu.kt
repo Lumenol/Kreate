@@ -1332,12 +1332,22 @@ fun MediaItemMenu(
                     )
                 }
 
-                if (onAddToPreferites != null)
+                if (onAddToPreferites != null) {
+                    // Follows the heart: an already liked song offers to remove it
+                    val isLiked by remember( mediaItem.mediaId ) {
+                        Database.songTable.isLiked( mediaItem.mediaId )
+                    }.collectAsState( false, Dispatchers.IO )
                     MenuEntry(
-                        icon = R.drawable.heart,
-                        text = stringResource(R.string.add_to_favorites),
-                        onClick = onAddToPreferites
+                        icon = if( isLiked ) R.drawable.heart_dislike else R.drawable.heart,
+                        text = stringResource( if( isLiked ) R.string.remove_from_favorites else R.string.add_to_favorites ),
+                        onClick = {
+                            if( isLiked ) {
+                                onDismiss()
+                                CoroutineScope( Dispatchers.IO ).launch { YouTubeSync.toggleSongLike( context, mediaItem ) }
+                            } else onAddToPreferites()
+                        }
                     )
+                }
 
                 if (onMatchingSong != null)
                     MenuEntry(

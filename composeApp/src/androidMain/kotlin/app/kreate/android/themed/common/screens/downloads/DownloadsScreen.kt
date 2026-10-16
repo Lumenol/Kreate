@@ -233,7 +233,11 @@ private fun DownloadRow( download: Download, paused: Boolean, context: Context, 
         modifier = Modifier.fillMaxWidth()
                            .combinedClickable(
                                // Plays the song, to know what it is
-                               onClick = { song?.let { player.forcePlay( it.asMediaItem ) } },
+                               // Already the current song: don't restart it from 0
+                               onClick = {
+                                   if( player.currentMediaItem?.mediaId != songId )
+                                       song?.let { player.forcePlay( it.asMediaItem ) }
+                               },
                                onLongClick = if( failed ) { { expanded = !expanded } } else null
                            )
                            .padding( horizontal = 16.dp, vertical = 8.dp )

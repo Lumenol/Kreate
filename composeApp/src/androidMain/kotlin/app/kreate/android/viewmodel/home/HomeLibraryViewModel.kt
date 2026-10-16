@@ -90,6 +90,9 @@ class HomeLibraryViewModel : ViewModel(), KoinComponent {
                                      browseId = item.id,
                                      isEditable = false,
                                      isYoutubePlaylist = true,
+                                     // Not in the database: -1 sends a tap to the YouTube page,
+                                     // the default 0 opened an empty local playlist
+                                     id = -1L,
                                      isPinned = false,
                                      isMonthly = false
                                  ),

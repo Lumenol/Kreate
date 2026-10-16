@@ -87,7 +87,8 @@ object ArtistItem: Visual(), MultiplatformItem {
     ) =
         Thumbnail(
             url = thumbnailUrl,
-            contentScale = ContentScale.FillWidth,
+            // Crop fills the round frame: FillWidth left wide photos as a lens shape
+            contentScale = ContentScale.Crop,
             modifier = modifier.padding( bottom = VERTICAL_SPACING.dp ),
             sizeDp = sizeDp
         ) {

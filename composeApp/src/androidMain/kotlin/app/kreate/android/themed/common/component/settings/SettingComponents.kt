@@ -85,9 +85,9 @@ object SettingComponents {
         modifier: Modifier = Modifier,
         isImportant: Boolean = false
     ) =
+        // Whole sentence: cut at 2 lines, French descriptions stopped mid-sentence
         BasicText(
             text = text,
-            maxLines = 2,
             style = typography().xs
                                 .semiBold
                                 .copy(
@@ -142,7 +142,6 @@ object SettingComponents {
                 if( subtitle.isNotBlank() )
                     BasicText(
                         text = subtitle,
-                        maxLines = 2,
                         style = typography().xs
                                             .semiBold
                                             .copy( colorPalette().textSecondary )

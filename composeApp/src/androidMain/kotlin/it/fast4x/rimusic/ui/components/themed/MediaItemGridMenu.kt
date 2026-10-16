@@ -268,6 +268,11 @@ fun MediaItemGridMenu (
     val menu = LocalBottomMenu.current
 
     val isLocal by remember { derivedStateOf { mediaItem.isLocal } }
+    // The favorites entry follows the heart: an already liked song offers to remove it
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val isLiked by remember( mediaItem.mediaId ) {
+        Database.songTable.isLiked( mediaItem.mediaId )
+    }.collectAsState( false, Dispatchers.IO )
 
     var updateData by remember {
         mutableStateOf(false)
@@ -802,14 +807,22 @@ fun MediaItemGridMenu (
                     }
                 )
 
-                if (onAddToPreferites != null)
+                if (onAddToPreferites != null) {
                     GridMenuItem(
-                        icon = R.drawable.heart,
-                        title = R.string.add_to_favorites,
+                        icon = if( isLiked ) R.drawable.heart_dislike else R.drawable.heart,
+                        title = if( isLiked ) R.string.remove_from_favorites else R.string.add_to_favorites,
                         colorIcon = colorPalette.text,
                         colorText = colorPalette.text,
-                        onClick = onAddToPreferites
+                        onClick = {
+                            if( isLiked ) {
+                                onDismiss()
+                                CoroutineScope( Dispatchers.IO ).launch {
+                                    me.knighthat.sync.YouTubeSync.toggleSongLike( context, mediaItem )
+                                }
+                            } else onAddToPreferites()
+                        }
                     )
+                }
 
                 if (onMatchingSong != null)
                     GridMenuItem(
