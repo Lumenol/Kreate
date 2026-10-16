@@ -334,8 +334,8 @@
     <string name="avoid_closing_the_player_cleaning_queue_by_swiping_down">Éviter de fermer le lecteur et de nettoyer la file en balayant vers le bas pendant qu\'il est minimisé</string>
     <string name="sort_date_liked">Date de mise en favoris</string>
     <string name="export_playlist">Exporter la playlist</string>
-    <string name="playlist_top">Top de la playlist</string>
-    <string name="my_playlist_top">Mon Top %s</string>
+    <string name="playlist_top">Mon top</string>
+    <string name="my_playlist_top">Mon top %s</string>
     <string name="navigation_bar_position">Position de la barre de navigation</string>
     <string name="direction_left">À gauche</string>
     <string name="direction_right">À droite</string>
@@ -796,7 +796,7 @@ Volume BAS : titre précédent</string>
     <string name="looking_up_album_from_the_internet">Recherche d\'album sur Internet</string>
     <string name="failed_to_fetch_original_property">Échec de la récupération de la propriété d\'origine</string>
     <string name="failed_to_fetch_album">Échec de la récupération de l\'album</string>
-    <string name="info_open_reset_dialog">Ouvrir la boîte de dialogue de réinitialisation</string>
+    <string name="info_open_reset_dialog">Réinitialiser…</string>
     <string name="title_reset_title">Réinitialiser le titre</string>
     <string name="title_reset_authors">Réinitialiser les auteurs</string>
     <string name="title_reset_total_play_time">Réinitialiser le temps de lecture total</string>

@@ -195,7 +195,8 @@ fun HomeArtists(
                                     FilterBy.YoutubeLibrary -> stringResource( R.string.ytm_library )
                                 }
                             },
-                            onSelect = { filterBy = it }
+                            onSelect = { filterBy = it },
+                            iconOf = FilterBy::iconId
                         )
                 }
 
