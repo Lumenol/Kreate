@@ -29,7 +29,9 @@ import it.fast4x.rimusic.colorPalette
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.themed.Loader
 import it.fast4x.rimusic.ui.components.themed.Menu
+import it.fast4x.rimusic.utils.addNext
 import it.fast4x.rimusic.utils.asMediaItem
+import it.fast4x.rimusic.utils.findMediaItemIndexById
 import it.fast4x.rimusic.utils.asSong
 import it.fast4x.rimusic.utils.semiBold
 import kotlinx.coroutines.Dispatchers
@@ -38,8 +40,8 @@ import org.koin.compose.koinInject
 
 /**
  * "Related" tab of the player: songs YouTube Music links to [mediaItem].
- * Tapping one plays it and starts a radio from it, like on the home screen; a long
- * press opens the usual song menu (play next, add to queue...).
+ * Tapping one plays it right away, inserted after the current song (the queue is
+ * kept); a long press opens the usual song menu (play next, add to queue, radio...).
  */
 @Composable
 fun RelatedSheet( mediaItem: MediaItem, onDismiss: () -> Unit ) {
@@ -93,7 +95,16 @@ fun RelatedSheet( mediaItem: MediaItem, onDismiss: () -> Unit ) {
                     // The usual song menu: play next, add to queue, playlist, share...
                     onLongClick = { bottomMenu.show( MenuPage.Song( song.asMediaItem ), true ) }
                 ) {
-                    player.startRadio( song, true )
+                    // Gently: play it now, right after the current song, and keep the
+                    // queue (it used to be replaced by a radio). The radio is in the menu.
+                    val item = song.asMediaItem
+                    player.addNext( item )
+                    val index = player.findMediaItemIndexById( item.mediaId )
+                    if( index >= 0 && index != player.currentMediaItemIndex ) {
+                        player.seekToDefaultPosition( index )
+                        player.prepare()
+                        player.playWhenReady = true
+                    }
                     onDismiss()
                 }
             }
