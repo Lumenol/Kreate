@@ -163,7 +163,9 @@ object TabToolBar {
         label: @Composable ( E ) -> String,
         onSelect: ( E ) -> Unit,
         // A secondary filter shows only its icon, so two pills fit next to the count
-        iconOf: (( E ) -> Int)? = null
+        iconOf: (( E ) -> Int)? = null,
+        // Long labels are cut with "…" past this width (the chevron always stays)
+        labelMaxWidth: androidx.compose.ui.unit.Dp = androidx.compose.ui.unit.Dp.Unspecified
     ) {
         var expanded by remember { mutableStateOf( false ) }
         Box {
@@ -188,7 +190,9 @@ object TabToolBar {
                     BasicText(
                         text = label( current ),
                         style = typography().xs.semiBold.color( colorPalette().text ),
-                        maxLines = 1
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        modifier = Modifier.widthIn( max = labelMaxWidth )
                     )
                 androidx.compose.material3.Icon(
                     painter = painterResource( app.kreate.android.R.drawable.chevron_down ),

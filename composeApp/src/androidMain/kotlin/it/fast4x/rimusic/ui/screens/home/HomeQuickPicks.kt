@@ -100,6 +100,7 @@ import it.fast4x.rimusic.enums.UiType
 import it.fast4x.rimusic.service.MyDownloadHelper
 import it.fast4x.rimusic.typography
 import it.fast4x.rimusic.ui.components.LocalMenuState
+import it.fast4x.rimusic.ui.components.navigation.header.TabToolBar
 import it.fast4x.rimusic.ui.components.themed.HeaderWithIcon
 import it.fast4x.rimusic.ui.components.themed.Loader
 import it.fast4x.rimusic.ui.components.themed.Menu
@@ -126,6 +127,7 @@ import it.fast4x.rimusic.utils.rememberPreference
 import it.fast4x.rimusic.utils.secondary
 import it.fast4x.rimusic.utils.semiBold
 import it.fast4x.rimusic.utils.shimmerEffect
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -977,37 +979,51 @@ fun HomeQuickPicks(
                         mutableStateOf<InnertubeCharts?>( null, referentialEqualityPolicy() )
                     }
                     LaunchedEffect( refreshing, countryCode ) {
-                        CoroutineScope( Dispatchers.IO ).launch {
+                        // In the effect's scope: switching country quickly cancels the older
+                        // request, so its answer can't land after the newer one
+                        withContext( Dispatchers.IO ) {
                             me.knighthat.innertube.Innertube.charts( CURRENT_LOCALE, countryCode, null )
                                 .onFailure { err ->
+                                    // runCatching also catches the cancel of a replaced request:
+                                    // that's no failure, no toast
+                                    if( err is CancellationException ) throw err
                                     Logger.e( "", err, "HomeQuickPicks" )
                                     Toaster.e( R.string.error_failed_to_get_charts )
                                 }
                                 .getOrNull()
-                                .also { charts = it }
                         }
+                            // On failure keep the charts shown, and with them the pill to pick again
+                            ?.also { charts = it }
                     }
 
                     charts?.run {
-                        Title(
-                            title = "${stringResource(R.string.charts)} ($selectedCountryName)",
-                            onClick = {
-                                menuState.display {
-                                    Menu {
-                                        menu.items.forEach { item ->
-                                            MenuEntry(
-                                                icon = R.drawable.arrow_right,
-                                                text = item.countryDisplayName,
-                                                onClick = {
-                                                    countryCode = item.countryCode
-                                                    menuState.hide()
-                                                }
-                                            )
-                                        }
-                                    }
-                                }
-                            }
-                        )
+                        // "Classements" then the country as a pill ("France ▾"): the arrow
+                        // after "Classements (France)" read as a link to an empty section
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxWidth().padding( end = 16.dp )
+                        ) {
+                            Title(
+                                title = stringResource( R.string.charts ),
+                                icon = null,
+                                modifier = Modifier.weight( 1f )
+                            )
+                            // The country of the charts on screen (YouTube's answer first, the
+                            // preference may already point to the next one); never without a pill
+                            val current = menu.items.firstOrNull { it.countryDisplayName == selectedCountryName }
+                                ?: menu.items.firstOrNull { it.countryCode == countryCode }
+                                ?: menu.items.firstOrNull()
+                            if( current != null )
+                                TabToolBar.FilterPill(
+                                    // Current country on top, so the list opens on it
+                                    options = listOf( current ) + (menu.items - current),
+                                    current = current,
+                                    label = { item -> item.countryDisplayName },
+                                    onSelect = { item -> countryCode = item.countryCode },
+                                    // A long name ("République dominicaine") doesn't push the title out
+                                    labelMaxWidth = 106.dp
+                                )
+                        }
 
                         sections.forEach { section ->
                             // Don't show section if the title is null or blank
