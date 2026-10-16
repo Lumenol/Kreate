@@ -22,7 +22,10 @@ data class ColorPalette(
     val background4: Color,
     val accent: Color,
     val onAccent: Color,
-    val red: Color = Color(0xffbf4040),
+    // Errors and destructive actions, always with an icon or a text
+    val red: Color = Color(0xfff2555a),
+    // Likes only (hearts): pink-red, so a like never reads as an error
+    val like: Color = Color(0xfff0507a),
     val blue: Color = Color(0xff4472cf),
     val text: Color,
     val textSecondary: Color,
@@ -62,14 +65,16 @@ val DefaultDarkColorPalette = ColorPalette(
     background0 = Color(0xff16171d),
     background1 = Color(0xff1f2029),
     background2 = Color(0xff2b2d3b),
-    background3 = Color(0xff495057),
+    // Outlines and separators, in the same blue-grey as the backgrounds
+    background3 = Color(0xff3a3c4c),
     background4 = Color(0xff333333),
     text = Color(0xffe1e1e2),
     textSecondary = Color(0xffa3a4a6),
-    textDisabled = Color(0xff6f6f73),
+    textDisabled = Color(0xff8c8d91),
     iconButtonPlayer = Color(0xffe1e1e2),
-    accent = Color(0xFF2b9348),
-    onAccent = Color.White,
+    // Lighter than #2b9348 so green text and icons stay readable on buttons (4.8:1 on background2)
+    accent = Color(0xFF3dae5f),
+    onAccent = Color(0xff16171d),
     isDark = true
 )
 
@@ -77,14 +82,17 @@ val DefaultLightColorPalette = ColorPalette(
     background0 = Color(0xfffdfdfe),
     background1 = Color(0xfff8f8fc),
     background2 = Color(0xffeaeaf5),
-    background3 = Color(0xffeaeafd),
+    background3 = Color(0xffdcdcea),
     background4 = Color(0xffeaeafd),
     text = Color(0xff212121),
     textSecondary = Color(0xff656566),
-    textDisabled = Color(0xff9d9d9d),
+    textDisabled = Color(0xff767679),
     iconButtonPlayer = Color(0xff212121),
-    accent = Color(0xFF2b9348),
+    // Darker than #2b9348, which failed for text on white (3.85:1)
+    accent = Color(0xFF1e7a3a),
     onAccent = Color.White,
+    red = Color(0xffc62828),
+    like = Color(0xffd6336c),
     isDark = false
 )
 
@@ -238,7 +246,7 @@ inline val ColorPalette.collapsedPlayerProgressBar: Color
 
 inline val ColorPalette.favoritesIcon: Color
     get() = if (this === DefaultDarkColorPalette || this === DefaultLightColorPalette || this === PureBlackColorPalette) {
-        red
+        like
     } else {
         accent
     }
