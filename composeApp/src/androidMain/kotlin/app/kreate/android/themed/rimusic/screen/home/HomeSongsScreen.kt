@@ -235,13 +235,8 @@ fun HomeSongsScreen(
                             // The finished ones are listed here; one quiet line leads to the
                             // others, only when some are running or failed
                             if( builtInPlaylist === BuiltInPlaylist.Downloaded ) {
-                                val downloads by MyDownloadHelper.instance.downloads.collectAsState()
-                                val running = downloads.values.count {
-                                    it.state == Download.STATE_QUEUED || it.state == Download.STATE_DOWNLOADING
-                                            || it.state == Download.STATE_RESTARTING || it.state == Download.STATE_STOPPED
-                                }
-                                val failed = downloads.values.count { it.state == Download.STATE_FAILED }
-                                if( running + failed > 0 )
+                                val counts = app.kreate.android.service.rememberDownloadCounts()
+                                if( counts.total > 0 )
                                     androidx.compose.foundation.layout.Row(
                                         verticalAlignment = Alignment.CenterVertically,
                                         modifier = Modifier.fillMaxWidth()
@@ -250,10 +245,11 @@ fun HomeSongsScreen(
                                     ) {
                                         BasicText(
                                             text = listOfNotNull(
-                                                stringResource( R.string.downloads_running_count, running ).takeIf { running > 0 },
-                                                stringResource( R.string.downloads_failed_count, failed ).takeIf { failed > 0 }
+                                                stringResource( R.string.downloads_running_count, counts.running ).takeIf { counts.running > 0 },
+                                                stringResource( R.string.downloads_paused_count, counts.paused ).takeIf { counts.paused > 0 },
+                                                stringResource( R.string.downloads_failed_count, counts.failed ).takeIf { counts.failed > 0 }
                                             ).joinToString( " · " ),
-                                            style = typography().xs.semiBold.color( if( failed > 0 ) colorPalette().red else colorPalette().textSecondary ),
+                                            style = typography().xs.semiBold.color( if( counts.failed > 0 ) colorPalette().red else colorPalette().textSecondary ),
                                             modifier = Modifier.weight( 1f )
                                         )
                                         androidx.compose.material3.Icon(

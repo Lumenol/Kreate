@@ -57,6 +57,13 @@ private fun HamburgerMenu(
             R.string.history
         ) { onItemClick( NavRoutes.history ) }
     )
+    // Downloads page, reachable even when nothing is running
+    menu.add(
+        DropdownMenu.Item(
+            R.drawable.download,
+            R.string.downloads_page_title
+        ) { onItemClick( NavRoutes.DOWNLOADS ) }
+    )
     // Statistics button
     menu.add(
         DropdownMenu.Item(
@@ -103,32 +110,37 @@ fun ActionBar(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    // Downloads running: a small "↓ 2" pill, on every page, leading to them
-    val downloads by it.fast4x.rimusic.service.MyDownloadHelper.instance.downloads.collectAsState()
-    val running = downloads.values.count {
-        it.state == androidx.media3.exoplayer.offline.Download.STATE_QUEUED
-                || it.state == androidx.media3.exoplayer.offline.Download.STATE_DOWNLOADING
-                || it.state == androidx.media3.exoplayer.offline.Download.STATE_RESTARTING
-    }
-    if( running > 0 )
+    // Downloads page not empty (running, paused or failed): a small pill on every
+    // page, "↓ 3" while downloading, "⏸ 2" when all are paused, a red dot on failures
+    val counts = app.kreate.android.service.rememberDownloadCounts()
+    if( counts.total > 0 )
         androidx.compose.foundation.layout.Row(
-            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy( 2.dp ),
+            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy( 3.dp ),
             verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             modifier = Modifier.clip( androidx.compose.foundation.shape.CircleShape )
                                .background( colorPalette().background2 )
                                .clickable { NavRoutes.DOWNLOADS.navigateHere( navController ) }
                                .padding( horizontal = 10.dp, vertical = 6.dp )
         ) {
+            val (iconId, count) = when {
+                counts.running > 0 -> R.drawable.download to counts.running
+                counts.paused > 0  -> R.drawable.pause to counts.paused
+                else               -> R.drawable.alert to counts.failed
+            }
             androidx.compose.material3.Icon(
-                painter = androidx.compose.ui.res.painterResource( R.drawable.download ),
-                contentDescription = stringResource( R.string.downloads_in_progress_title ),
-                tint = colorPalette().text,
+                painter = androidx.compose.ui.res.painterResource( iconId ),
+                contentDescription = stringResource( R.string.downloads_page_title ),
+                tint = if( counts.total == counts.failed ) colorPalette().red else colorPalette().text,
                 modifier = Modifier.size( 14.dp )
             )
             androidx.compose.foundation.text.BasicText(
-                text = running.toString(),
+                text = count.toString(),
                 style = typography().xs.semiBold.color( colorPalette().text )
             )
+            if( counts.failed > 0 && counts.total != counts.failed )
+                androidx.compose.foundation.layout.Box(
+                    Modifier.size( 6.dp ).clip( androidx.compose.foundation.shape.CircleShape ).background( colorPalette().red )
+                )
         }
 
     // History in sight: in the menu alone, behind the account picture, nobody found it

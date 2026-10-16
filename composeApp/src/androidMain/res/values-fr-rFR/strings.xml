@@ -157,7 +157,8 @@
     <string name="downloads_pause">Pause</string>
     <string name="downloads_retry_failed">Relancer (%1$d)</string>
     <string name="downloads_running_count">↓ %1$d en cours</string>
-    <string name="downloads_failed_count">%1$d en échec</string>
+    <string name="downloads_failed_count">%1$d en échec</string>
+    <string name="downloads_paused_count">%1$d en pause</string>
     <string name="downloads_resume">Reprendre</string>
     <string name="downloads_cancel_all">Tout annuler</string>
     <string name="downloads_cancel">Annuler</string>
