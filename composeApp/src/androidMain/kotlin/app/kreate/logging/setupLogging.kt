@@ -19,21 +19,31 @@ fun setupLogging( vararg bufferedLoggers: BufferedLogger ) {
     val numFiles = Preferences.RUNTIME_LOG_FILE_COUNT.value
     val severity = Preferences.RUNTIME_LOG_SEVERITY.value
 
-    val config = RollingFileLogWriterConfig(
-        logFileName = "logs",
-        logFilePath = dir,
-        rollOnSize = maxSize,
-        maxLogFiles = numFiles
-    )
-    val fileWriter = RollingFileLogWriter(
-        config = config,
-        fileSystem = SystemFileSystem
-    )
-
-    Logger.setLogWriters( platformLogWriter(), fileWriter )
+    // The "Runtime log" switch decides whether a log file is written at all; its level
+    // only applies while it's on (kept for next time). Off, only Android's own log
+    // gets warnings and errors. It was written at the chosen level even when off.
+    val enabled = Preferences.RUNTIME_LOG.value
+    if( enabled ) {
+        val config = RollingFileLogWriterConfig(
+            logFileName = "logs",
+            logFilePath = dir,
+            rollOnSize = maxSize,
+            maxLogFiles = numFiles
+        )
+        val fileWriter = RollingFileLogWriter(
+            config = config,
+            fileSystem = SystemFileSystem
+        )
+        Logger.setLogWriters( platformLogWriter(), fileWriter )
+    } else
+        Logger.setLogWriters( platformLogWriter() )
     Logger.setMinSeverity(
-        // Override severity when in debug mode
-        if( BuildConfig.DEBUG ) Severity.Verbose else severity
+        when {
+            // Override severity when in debug mode
+            BuildConfig.DEBUG -> Severity.Verbose
+            enabled           -> severity
+            else              -> Severity.Warn
+        }
     )
 
     if( Logger.config.minSeverity == Severity.Verbose )
