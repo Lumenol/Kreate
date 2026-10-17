@@ -1,5 +1,6 @@
 package app.kreate.android.themed.common.screens.artist
 
+import it.fast4x.rimusic.utils.forcePlayFromBeginning
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
@@ -448,12 +449,16 @@ fun YouTubeArtist(
                                     modifier = Modifier.size( 52.dp )
                                                        .clip( CircleShape )
                                                        .background( colorPalette.text )
-                                                       // All the artist's songs, shuffled, like YouTube Music
-                                                       // (it played only the few shown here)
+                                                       // YouTube Music's "Shuffle": the artist's songs in
+                                                       // its order (it played only the few shown here)
                                                        .clickable( enabled = !viewModel.isLoadingAll ) {
                                                            playAllScope.launch {
-                                                               val songs = withContext( Dispatchers.IO ) { viewModel.allSongs() }
-                                                               SongShuffler.playShuffled( songs )
+                                                               val (songs, mixed) = withContext( Dispatchers.IO ) { viewModel.songsToPlay() }
+                                                               if( mixed && songs.isNotEmpty() ) {
+                                                                   player.stopRadio()
+                                                                   player.forcePlayFromBeginning( songs.map( Song::asMediaItem ) )
+                                                               } else
+                                                                   SongShuffler.playShuffled( songs )
                                                            }
                                                        }
                                 ) {

@@ -170,12 +170,40 @@ class YoutubeArtistViewModel(
         private set
 
     /**
-     * Every song of the artist, for the play button: the page shows only a few top
-     * ones, YouTube Music plays them all. The "Top songs" shelf leads to the artist's
-     * full playlist (its "See all"), read with its next pages (up to 500 songs).
-     * What the page shows when there's no such list or it can't be read.
+     * What the play button plays, and whether it's already in a random order.
+     * 1. YouTube Music's own "Shuffle": the artist's songs mixed by YouTube (the same
+     *    list as its button; the top songs are on the page already)
+     * 2. else the artist's full list ("See all" of the top songs), to shuffle here
+     * 3. else the songs on the page, to shuffle here
      */
-    suspend fun allSongs(): List<Song> {
+    suspend fun songsToPlay(): Pair<List<Song>, Boolean> {
+        if( tabIndex != 0 ) return getSongs() to false
+        val page = _artistPage.value
+        val videoId = page?.shuffleVideoId
+        val playlistId = page?.shufflePlaylistId
+        if( videoId != null && playlistId != null ) {
+            isLoadingAll = true
+            try {
+                val mixed = Innertube.radio( videoId, CURRENT_LOCALE, playlistId, page.shuffleParams, true )
+                                     .onFailure { Logger.w( it ) { "YouTube's shuffle unreadable, the full list instead" } }
+                                     .getOrNull()
+                                     .orEmpty()
+                                     .filterNot { Preferences.PARENTAL_CONTROL.value && it.isExplicit }
+                if( mixed.isNotEmpty() ) return mixed.map( InnertubeSong::toSong ) to true
+            } finally {
+                isLoadingAll = false
+            }
+        }
+        return allSongs() to false
+    }
+
+    /**
+     * Every song of the artist: the page shows only a few top ones. The "Top songs"
+     * shelf leads to the artist's full playlist (its "See all"), read with its next
+     * pages (up to 500 songs). What the page shows when there's no such list or it
+     * can't be read.
+     */
+    private suspend fun allSongs(): List<Song> {
         if( tabIndex != 0 ) return getSongs()
         val shelfId = _artistPage.value
                                  ?.sections

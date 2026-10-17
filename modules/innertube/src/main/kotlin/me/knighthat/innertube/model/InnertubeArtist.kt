@@ -35,4 +35,9 @@ interface InnertubeArtist: InnertubeItem, Descriptive, AccessibleViaUrl, MultiCo
      */
     @get:Localized
     val shortNumMonthlyAudience: String?
+
+    /** YouTube Music's "Shuffle" button: a song to start from and its "RDAO…" playlist */
+    val shuffleVideoId: String? get() = null
+    val shufflePlaylistId: String? get() = null
+    val shuffleParams: String? get() = null
 }
