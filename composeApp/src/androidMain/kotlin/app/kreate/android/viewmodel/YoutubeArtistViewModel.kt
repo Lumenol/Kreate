@@ -1,5 +1,7 @@
 package app.kreate.android.viewmodel
 
+import app.kreate.android.Preferences
+import app.kreate.android.utils.PlaylistIds
 import android.content.Context
 import androidx.annotation.MainThread
 import androidx.annotation.OptIn
@@ -162,4 +164,50 @@ class YoutubeArtistViewModel(
 
     @OptIn(UnstableApi::class)
     fun getMediaItems() = getSongs().map( Song::asMediaItem )
+
+    /** The play button loads the whole list: shown while it does */
+    var isLoadingAll by mutableStateOf( false )
+        private set
+
+    /**
+     * Every song of the artist, for the play button: the page shows only a few top
+     * ones, YouTube Music plays them all. The "Top songs" shelf leads to the artist's
+     * full playlist (its "See all"), read with its next pages (up to 500 songs).
+     * What the page shows when there's no such list or it can't be read.
+     */
+    suspend fun allSongs(): List<Song> {
+        if( tabIndex != 0 ) return getSongs()
+        val shelfId = _artistPage.value
+                                 ?.sections
+                                 ?.firstOrNull { section ->
+                                     section.browseId != null
+                                             && section.contents.isNotEmpty()
+                                             && section.contents.all { it is InnertubeSong }
+                                 }
+                                 ?.browseId
+                                 ?: return getSongs()
+
+        isLoadingAll = true
+        try {
+            val page = Innertube.browsePlaylist( PlaylistIds.browseId( shelfId ), CURRENT_LOCALE, false )
+                                .onFailure { Logger.w( it ) { "artist's full list unreadable, the page's songs instead" } }
+                                .getOrNull()
+                                ?: return getSongs()
+            val songs = page.songs.toMutableList()
+            var continuation = page.songContinuation
+            var pages = 0
+            while( continuation != null && songs.size < 500 && pages++ < 10 ) {
+                val more = Innertube.playlistContinued( page.visitorData, continuation, CURRENT_LOCALE, null, false )
+                                    .getOrNull() ?: break
+                songs += more.songs
+                continuation = more.continuation
+            }
+            return songs.distinctBy { it.id }
+                        .filterNot { Preferences.PARENTAL_CONTROL.value && it.isExplicit }
+                        .map( InnertubeSong::toSong )
+                        .ifEmpty { getSongs() }
+        } finally {
+            isLoadingAll = false
+        }
+    }
 }
