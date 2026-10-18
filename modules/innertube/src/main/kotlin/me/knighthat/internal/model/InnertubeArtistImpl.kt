@@ -20,7 +20,10 @@ internal data class InnertubeArtistImpl(
     override val shortNumSubscribers: String?,
     override val longNumSubscribers: String?,
     override val shortNumMonthlyAudience: String?,
-    override val sections: List<Section>
+    override val sections: List<Section>,
+    override val shuffleVideoId: String? = null,
+    override val shufflePlaylistId: String? = null,
+    override val shuffleParams: String? = null
 ): InnertubeArtist {
 
     companion object {
@@ -103,6 +106,7 @@ internal data class InnertubeArtistImpl(
             val item = parse( response.header!! )       // Requires [BrowseResponse.Header] to be a non-null value
             val header = response.header?.musicImmersiveHeaderRenderer
             val subscribeButton = header?.subscriptionButton?.subscribeButtonRenderer
+            val shuffle = header?.playButton?.buttonRenderer?.navigationEndpoint?.watchEndpoint
 
             return InnertubeArtistImpl(
                 channelId,
@@ -112,7 +116,10 @@ internal data class InnertubeArtistImpl(
                 subscribeButton?.shortSubscriberCountText?.firstText,
                 subscribeButton?.longSubscriberCountText?.firstText,
                 header?.monthlyListenerCount?.firstText,
-                sections
+                sections,
+                shuffle?.videoId,
+                shuffle?.playlistId,
+                shuffle?.params
             )
         }
 

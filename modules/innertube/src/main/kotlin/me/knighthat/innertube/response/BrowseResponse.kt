@@ -43,6 +43,16 @@ interface BrowseResponse : InnertubeResponse {
             val shareEndpoint: Endpoint?
             val monthlyListenerCount: Runs?
             val subscriptionButton: Button
+            /** "Shuffle": the artist's songs, mixed by YouTube (a "RDAO…" watch playlist) */
+            val playButton: PlayButton?
+
+            interface PlayButton {
+                val buttonRenderer: Renderer?
+
+                interface Renderer {
+                    val navigationEndpoint: Endpoint?
+                }
+            }
         }
 
         interface MusicHeaderRenderer {

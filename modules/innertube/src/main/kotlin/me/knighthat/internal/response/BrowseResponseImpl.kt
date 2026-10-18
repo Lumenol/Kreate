@@ -50,8 +50,21 @@ internal data class BrowseResponseImpl(
             override val thumbnail: ThumbnailImpl,
             override val shareEndpoint: EndpointImpl?,
             override val monthlyListenerCount: RunsImpl?,
-            override val subscriptionButton: ButtonImpl
-        ): BrowseResponse.Header.MusicImmersiveHeaderRenderer
+            override val subscriptionButton: ButtonImpl,
+            override val playButton: PlayButtonImpl? = null
+        ): BrowseResponse.Header.MusicImmersiveHeaderRenderer {
+
+            @Serializable
+            internal data class PlayButtonImpl(
+                override val buttonRenderer: RendererImpl? = null
+            ): BrowseResponse.Header.MusicImmersiveHeaderRenderer.PlayButton {
+
+                @Serializable
+                internal data class RendererImpl(
+                    override val navigationEndpoint: EndpointImpl? = null
+                ): BrowseResponse.Header.MusicImmersiveHeaderRenderer.PlayButton.Renderer
+            }
+        }
 
         @Serializable
         internal data class MusicHeaderRendererImpl(

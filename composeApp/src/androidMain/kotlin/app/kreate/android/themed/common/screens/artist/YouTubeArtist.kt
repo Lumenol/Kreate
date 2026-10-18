@@ -1,5 +1,10 @@
 package app.kreate.android.themed.common.screens.artist
 
+import it.fast4x.rimusic.utils.forcePlayFromBeginning
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import androidx.compose.runtime.rememberCoroutineScope
 import me.knighthat.utils.Toaster
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
@@ -304,6 +309,7 @@ fun YouTubeArtist(
     //<editor-fold defaultstate="collapsed" desc="Buttons">
     val followButton = FollowButton { dbArtist }
     val shuffler = SongShuffler( viewModel::getSongs )
+    val playAllScope = rememberCoroutineScope()
     val downloadAllDialog = remember {
         DownloadAllDialog( context, viewModel::getSongs )
     }
@@ -443,14 +449,32 @@ fun YouTubeArtist(
                                     modifier = Modifier.size( 52.dp )
                                                        .clip( CircleShape )
                                                        .background( colorPalette.text )
-                                                       .clickable( onClick = shuffler::onShortClick )
+                                                       // YouTube Music's "Shuffle": the artist's songs in
+                                                       // its order (it played only the few shown here)
+                                                       .clickable( enabled = !viewModel.isLoadingAll ) {
+                                                           playAllScope.launch {
+                                                               val (songs, mixed) = withContext( Dispatchers.IO ) { viewModel.songsToPlay() }
+                                                               if( mixed && songs.isNotEmpty() ) {
+                                                                   player.stopRadio()
+                                                                   player.forcePlayFromBeginning( songs.map( Song::asMediaItem ) )
+                                                               } else
+                                                                   SongShuffler.playShuffled( songs )
+                                                           }
+                                                       }
                                 ) {
-                                    Icon(
-                                        painter = painterResource( R.drawable.play ),
-                                        contentDescription = stringResource( R.string.shuffle ),
-                                        tint = colorPalette.background0,
-                                        modifier = Modifier.size( 24.dp )
-                                    )
+                                    if( viewModel.isLoadingAll )
+                                        androidx.compose.material3.CircularProgressIndicator(
+                                            color = colorPalette.background0,
+                                            strokeWidth = 2.dp,
+                                            modifier = Modifier.size( 22.dp )
+                                        )
+                                    else
+                                        Icon(
+                                            painter = painterResource( R.drawable.play ),
+                                            contentDescription = stringResource( R.string.shuffle ),
+                                            tint = colorPalette.background0,
+                                            modifier = Modifier.size( 24.dp )
+                                        )
                                 }
                             }
                         }
