@@ -625,6 +625,9 @@ Volume BAS : titre précédent</string>
     <string name="error_unknown">Erreur inconnue</string>
     <string name="error_playback_failed">Lecture impossible : %1$s</string>
     <string name="error_youtube_refused_stream">YouTube a refusé le flux (HTTP %1$d)</string>
+    <string name="error_playback_of">« %1$s » : %2$s</string>
+    <string name="error_playback_skipped">« %1$s » : %2$s — titre suivant</string>
+    <string name="error_playback_stopped_after_skips">%1$d titres d\'affilée illisibles : lecture arrêtée. %2$s</string>
     <string name="error_audio_format_unsupported">Ce format audio ne peut pas être lu sur cet appareil</string>
     <string name="delete_song">Supprimer vraiment ce titre ? Il sera retiré de la base de données. C\'est irréversible.</string>
     <string name="info_check_update_now">Vérifier maintenant</string>

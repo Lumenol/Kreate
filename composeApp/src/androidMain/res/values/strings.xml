@@ -622,6 +622,9 @@
     <string name="error_unknown">Unknown error</string>
     <string name="error_playback_failed">Playback failed: %1$s</string>
     <string name="error_youtube_refused_stream">YouTube refused the stream (HTTP %1$d)</string>
+    <string name="error_playback_of">"%1$s": %2$s</string>
+    <string name="error_playback_skipped">"%1$s": %2$s — next song</string>
+    <string name="error_playback_stopped_after_skips">%1$d songs in a row couldn\'t play, playback stopped. %2$s</string>
     <string name="error_audio_format_unsupported">This audio format can\'t be played on this device</string>
     <string name="delete_song">Do you really want to delete this song? It will be deleted from database. This action is irreversible.</string>
     <string name="info_check_update_now">Check now</string>

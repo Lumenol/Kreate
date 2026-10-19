@@ -64,6 +64,9 @@ object YTPlayerUtils : KoinComponent {
         webRemixFailedIds.add(videoId)
     }
 
+    /** WEB_REMIX urls refused (403) in this run before they're checked before playback */
+    private const val WEB_REMIX_FAILURES_BEFORE_CHECKING = 3
+
     /**
      * Cleared when the cipher recovers (player config refreshed after a stream rejection): the
      * prior WEB_REMIX failures were caused by the stale cipher, so let resolution try WEB_REMIX
@@ -452,8 +455,11 @@ object YTPlayerUtils : KoinComponent {
                 // GET that ExoPlayer makes. Skip HEAD validation for the main client and let ExoPlayer
                 // try directly, UNLESS this videoId already 403'd on GET (markWebRemixFailed) — then
                 // fall through to the fallback clients. Saves a validateStatus round-trip per resolve.
+                // A few refusals in this run (YouTube changed something): check WEB_REMIX's
+                // url like the others for every song, instead of losing one try on each
                 if (clientIndex == -1 && currentClient.clientName == "WEB_REMIX" &&
-                    !webRemixFailedIds.contains(videoId)
+                    !webRemixFailedIds.contains(videoId) &&
+                    webRemixFailedIds.size < WEB_REMIX_FAILURES_BEFORE_CHECKING
                 ) {
                     logger.d("WEB_REMIX — skipping HEAD validation, letting ExoPlayer try directly")
                     logger.i("Playback: client=${currentClient.clientName}, videoId=$videoId")
