@@ -127,6 +127,12 @@
     <string name="when_app_swipe_out_from_task_manager">When app swipe out from task manager</string>
     <string name="opening_url">is loading...</string>
     <string name="link_not_supported">Kreate can\'t open this link</string>
+    <string name="open_links">YouTube links</string>
+    <string name="open_links_with_kreate">Open YouTube links with Kreate</string>
+    <string name="open_links_all">On: links to YouTube and YouTube Music open in Kreate</string>
+    <string name="open_links_none">Off: links open in YouTube. Touch here, then "Add links" and tick every address shown</string>
+    <string name="open_links_some">%1$d of %2$d addresses on, missing: %3$s. Touch here, then "Add links" and tick them</string>
+    <string name="open_links_asked">Android asks which app opens each link. Touch here for Kreate\'s settings</string>
     <string name="an_error_has_occurred_while_fetching_the_lyrics">An error has occurred while fetching the lyrics</string>
     <string name="error_a_network_error_has_occurred">A network error has occurred</string>
     <string name="error_couldn_t_find_a_playable_audio_format">Couldn\'t find a playable audio format</string>
