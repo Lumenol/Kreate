@@ -454,6 +454,9 @@ fun clearCachedStreamUrlOf( songId: String ): Boolean {
     return cachedStreamUrl.remove( songId ) != null
 }
 
+/** Forgets every resolved url: made with a token or player code just renewed, they'd be refused */
+fun clearAllCachedStreamUrls() = cachedStreamUrl.clear()
+
 /** Query parameter of a download's uri carrying its [AudioQualityFormat] */
 const val DOWNLOAD_QUALITY_PARAM = "quality"
 

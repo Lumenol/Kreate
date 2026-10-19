@@ -1,5 +1,6 @@
 package app.kreate.android.service.player
 
+import com.metrolist.music.utils.YTPlayerUtils
 import android.content.Context
 import android.media.audiofx.LoudnessEnhancer
 import android.widget.Toast
@@ -49,6 +50,8 @@ import kotlin.concurrent.atomics.ExperimentalAtomicApi
 import kotlin.time.Duration.Companion.seconds
 
 private const val MAX_RECOVERY_ATTEMPTS = 2
+
+private const val MAX_SKIPS_IN_A_ROW = 3
 private val RECOVERABLE_ERROR_CODES = setOf(
     PlaybackException.ERROR_CODE_IO_BAD_HTTP_STATUS,
     PlaybackException.ERROR_CODE_IO_NETWORK_CONNECTION_FAILED,
@@ -74,6 +77,10 @@ class ExoPlayerListener(
     private var lastErrorMessage = ""
     private val logger = Logger.withTag( "Playback" )
     private var recoveryAttempts = 0
+    /** Songs skipped on an error in a row: past [MAX_SKIPS_IN_A_ROW], playback stops instead */
+    private var skipsInARow = 0
+    /** Where the skipping started: playback stops back there, nothing is lost */
+    private var firstSkippedIndex = -1
 
     var loudnessEnhancer: LoudnessEnhancer? = null
         private set
@@ -188,11 +195,33 @@ class ExoPlayerListener(
         val position = player.currentPosition
         logger.w { "re-resolving stream of $mediaId at ${position}ms (attempt $recoveryAttempts/$MAX_RECOVERY_ATTEMPTS)" }
 
+        // The CDN refused the url (403): the next resolution skips the client that gave
+        // it (WEB_REMIX, served unchecked) for the fallback clients. Metrolist's service
+        // does this; without it both retries got the same refused url and every song was
+        // skipped. The first refusal of a streak also renews the playback session (stale
+        // token or player code: what restarting the app fixed), then plays this same song
+        // again from where it was: nothing is skipped meanwhile
+        if( error.isHttpForbidden() && YTPlayerUtils.onStreamRefused( mediaId ) ) {
+            CoroutineScope( Dispatchers.Main ).launch {
+                withContext( Dispatchers.IO ) { YTPlayerUtils.resetPlaybackSession() }
+                if( player.currentMediaItem?.mediaId != mediaId ) return@launch
+                clearCachedStreamUrlOf( mediaId )
+                player.seekTo( position )
+                player.prepare()
+            }
+            return true
+        }
+
         clearCachedStreamUrlOf( mediaId )
         player.seekTo( position )
         player.prepare()
         return true
     }
+
+    private fun Throwable.isHttpForbidden(): Boolean =
+        generateSequence( this ) { it.cause }
+            .take( 10 )
+            .any { it is HttpDataSource.InvalidResponseCodeException && it.responseCode == 403 }
 
     /**
      * The streaming cache is keyed by song only: when an earlier attempt left part of a
@@ -307,6 +336,11 @@ class ExoPlayerListener(
 
     override fun onPlaybackStateChanged( playbackState: Int ) {
         logger.d { "state=$playbackState at ${player.currentPosition}/${player.duration}ms, item=${player.currentMediaItem?.mediaId}" }
+        // A song plays: the next error starts a new count
+        if( playbackState == Player.STATE_READY ) {
+            skipsInARow = 0
+            YTPlayerUtils.onStreamPlayed()
+        }
     }
 
     override fun onPlayerError( error: PlaybackException ) {
@@ -330,10 +364,32 @@ class ExoPlayerListener(
 
         if( tryRecoverCorruptedCache( error ) || tryRecover( error ) ) return
 
-        readableMessage( error, rootCause ).also( ::printErrorMessage )
+        val reason = readableMessage( error, rootCause )
+        val title = item?.mediaMetadata?.title?.toString().orEmpty()
 
-        if ( Preferences.PLAYBACK_SKIP_ON_ERROR.value && player.hasNextMediaItem() )
-            player.playNext()
+        // Skipping only says why, song by song; several in a row (a whole artist refused,
+        // YouTube changed something) stop instead of running through the queue silently
+        if( Preferences.PLAYBACK_SKIP_ON_ERROR.value && player.hasNextMediaItem() ) {
+            skipsInARow++
+            if( skipsInARow == 1 ) firstSkippedIndex = player.currentMediaItemIndex
+            if( skipsInARow < MAX_SKIPS_IN_A_ROW ) {
+                // The title makes each message different: none is swallowed by the 10 s filter
+                printErrorMessage( context.getString( R.string.error_playback_skipped, title, reason ) )
+                player.playNext()
+                return
+            }
+            skipsInARow = 0
+            // Back to the first song that failed, paused: once fixed (Settings → Data →
+            // reset YouTube playback), playback goes on from there
+            if( firstSkippedIndex in 0 until player.mediaItemCount ) {
+                player.playWhenReady = false
+                player.seekTo( firstSkippedIndex, 0 )
+            }
+            firstSkippedIndex = -1
+            printErrorMessage( context.getString( R.string.error_playback_stopped_after_skips, MAX_SKIPS_IN_A_ROW, reason ) )
+            return
+        }
+        printErrorMessage( if( title.isBlank() ) reason else context.getString( R.string.error_playback_of, title, reason ) )
     }
 
     override fun onEvents(player: Player, events: Player.Events) {

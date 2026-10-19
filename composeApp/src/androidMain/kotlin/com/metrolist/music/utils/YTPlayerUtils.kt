@@ -34,6 +34,7 @@ import com.metrolist.music.utils.YTPlayerUtils.MAIN_CLIENT
 import com.metrolist.music.utils.YTPlayerUtils.STREAM_FALLBACK_CLIENTS
 import com.metrolist.music.utils.YTPlayerUtils.validateStatus
 import com.metrolist.music.utils.cipher.CipherDeobfuscator
+import com.metrolist.music.utils.cipher.PlayerJsFetcher
 import com.metrolist.music.utils.potoken.PoTokenGenerator
 import com.metrolist.music.utils.potoken.PoTokenResult
 import it.fast4x.rimusic.enums.AudioQualityFormat
@@ -62,6 +63,47 @@ object YTPlayerUtils : KoinComponent {
 
     fun markWebRemixFailed(videoId: String) {
         webRemixFailedIds.add(videoId)
+    }
+
+    /** WEB_REMIX urls refused (403) in this run before they're checked before playback */
+    private const val WEB_REMIX_FAILURES_BEFORE_CHECKING = 3
+
+    // Whether the playback session was renewed for the current streak of refusals: once
+    // per streak, never in a loop. A song that plays rearms it
+    @Volatile
+    private var renewedThisStreak = false
+
+    /**
+     * A stream url was refused (403): the song goes to the fallback clients next time.
+     * @return `true` the first time in a streak: the caller renews the session
+     * ([resetPlaybackSession]) and plays the same song again. Afterwards `false` until a
+     * song plays; Settings → Data has the manual reset.
+     */
+    fun onStreamRefused(videoId: String): Boolean {
+        markWebRemixFailed(videoId)
+        if (renewedThisStreak) return false
+        renewedThisStreak = true
+        logger.w("stream of $videoId refused: renewing the playback session")
+        return true
+    }
+
+    /** A song plays: the next refusal starts a new streak */
+    fun onStreamPlayed() {
+        renewedThisStreak = false
+    }
+
+    /**
+     * A fresh playback session, like an app restart: new anti-bot token, YouTube's player
+     * code fetched again and the deciphering config refreshed, refused songs and cached
+     * stream urls forgotten. Automatic once per streak of refusals, or from Settings.
+     */
+    suspend fun resetPlaybackSession() {
+        runCatching { poTokenGenerator.reset() }.onFailure { logger.e(it) { "poToken reset failed" } }
+        runCatching { PlayerJsFetcher.invalidateCache() }.onFailure { logger.e(it) { "player code cache reset failed" } }
+        runCatching { CipherDeobfuscator.onStreamRejected() }.onFailure { logger.e(it) { "cipher refresh failed" } }
+        webRemixFailedIds.clear()
+        app.kreate.di.clearAllCachedStreamUrls()
+        logger.i("playback session renewed")
     }
 
     /**
@@ -452,8 +494,11 @@ object YTPlayerUtils : KoinComponent {
                 // GET that ExoPlayer makes. Skip HEAD validation for the main client and let ExoPlayer
                 // try directly, UNLESS this videoId already 403'd on GET (markWebRemixFailed) — then
                 // fall through to the fallback clients. Saves a validateStatus round-trip per resolve.
+                // A few refusals in this run (YouTube changed something): check WEB_REMIX's
+                // url like the others for every song, instead of losing one try on each
                 if (clientIndex == -1 && currentClient.clientName == "WEB_REMIX" &&
-                    !webRemixFailedIds.contains(videoId)
+                    !webRemixFailedIds.contains(videoId) &&
+                    webRemixFailedIds.size < WEB_REMIX_FAILURES_BEFORE_CHECKING
                 ) {
                     logger.d("WEB_REMIX — skipping HEAD validation, letting ExoPlayer try directly")
                     logger.i("Playback: client=${currentClient.clientName}, videoId=$videoId")

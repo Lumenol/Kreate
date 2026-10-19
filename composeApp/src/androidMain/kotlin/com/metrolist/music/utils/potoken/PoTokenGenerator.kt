@@ -23,6 +23,17 @@ class PoTokenGenerator {
     private var webPoTokenStreamingPot: String? = null
     private var webPoTokenGenerator: PoTokenWebView? = null
 
+    /** Drops the token generator: the next token comes from a fresh one (what an app restart did) */
+    suspend fun reset() {
+        webPoTokenGenLock.withLock {
+            withContext(Dispatchers.Main) { webPoTokenGenerator?.close() }
+            webPoTokenGenerator = null
+            webPoTokenSessionId = null
+            webPoTokenStreamingPot = null
+        }
+        logger.i("poToken generator reset")
+    }
+
     fun getWebClientPoToken(videoId: String, sessionId: String): PoTokenResult? {
         logger.d("getWebClientPoToken called: videoId=$videoId, sessionId=$sessionId")
         logger.d("WebView state: supported=$webViewSupported, badImpl=$webViewBadImpl")
