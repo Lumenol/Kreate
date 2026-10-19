@@ -1,5 +1,6 @@
 package it.fast4x.rimusic
 
+import app.kreate.android.utils.LinkResolver
 import androidx.navigation.NavController
 import app.kreate.android.service.player.PreviewPlayer
 import android.annotation.SuppressLint
@@ -343,7 +344,8 @@ MainActivity :
 
         println("MainActivity.onCreate launchedFromNotification: $launchedFromNotification intent $intent.action")
 
-        intentUriData = intent.data ?: intent.getStringExtra(Intent.EXTRA_TEXT)?.toUri()
+        // Shared texts may wrap the link in words ("Listen to this: https://…")
+        intentUriData = intent.data ?: intent.getStringExtra(Intent.EXTRA_TEXT)?.let( LinkResolver::linkIn )
         shortcutAction = intent.action?.takeIf { it in LauncherShortcuts.actions }
         LauncherShortcuts.register( this )
 
@@ -965,8 +967,23 @@ MainActivity :
                             }
                         }
 
-                        "channel", "c" -> uri.lastPathSegment?.let { channelId ->
+                        "channel" -> uri.lastPathSegment?.let { channelId ->
                             NavRoutes.YT_ARTIST.navigateHere( navController, channelId )
+                        }
+
+                        // Channels by name ("/@name", "/c/name", "/user/name"): YouTube
+                        // gives their id, YouTube Music shows them as the artist's page
+                        "c", "user" -> openChannelByName( uri, navController )
+
+                        // What YouTube Music's "Share" gives for an album ("MPREb_…"),
+                        // an artist ("UC…") or a playlist ("VL…")
+                        "browse" -> uri.lastPathSegment?.let { browseId ->
+                            when {
+                                browseId.startsWith( "MPREb" ) -> NavRoutes.YT_ALBUM.navigateHere( navController, browseId )
+                                browseId.startsWith( "UC" ) -> NavRoutes.YT_ARTIST.navigateHere( navController, browseId )
+                                browseId.startsWith( "VL" ) -> NavRoutes.YT_PLAYLIST.navigateHere( navController, browseId )
+                                else -> Toaster.w( R.string.link_not_supported )
+                            }
                         }
 
                         "search" -> uri.getQueryParameter("q")?.let { query ->
@@ -981,11 +998,15 @@ MainActivity :
                             shuffle = uri.getQueryParameter("shuffle") == "1"
                         ) -> Unit
 
+                        else if path?.startsWith( "@" ) == true -> openChannelByName( uri, navController )
+
                         else -> when {
                             path == "watch" -> uri.getQueryParameter("v")
                             uri.host == "youtu.be" -> path
+                            // "/shorts/ID", "/live/ID", "/v/ID", "/embed/ID"
+                            path in setOf( "shorts", "live", "v", "embed" ) -> uri.pathSegments.getOrNull( 1 )
                             else -> null
-                        }?.let { videoId ->
+                        }.also { if( it == null ) Toaster.w( R.string.link_not_supported ) }?.let { videoId ->
                             Innertube.song(videoId)?.getOrNull()?.let { song ->
                                 withContext(Dispatchers.Main) {
                                     if ( !song.explicit && !Preferences.PARENTAL_CONTROL.value )
@@ -1002,6 +1023,15 @@ MainActivity :
         }
     }
 
+
+    /** A channel link by name: YouTube gives its id, then the artist's page opens */
+    private suspend fun openChannelByName( uri: Uri, navController: NavController ) {
+        val channelId = LinkResolver.channelIdOf( uri )
+        withContext( Dispatchers.Main ) {
+            if( channelId != null ) NavRoutes.YT_ARTIST.navigateHere( navController, channelId )
+            else Toaster.w( R.string.link_not_supported )
+        }
+    }
 
     private val sensorListener: SensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent) {
@@ -1069,7 +1099,8 @@ MainActivity :
     @UnstableApi
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intentUriData = intent.data ?: intent.getStringExtra(Intent.EXTRA_TEXT)?.toUri()
+        // Shared texts may wrap the link in words ("Listen to this: https://…")
+        intentUriData = intent.data ?: intent.getStringExtra(Intent.EXTRA_TEXT)?.let( LinkResolver::linkIn )
         shortcutAction = intent.action?.takeIf { it in LauncherShortcuts.actions }
     }
 

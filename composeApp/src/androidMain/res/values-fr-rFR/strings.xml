@@ -113,6 +113,7 @@
     <string name="close_background_player">Effacer le lecteur en arrière-plan</string>
     <string name="when_app_swipe_out_from_task_manager">Quand tu fermes l\'app depuis les applications récentes</string>
     <string name="opening_url">est en train de charger...</string>
+    <string name="link_not_supported">Kreate ne sait pas ouvrir ce lien</string>
     <string name="an_error_has_occurred_while_fetching_the_lyrics">Une erreur est apparue lors de la récupération des paroles</string>
     <string name="error_a_network_error_has_occurred">Une erreur réseau est apparue</string>
     <string name="error_couldn_t_find_a_playable_audio_format">Ne peut pas trouver un format audio jouable</string>

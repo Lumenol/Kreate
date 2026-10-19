@@ -126,6 +126,7 @@
     <string name="close_background_player">Close background player</string>
     <string name="when_app_swipe_out_from_task_manager">When app swipe out from task manager</string>
     <string name="opening_url">is loading...</string>
+    <string name="link_not_supported">Kreate can\'t open this link</string>
     <string name="an_error_has_occurred_while_fetching_the_lyrics">An error has occurred while fetching the lyrics</string>
     <string name="error_a_network_error_has_occurred">A network error has occurred</string>
     <string name="error_couldn_t_find_a_playable_audio_format">Couldn\'t find a playable audio format</string>
