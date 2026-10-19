@@ -624,7 +624,11 @@
     <string name="error_youtube_refused_stream">YouTube refused the stream (HTTP %1$d)</string>
     <string name="error_playback_of">"%1$s": %2$s</string>
     <string name="error_playback_skipped">"%1$s": %2$s — next song</string>
-    <string name="error_playback_stopped_after_skips">%1$d songs in a row couldn\'t play, playback stopped. %2$s</string>
+    <string name="error_playback_stopped_after_skips">%1$d songs in a row couldn\'t play: playback stopped on the first one. %2$s If they play on YouTube Music: Settings → Data → Reset YouTube playback</string>
+    <string name="playback_session">YouTube playback</string>
+    <string name="playback_session_reset">Reset YouTube playback</string>
+    <string name="playback_session_reset_description">New anti-bot token and deciphering, like restarting the app. For songs refused (403) though they play on YouTube Music. It\'s already done once by itself on the first refusal</string>
+    <string name="playback_session_reset_done">YouTube playback reset</string>
     <string name="error_audio_format_unsupported">This audio format can\'t be played on this device</string>
     <string name="delete_song">Do you really want to delete this song? It will be deleted from database. This action is irreversible.</string>
     <string name="info_check_update_now">Check now</string>

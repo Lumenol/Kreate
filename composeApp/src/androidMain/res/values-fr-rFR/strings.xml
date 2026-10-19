@@ -627,7 +627,11 @@ Volume BAS : titre précédent</string>
     <string name="error_youtube_refused_stream">YouTube a refusé le flux (HTTP %1$d)</string>
     <string name="error_playback_of">« %1$s » : %2$s</string>
     <string name="error_playback_skipped">« %1$s » : %2$s — titre suivant</string>
-    <string name="error_playback_stopped_after_skips">%1$d titres d\'affilée illisibles : lecture arrêtée. %2$s</string>
+    <string name="error_playback_stopped_after_skips">%1$d titres d\'affilée illisibles : lecture arrêtée sur le premier. %2$s S\'ils marchent sur YouTube Music : Paramètres → Données → Réinitialiser la lecture YouTube</string>
+    <string name="playback_session">Lecture YouTube</string>
+    <string name="playback_session_reset">Réinitialiser la lecture YouTube</string>
+    <string name="playback_session_reset_description">Jeton anti-robot et déchiffrement refaits, comme au redémarrage de l\'app. Pour des titres refusés (403) alors qu\'ils marchent sur YouTube Music. C\'est déjà fait une fois tout seul au premier refus</string>
+    <string name="playback_session_reset_done">Lecture YouTube réinitialisée</string>
     <string name="error_audio_format_unsupported">Ce format audio ne peut pas être lu sur cet appareil</string>
     <string name="delete_song">Supprimer vraiment ce titre ? Il sera retiré de la base de données. C\'est irréversible.</string>
     <string name="info_check_update_now">Vérifier maintenant</string>

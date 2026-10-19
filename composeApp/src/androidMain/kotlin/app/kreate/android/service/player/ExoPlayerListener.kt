@@ -79,6 +79,8 @@ class ExoPlayerListener(
     private var recoveryAttempts = 0
     /** Songs skipped on an error in a row: past [MAX_SKIPS_IN_A_ROW], playback stops instead */
     private var skipsInARow = 0
+    /** Where the skipping started: playback stops back there, nothing is lost */
+    private var firstSkippedIndex = -1
 
     var loudnessEnhancer: LoudnessEnhancer? = null
         private set
@@ -193,11 +195,22 @@ class ExoPlayerListener(
         val position = player.currentPosition
         logger.w { "re-resolving stream of $mediaId at ${position}ms (attempt $recoveryAttempts/$MAX_RECOVERY_ATTEMPTS)" }
 
-        // The CDN refused the url (403): the next resolution must skip the client that
-        // gave it (WEB_REMIX, served unchecked) and try the fallback clients. Metrolist's
-        // service does this; without it both retries got the same refused url and every
-        // song was skipped
-        if( error.isHttpForbidden() ) YTPlayerUtils.markWebRemixFailed( mediaId )
+        // The CDN refused the url (403): the next resolution skips the client that gave
+        // it (WEB_REMIX, served unchecked) for the fallback clients. Metrolist's service
+        // does this; without it both retries got the same refused url and every song was
+        // skipped. The first refusal of a streak also renews the playback session (stale
+        // token or player code: what restarting the app fixed), then plays this same song
+        // again from where it was: nothing is skipped meanwhile
+        if( error.isHttpForbidden() && YTPlayerUtils.onStreamRefused( mediaId ) ) {
+            CoroutineScope( Dispatchers.Main ).launch {
+                withContext( Dispatchers.IO ) { YTPlayerUtils.resetPlaybackSession() }
+                if( player.currentMediaItem?.mediaId != mediaId ) return@launch
+                clearCachedStreamUrlOf( mediaId )
+                player.seekTo( position )
+                player.prepare()
+            }
+            return true
+        }
 
         clearCachedStreamUrlOf( mediaId )
         player.seekTo( position )
@@ -324,7 +337,10 @@ class ExoPlayerListener(
     override fun onPlaybackStateChanged( playbackState: Int ) {
         logger.d { "state=$playbackState at ${player.currentPosition}/${player.duration}ms, item=${player.currentMediaItem?.mediaId}" }
         // A song plays: the next error starts a new count
-        if( playbackState == Player.STATE_READY ) skipsInARow = 0
+        if( playbackState == Player.STATE_READY ) {
+            skipsInARow = 0
+            YTPlayerUtils.onStreamPlayed()
+        }
     }
 
     override fun onPlayerError( error: PlaybackException ) {
@@ -355,6 +371,7 @@ class ExoPlayerListener(
         // YouTube changed something) stop instead of running through the queue silently
         if( Preferences.PLAYBACK_SKIP_ON_ERROR.value && player.hasNextMediaItem() ) {
             skipsInARow++
+            if( skipsInARow == 1 ) firstSkippedIndex = player.currentMediaItemIndex
             if( skipsInARow < MAX_SKIPS_IN_A_ROW ) {
                 // The title makes each message different: none is swallowed by the 10 s filter
                 printErrorMessage( context.getString( R.string.error_playback_skipped, title, reason ) )
@@ -362,6 +379,13 @@ class ExoPlayerListener(
                 return
             }
             skipsInARow = 0
+            // Back to the first song that failed, paused: once fixed (Settings → Data →
+            // reset YouTube playback), playback goes on from there
+            if( firstSkippedIndex in 0 until player.mediaItemCount ) {
+                player.playWhenReady = false
+                player.seekTo( firstSkippedIndex, 0 )
+            }
+            firstSkippedIndex = -1
             printErrorMessage( context.getString( R.string.error_playback_stopped_after_skips, MAX_SKIPS_IN_A_ROW, reason ) )
             return
         }

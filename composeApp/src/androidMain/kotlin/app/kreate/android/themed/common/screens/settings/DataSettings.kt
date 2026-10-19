@@ -386,6 +386,20 @@ fun DataSettings( paddingValues: PaddingValues ) {
                 }
             }
 
+            header( R.string.playback_session )
+            entry( search, R.string.playback_session_reset ) {
+                SettingComponents.Text(
+                    title = stringResource( R.string.playback_session_reset ),
+                    subtitle = stringResource( R.string.playback_session_reset_description ),
+                    onClick = {
+                        CoroutineScope( Dispatchers.IO ).launch {
+                            com.metrolist.music.utils.YTPlayerUtils.resetPlaybackSession()
+                            Toaster.s( R.string.playback_session_reset_done )
+                        }
+                    }
+                )
+            }
+
             header( R.string.library_filters_youtube_info )
             entry( search, R.string.library_filters_refresh ) {
                 // The value chosen first: the entry doesn't show it otherwise
