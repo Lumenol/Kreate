@@ -117,8 +117,8 @@
     <string name="open_links">Liens YouTube</string>
     <string name="open_links_with_kreate">Ouvrir les liens YouTube avec Kreate</string>
     <string name="open_links_all">Activé : les liens YouTube et YouTube Music s\'ouvrent dans Kreate</string>
-    <string name="open_links_none">Désactivé : les liens s\'ouvrent dans YouTube. Touche ici, puis « Ajouter des liens » et coche toutes les adresses proposées</string>
-    <string name="open_links_some">%1$d adresses sur %2$d activées, il manque : %3$s. Touche ici, puis « Ajouter des liens » et coche-les</string>
+    <string name="open_links_none">Désactivé : les liens s\'ouvrent dans YouTube. Touche ici, puis « Ajouter un lien » et coche music.youtube.com. Les adresses réservées par l\'app YouTube (youtube.com, youtu.be) : appui long sur le lien → Partager → Kreate</string>
+    <string name="open_links_some">%1$d adresses sur %2$d pour Kreate. Les autres (%3$s) sont réservées par l\'app YouTube : appui long sur le lien → Partager → Kreate</string>
     <string name="open_links_asked">Android demande quelle app ouvre chaque lien. Touche ici pour les réglages de Kreate</string>
     <string name="an_error_has_occurred_while_fetching_the_lyrics">Une erreur est apparue lors de la récupération des paroles</string>
     <string name="error_a_network_error_has_occurred">Une erreur réseau est apparue</string>
