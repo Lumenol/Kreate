@@ -105,6 +105,8 @@ fun GeneralSettings( paddingValues: PaddingValues ) {
                 )
             }
 
+            openLinksSection( search )
+
             playerSettingsSection( search )
             resetEntry( search, R.string.tab_general, { SettingsReset.GENERAL } )
         }
