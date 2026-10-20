@@ -981,10 +981,13 @@ MainActivity :
                             NavRoutes.searchResults.navigateHere( navController, query )
                         }
 
-                        // A song of a playlist: the playlist's page, nothing plays (#422). A
-                        // radio ("RD…") has no page: the song's menu below
-                        "watch" if uri.getQueryParameter("list")?.let { !PlaylistIds.isRadio( it ) } == true ->
+                        // A song of a playlist: the playlist's page, nothing plays (#422), with
+                        // the shared song's menu over it. A radio ("RD…") has no page: the
+                        // song's menu alone, below
+                        "watch" if uri.getQueryParameter("list")?.let { !PlaylistIds.isRadio( it ) } == true -> {
                             openPlaylistPage( uri.getQueryParameter("list")!!, navController )
+                            uri.getQueryParameter("v")?.let { showLinkedSong( it ) }
+                        }
 
                         else if path?.startsWith( "@" ) == true -> openChannelByName( uri, navController )
 
@@ -995,16 +998,7 @@ MainActivity :
                             path in setOf( "shorts", "live", "v", "embed" ) -> uri.pathSegments.getOrNull( 1 )
                             else -> null
                         }.also { if( it == null ) Toaster.w( R.string.link_not_supported ) }?.let { videoId ->
-                            // The song's menu, like a long press: play, play next, enqueue,
-                            // add to a playlist… A link never replaces what's playing
-                            Innertube.song(videoId)?.getOrNull()?.let { song ->
-                                withContext(Dispatchers.Main) {
-                                    if ( !song.explicit || !Preferences.PARENTAL_CONTROL.value )
-                                        bottomMenu.show( MenuPage.LinkedSong( song.asMediaItem ), true )
-                                    else
-                                        Toaster.w( R.string.info_parental_control_enabled )
-                                }
-                            }
+                            showLinkedSong( videoId )
                         }
                     }
                 }
@@ -1013,6 +1007,20 @@ MainActivity :
         }
     }
 
+
+    /**
+     * The song's menu, like a long press: play now, play next, enqueue, add to a
+     * playlist… A link never replaces what's playing
+     */
+    private suspend fun showLinkedSong( videoId: String ) {
+        val song = Innertube.song( videoId )?.getOrNull() ?: return
+        withContext( Dispatchers.Main ) {
+            if( !song.explicit || !Preferences.PARENTAL_CONTROL.value )
+                bottomMenu.show( MenuPage.LinkedSong( song.asMediaItem ), true )
+            else
+                Toaster.w( R.string.info_parental_control_enabled )
+        }
+    }
 
     /** A playlist's page; an album's when the playlist is one ("OLAK5uy_…") */
     private suspend fun openPlaylistPage( playlistId: String, navController: NavController ) {
