@@ -1,5 +1,6 @@
 package app.kreate.android.constant
 
+import app.kreate.android.themed.common.component.menu.SongPlayNowButton
 import androidx.media3.exoplayer.offline.Download
 import app.kreate.android.themed.common.component.menu.SongDownloadButton
 import app.kreate.android.service.DownloadCacheState
@@ -69,6 +70,20 @@ sealed interface MenuPage {
                 ViewSongDetailsButton(),
                 SongRenameButton(), SongRenameAuthorButton(), SongEditThumbnailButton(),
                 ResetSongButton(), ExportCacheButton(), DeleteSongButton()
+            )
+    }
+
+    /**
+     * A song opened from a link: its menu with "Play now" first. A link never replaces
+     * the queue by itself, the user chooses: now, next, at the end, a playlist…
+     */
+    data class LinkedSong(override val song: MediaItem) : MenuPage, SongMenu {
+
+        override suspend fun getButtons(): List<MenuButton<*>> =
+            listOf(
+                SongPlayNowButton(), SongEnqueueButton(),
+                SongRadioButton(), GoToArtistButton(), GoToAlbumButton(),
+                ViewSongDetailsButton()
             )
     }
 

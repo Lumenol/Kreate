@@ -114,6 +114,7 @@
     <string name="when_app_swipe_out_from_task_manager">Quand tu fermes l\'app depuis les applications récentes</string>
     <string name="opening_url">est en train de charger...</string>
     <string name="link_not_supported">Kreate ne sait pas ouvrir ce lien</string>
+    <string name="play_now">Lire maintenant</string>
     <string name="open_links">Liens YouTube</string>
     <string name="open_links_with_kreate">Ouvrir les liens YouTube avec Kreate</string>
     <string name="open_links_all">Activé : les liens YouTube et YouTube Music s\'ouvrent dans Kreate</string>
