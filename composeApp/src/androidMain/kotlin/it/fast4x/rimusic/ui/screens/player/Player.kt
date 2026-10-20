@@ -1783,13 +1783,18 @@ fun Player(
                                     .size(24.dp)
                             )
 
-                        // Where the sound goes, and Android's picker to change it (phone,
-                        // Bluetooth speaker, headphones): at hand, not in the notification shade
-                        val outputName = app.kreate.android.utils.AudioOutput.rememberName()
+                        // Where Kreate's sound goes, and its own panel to change it (phone,
+                        // Bluetooth speaker, headphones), kept up to date as devices come and go
+                        val systemOutput = app.kreate.android.utils.AudioOutput.rememberName()
+                        val outputName = app.kreate.android.service.player.AudioOutputs.selected?.name ?: systemOutput
                         androidx.compose.foundation.layout.Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier.clip( androidx.compose.foundation.shape.RoundedCornerShape( 50 ) )
-                                               .clickable { app.kreate.android.utils.AudioOutput.showPicker( context ) }
+                                               .clickable {
+                                                   menuState.display {
+                                                       app.kreate.android.themed.common.component.AudioOutputSheet( menuState::hide )
+                                                   }
+                                               }
                                                .padding( horizontal = 10.dp, vertical = 3.dp )
                         ) {
                             Image(

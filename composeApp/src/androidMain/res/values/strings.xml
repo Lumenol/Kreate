@@ -129,6 +129,13 @@
     <string name="link_not_supported">Kreate can\'t open this link</string>
     <string name="play_now">Play now</string>
     <string name="audio_output">Audio output</string>
+    <string name="audio_output_default">Like the phone</string>
+    <string name="audio_output_phone_speaker">Phone speaker</string>
+    <string name="audio_output_wired">Wired headphones</string>
+    <string name="audio_output_connect">Connect a device</string>
+    <string name="audio_output_all_apps">All apps…</string>
+    <string name="audio_output_all_apps_description">Android\'s picker: moves the sound of the whole phone</string>
+    <string name="audio_output_gone">%1$s disconnected: back to the phone\'s output</string>
     <string name="open_links">YouTube links</string>
     <string name="open_links_with_kreate">Open YouTube links with Kreate</string>
     <string name="open_links_all">On: links to YouTube and YouTube Music open in Kreate</string>

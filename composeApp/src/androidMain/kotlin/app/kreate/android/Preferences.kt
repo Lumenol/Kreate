@@ -689,6 +689,10 @@ sealed class Preferences<T>(
         val PREVIEW_LENGTH by lazy {
             Enum( preferences, Key.PREVIEW_LENGTH, "", PreviewLength.`30s` )
         }
+        /** Kreate's own audio output (see AudioOutputs), empty: the phone's default one */
+        val AUDIO_OUTPUT_CHOICE by lazy {
+            String( preferences, Key.AUDIO_OUTPUT_CHOICE, "", "" )
+        }
         /** When a song's release date and views are asked to YouTube again */
         val YOUTUBE_INFO_REFRESH by lazy {
             Enum( preferences, Key.YOUTUBE_INFO_REFRESH, "", YoutubeInfoRefresh.Days90 )
@@ -1951,6 +1955,7 @@ sealed class Preferences<T>(
         const val HOME_SONGS_TYPE = "HomeSongsType"
         const val LIBRARY_SONG_FILTERS = "LibrarySongFilters"
         const val YOUTUBE_INFO_REFRESH = "YoutubeInfoRefresh"
+        const val AUDIO_OUTPUT_CHOICE = "AudioOutputChoice"
         const val YOUTUBE_INFO_LAST_FILL = "YoutubeInfoLastFill"
         const val LIBRARY_FILTER_SHORTCUTS = "LibraryFilterShortcuts"
         const val HISTORY_PAGE_TYPE = "HistoryPageType"

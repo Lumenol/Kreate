@@ -317,6 +317,8 @@ class PlayerServiceModern:
         }
 
         maybeResumePlaybackWhenDeviceConnected()
+        // Kreate's own output (Player → output panel), back to the default one when its device goes
+        app.kreate.android.service.player.AudioOutputs.start( this, player )
 
         /* Queue is saved in events without scheduling it (remove this in future)*/
         // Load persistent queue when start activity and save periodically in background
@@ -435,6 +437,7 @@ class PlayerServiceModern:
 
     @UnstableApi
     override fun onDestroy() {
+        app.kreate.android.service.player.AudioOutputs.stop()
         runCatching {
             listener.saveQueueToDatabase()
             volumeObserver.unregister()
