@@ -1,5 +1,7 @@
 package it.fast4x.rimusic
 
+import app.kreate.android.constant.MenuPage
+import app.kreate.android.utils.PlaylistIds
 import app.kreate.android.utils.LinkResolver
 import androidx.navigation.NavController
 import app.kreate.android.service.player.PreviewPlayer
@@ -140,7 +142,6 @@ import it.fast4x.rimusic.utils.asMediaItem
 import it.fast4x.rimusic.utils.forcePlay
 import app.kreate.android.utils.warnIfYouTubeLoginExpired
 import app.kreate.android.utils.LauncherShortcuts
-import app.kreate.android.utils.playYouTubePlaylistLink
 import it.fast4x.rimusic.utils.getEnum
 import it.fast4x.rimusic.utils.intent
 import it.fast4x.rimusic.utils.invokeOnReady
@@ -187,6 +188,8 @@ MainActivity :
     }
 
     private var intentUriData by mutableStateOf<Uri?>(null)
+    // Here, not in the composition: an opened link shows a song's menu with it
+    private val bottomMenu = BottomMenu()
     /** Launcher shortcut to run once the player is there, see [LauncherShortcuts] */
     private var shortcutAction by mutableStateOf<String?>(null)
 
@@ -754,7 +757,6 @@ MainActivity :
                         }
 
                     } else {
-                        val bottomMenu = remember { BottomMenu() }
 
                         // FIXME: Why is this block getting called twice on start?
                         CompositionLocalProvider(
@@ -951,21 +953,10 @@ MainActivity :
                 )
 
                 lifecycleScope.launch(Dispatchers.Main) {
+                    // A menu left open (a link opened before) would hide the page this one opens
+                    bottomMenu.hide()
                     when (val path = uri.pathSegments.firstOrNull()) {
-                        "playlist" -> uri.getQueryParameter("list")?.let { playlistId ->
-                            val browseId = "VL$playlistId"
-
-                            if (playlistId.startsWith("OLAK5uy_")) {
-                                Innertube.playlistPage(BrowseBody(browseId = browseId))
-                                    ?.getOrNull()?.let {
-                                        it.songsPage?.items?.firstOrNull()?.album?.endpoint?.browseId?.let { browseId ->
-                                            NavRoutes.YT_ALBUM.navigateHere( navController, browseId )
-                                        }
-                                    }
-                            } else {
-                                NavRoutes.YT_PLAYLIST.navigateHere( navController, browseId )
-                            }
-                        }
+                        "playlist" -> uri.getQueryParameter("list")?.let { openPlaylistPage( it, navController ) }
 
                         "channel" -> uri.lastPathSegment?.let { channelId ->
                             NavRoutes.YT_ARTIST.navigateHere( navController, channelId )
@@ -990,13 +981,13 @@ MainActivity :
                             NavRoutes.searchResults.navigateHere( navController, query )
                         }
 
-                        // A song of a playlist: play the playlist (#422)
-                        "watch" if uri.getQueryParameter("list") != null && playYouTubePlaylistLink(
-                            player,
-                            uri.getQueryParameter("list")!!,
-                            uri.getQueryParameter("v"),
-                            shuffle = uri.getQueryParameter("shuffle") == "1"
-                        ) -> Unit
+                        // A song of a playlist: the playlist's page, nothing plays (#422), with
+                        // the shared song's menu over it. A radio ("RD…") has no page: the
+                        // song's menu alone, below
+                        "watch" if uri.getQueryParameter("list")?.let { !PlaylistIds.isRadio( it ) } == true -> {
+                            openPlaylistPage( uri.getQueryParameter("list")!!, navController )
+                            uri.getQueryParameter("v")?.let { showLinkedSong( it ) }
+                        }
 
                         else if path?.startsWith( "@" ) == true -> openChannelByName( uri, navController )
 
@@ -1007,14 +998,7 @@ MainActivity :
                             path in setOf( "shorts", "live", "v", "embed" ) -> uri.pathSegments.getOrNull( 1 )
                             else -> null
                         }.also { if( it == null ) Toaster.w( R.string.link_not_supported ) }?.let { videoId ->
-                            Innertube.song(videoId)?.getOrNull()?.let { song ->
-                                withContext(Dispatchers.Main) {
-                                    if ( !song.explicit && !Preferences.PARENTAL_CONTROL.value )
-                                        player.forcePlay(song.asMediaItem)
-                                    else
-                                        Toaster.w( R.string.info_parental_control_enabled )
-                                }
-                            }
+                            showLinkedSong( videoId )
                         }
                     }
                 }
@@ -1023,6 +1007,32 @@ MainActivity :
         }
     }
 
+
+    /**
+     * The song's menu, like a long press: play now, play next, enqueue, add to a
+     * playlist… A link never replaces what's playing
+     */
+    private suspend fun showLinkedSong( videoId: String ) {
+        val song = Innertube.song( videoId )?.getOrNull() ?: return
+        withContext( Dispatchers.Main ) {
+            if( !song.explicit || !Preferences.PARENTAL_CONTROL.value )
+                bottomMenu.show( MenuPage.LinkedSong( song.asMediaItem ), true )
+            else
+                Toaster.w( R.string.info_parental_control_enabled )
+        }
+    }
+
+    /** A playlist's page; an album's when the playlist is one ("OLAK5uy_…") */
+    private suspend fun openPlaylistPage( playlistId: String, navController: NavController ) {
+        val browseId = "VL${playlistId.removePrefix( "VL" )}"
+        if( playlistId.startsWith( "OLAK5uy_" ) )
+            Innertube.playlistPage( BrowseBody( browseId = browseId ) )
+                ?.getOrNull()
+                ?.songsPage?.items?.firstOrNull()?.album?.endpoint?.browseId
+                ?.let { withContext( Dispatchers.Main ) { NavRoutes.YT_ALBUM.navigateHere( navController, it ) } }
+        else
+            withContext( Dispatchers.Main ) { NavRoutes.YT_PLAYLIST.navigateHere( navController, browseId ) }
+    }
 
     /** A channel link by name: YouTube gives its id, then the artist's page opens */
     private suspend fun openChannelByName( uri: Uri, navController: NavController ) {
