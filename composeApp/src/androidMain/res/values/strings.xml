@@ -128,6 +128,7 @@
     <string name="opening_url">is loading...</string>
     <string name="link_not_supported">Kreate can\'t open this link</string>
     <string name="play_now">Play now</string>
+    <string name="audio_output">Audio output</string>
     <string name="open_links">YouTube links</string>
     <string name="open_links_with_kreate">Open YouTube links with Kreate</string>
     <string name="open_links_all">On: links to YouTube and YouTube Music open in Kreate</string>

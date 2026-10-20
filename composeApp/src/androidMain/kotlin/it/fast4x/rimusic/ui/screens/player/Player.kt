@@ -1,5 +1,7 @@
 package it.fast4x.rimusic.ui.screens.player
 
+import it.fast4x.rimusic.utils.color
+import androidx.compose.foundation.layout.widthIn
 import app.kreate.android.LocalBottomMenu
 import app.kreate.android.constant.MenuPage
 import it.fast4x.rimusic.service.modern.isLocal
@@ -1780,6 +1782,31 @@ fun Player(
                                     //.padding(10.dp)
                                     .size(24.dp)
                             )
+
+                        // Where the sound goes, and Android's picker to change it (phone,
+                        // Bluetooth speaker, headphones): at hand, not in the notification shade
+                        val outputName = app.kreate.android.utils.AudioOutput.rememberName()
+                        androidx.compose.foundation.layout.Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.clip( androidx.compose.foundation.shape.RoundedCornerShape( 50 ) )
+                                               .clickable { app.kreate.android.utils.AudioOutput.showPicker( context ) }
+                                               .padding( horizontal = 10.dp, vertical = 3.dp )
+                        ) {
+                            Image(
+                                painter = painterResource( R.drawable.volume_up ),
+                                contentDescription = stringResource( R.string.audio_output ),
+                                colorFilter = ColorFilter.tint( colorPalette().collapsedPlayerProgressBar ),
+                                modifier = Modifier.size( 18.dp )
+                            )
+                            if( outputName.isNotBlank() )
+                                BasicText(
+                                    text = outputName,
+                                    maxLines = 1,
+                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                    style = typography().xs.semiBold.color( colorPalette().collapsedPlayerProgressBar ),
+                                    modifier = Modifier.padding( start = 6.dp ).widthIn( max = 180.dp )
+                                )
+                        }
 
                         // Share where the app logo was (it only led home; ⌄ closes the player)
                         if( !mediaItem.isLocal )
