@@ -1,5 +1,8 @@
 package it.fast4x.rimusic.ui.screens.settings
 
+import androidx.compose.ui.platform.LocalContext
+import app.kreate.android.themed.common.screens.settings.SettingsIndex
+import app.kreate.android.themed.common.component.settings.SettingEntrySearch
 import androidx.activity.compose.BackHandler
 import it.fast4x.rimusic.enums.NavigationBarPosition
 import androidx.compose.ui.semantics.Role
@@ -118,9 +121,22 @@ fun SettingsScreen(
         Box( Modifier.fillMaxSize() ) {
             val section = sections.getOrNull( tabIndex )
             if( section == null )
-                SettingsSectionList( sections, listState, paddingValues ) {
-                    tabIndex = it
-                    openedDirectly = false
+                Column {
+                    // Search across every section: the settings found, by section; one opens
+                    // its section filtered on it
+                    val search = remember { SettingEntrySearch( listState, R.string.settings, R.drawable.settings ) }
+                    Box( Modifier.padding( horizontal = 6.dp ) ) { search.ToolBarButton() }
+                    if( search.input.text.isBlank() )
+                        SettingsSectionList( sections, listState, paddingValues ) {
+                            tabIndex = it
+                            openedDirectly = false
+                        }
+                    else
+                        SettingsSearchResults( sections, search, paddingValues ) { index, title ->
+                            SettingEntrySearch.pending = title
+                            tabIndex = index
+                            openedDirectly = false
+                        }
                 }
             else
                 saveableStateHolder.SaveableStateProvider( tabIndex ) {
@@ -130,6 +146,56 @@ fun SettingsScreen(
     }
 
     RestartAppDialog.Render()
+}
+
+/** Settings matching the search, under their section's name; a touch opens it */
+@Composable
+private fun SettingsSearchResults(
+    sections: List<SettingsSection>,
+    search: SettingEntrySearch,
+    paddingValues: PaddingValues,
+    onOpen: (Int, String) -> Unit
+) {
+    val context = LocalContext.current
+    val results = SettingsIndex.titles.mapIndexedNotNull { index, ids ->
+        val section = sections.getOrNull( index ) ?: return@mapIndexedNotNull null
+        val titles = ids.map( context::getString ).distinct().filter { search appearsIn it }
+        if( titles.isEmpty() ) null else section to titles.map { index to it }
+    }
+    LazyColumn(
+        contentPadding = PaddingValues( bottom = Dimensions.bottomSpacer ),
+        modifier = Modifier.fillMaxHeight()
+                           .fillMaxWidth( if( NavigationBarPosition.Right.isCurrent() ) Dimensions.contentWidthRightBar else 1f )
+                           .background( colorPalette().background0 )
+                           .padding( paddingValues )
+    ) {
+        if( results.isEmpty() )
+            item( "none" ) {
+                BasicText(
+                    text = stringResource( R.string.no_results_found ),
+                    style = typography().s.color( colorPalette().textSecondary ),
+                    modifier = Modifier.padding( horizontal = 20.dp, vertical = 24.dp )
+                )
+            }
+        results.forEach { (section, titles) ->
+            item( "header ${section.title}" ) {
+                BasicText(
+                    text = section.title.uppercase(),
+                    style = typography().xxs.semiBold.color( colorPalette().accent ),
+                    modifier = Modifier.padding( start = 20.dp, end = 20.dp, top = 18.dp, bottom = 4.dp )
+                )
+            }
+            titles.forEach { (index, title) -> item( "$index $title" ) {
+                BasicText(
+                    text = title,
+                    style = typography().s.semiBold.color( colorPalette().text ),
+                    modifier = Modifier.fillMaxWidth()
+                                       .clickable { onOpen( index, title ) }
+                                       .padding( horizontal = 20.dp, vertical = 12.dp )
+                )
+            } }
+        }
+    }
 }
 
 /** One line of the settings list: icon, name, what it holds, and the page it opens */

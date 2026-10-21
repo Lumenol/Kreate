@@ -1,5 +1,6 @@
 package app.kreate.android.themed.common.component.settings
 
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.compose.foundation.clickable
@@ -41,6 +42,19 @@ class SettingEntrySearch(
     @field:StringRes val titleId: Int,
     @field:DrawableRes override val iconId: Int
 ): AbstractSearch(), Icon {
+
+    companion object {
+        /** A setting picked in the Settings list's search: the page it opens starts filtered on it */
+        var pending: String? = null
+    }
+
+    init {
+        pending?.let {
+            pending = null
+            input = TextFieldValue( it )
+            isVisible = true
+        }
+    }
 
     @Composable
     override fun DecorationBox( innerTextField: @Composable () -> Unit ) =
